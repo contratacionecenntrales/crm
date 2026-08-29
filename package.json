@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:node": "DEPLOY_TARGET=node vite build",
+    "build:static": "DEPLOY_TARGET=static vite build",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "lint": "eslint .",

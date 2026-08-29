@@ -7,16 +7,28 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // Lovable Cloud always builds for Cloudflare Workers regardless of this
-// setting. Outside Lovable's sandbox (e.g. building for a VPS or a cPanel
-// "Setup Node.js App" host), set DEPLOY_TARGET=node to build a plain Node
-// server at .output/server/index.mjs instead. See README.md.
-const deployingToNode = process.env["DEPLOY_TARGET"] === "node";
+// setting. Outside Lovable's sandbox:
+//   - DEPLOY_TARGET=node   -> plain Node server at .output/server/index.mjs
+//                             (VPS or cPanel "Setup Node.js App")
+//   - DEPLOY_TARGET=static -> fully static HTML/JS/CSS in .output/public,
+//                             no server at all (classic shared hosting,
+//                             e.g. Hostalia, that only serves plain files)
+// See README.md.
+const deployTarget = process.env["DEPLOY_TARGET"];
+const deployingToNode = deployTarget === "node";
+const deployingStatic = deployTarget === "static";
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    ...(deployingStatic
+      ? {
+          prerender: { enabled: true, crawlLinks: true },
+          pages: [{ path: "/" }, { path: "/auth" }],
+        }
+      : {}),
   },
   ...(deployingToNode ? { nitro: { preset: "node-server" } } : {}),
 });

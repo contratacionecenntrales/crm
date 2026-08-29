@@ -200,27 +200,75 @@ día en hostings compartidos y VPS con cPanel/WHM):
    credenciales o facturación real.
 
 Si tu hosting **no** ofrece "Setup Node.js App" (cPanel puramente PHP/MySQL
-clásico), esta aplicación no puede correr ahí: necesitarás un VPS (sección 5)
-o un proveedor con soporte Node.
+clásico), no instales ahí el build de Node: usa el build estático de la
+sección 7.
 
-## 7. Seguridad ya implementada
+## 7. Despliegue estático en hosting compartido sin Node (Hostalia y similares)
+
+Aunque la app está construida con un framework SSR, **no usa ninguna función
+de servidor propia** (todo el acceso a datos lo hace el navegador directamente
+contra Supabase), así que se puede generar como HTML/CSS/JS puramente
+estático — sin Node, sin PHP, sin base de datos que instalar en el hosting —
+válido para un plan básico de Hostalia (o cualquier hosting que solo sirva
+ficheros por FTP).
+
+```bash
+bun run build:static     # o: npm run build:static
+```
+
+Esto genera `.output/public/` con:
+
+- `index.html` y `auth/index.html` — una página HTML ya renderizada por cada
+  ruta (`/` y `/auth`), así que no hace falta ninguna regla de reescritura:
+  Apache sirve cada carpeta con su propio `index.html` de forma nativa.
+- `assets/` — el JavaScript y CSS de la aplicación.
+- `.htaccess` — cabeceras de seguridad equivalentes a las del despliegue en
+  Node (ver sección 8), compresión y caché para los ficheros de `assets/`.
+
+**Subida a Hostalia:**
+
+1. En el panel de Hostalia (o por FTP/SFTP con las credenciales que te dan),
+   entra en la carpeta pública de tu dominio (normalmente `httpdocs` o
+   `public_html`).
+2. Sube **el contenido** de `.output/public/` (no la carpeta en sí) a esa
+   carpeta: `index.html`, `auth/`, `assets/`, `.htaccess`, `favicon.ico`, etc.
+   Si tu cliente FTP oculta ficheros que empiezan por punto, activa "mostrar
+   ficheros ocultos" para no dejarte el `.htaccess` sin subir.
+3. Activa el certificado SSL gratuito desde el panel de Hostalia y fuerza
+   HTTPS (puedes descomentar el bloque `RewriteEngine`/`RewriteCond` del
+   `.htaccess` una vez tengas el certificado activo).
+4. Ya está: `tudominio.com` sirve el login y `tudominio.com/auth` el alta de
+   comercial, hablando directamente con el mismo proyecto Supabase que uses
+   en `.env` en el momento de compilar (las claves quedan incluidas en el
+   JavaScript compilado, por eso solo debe llevar la clave _publishable_,
+   nunca la `service_role`).
+
+**Limitación frente al despliegue en Node**: la Content-Security-Policy del
+`.htaccess` no puede usar un nonce distinto por petición (eso requiere un
+servidor vivo, ver sección 8), así que aquí `script-src` necesita
+`'unsafe-inline'`. Sigue bloqueando cargar scripts desde dominios ajenos,
+pero no añade la misma barrera extra contra XSS que el despliegue en Node.
+Si tu hosting sí admite Node, prefiere las secciones 5 o 6.
+
+## 8. Seguridad ya implementada
 
 - **Rutas protegidas**: la intranet (`/`) redirige a `/auth` si no hay sesión activa; todos los datos, además, están protegidos por RLS en la base de datos (no solo por ocultar la pantalla).
-- **Contraseñas**: hasheadas y gestionadas por completo por Supabase Auth; esta app nunca las ve en claro ni las guarda.
+- **Contraseñas**: hasheadas y gestionadas por completo por Supabase Auth; esta app nunca las ve en claro ni las guarda. El propio comercial puede cambiarla desde Perfil, reautenticándose primero con la contraseña actual.
 - **RLS por fila**: cada comercial solo puede leer/editar sus propias facturas y citas; solo `admin` puede ver los datos de todo el equipo, cambiar el estado de una factura, gestionar Academia/Recursos o asignar roles (protegido también por triggers y políticas en base de datos, no solo por la interfaz).
 - **Subida de ficheros**: validación de tipo MIME y tamaño máximo tanto en el cliente (antes de subir) como en el propio bucket de Supabase Storage (`allowed_mime_types` / `file_size_limit`), y nombres de fichero saneados. Los buckets son privados: la descarga se hace con URLs firmadas de corta duración, nunca con enlaces públicos permanentes.
-- **Cabeceras HTTP de seguridad** (`src/server.ts`, aplicadas a toda respuesta): `Content-Security-Policy` estricta (scripts solo desde el propio origen, con un nonce distinto por petición — nada de `unsafe-inline` para scripts), `X-Frame-Options: DENY` y `frame-ancestors 'none'` (anti-clickjacking), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
+- **Cabeceras HTTP de seguridad** (`src/server.ts` en Node/Cloudflare, `.htaccess` en el build estático — aplicadas a toda respuesta): `Content-Security-Policy` (en el despliegue con servidor, con un nonce distinto por petición para los scripts — nada de `unsafe-inline` ahí), `frame-ancestors` restringido al propio dominio más el editor de Lovable (así la vista previa de Lovable sigue funcionando sin abrirle la puerta a cualquier otra web), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
 - **HTTPS**: la app es agnóstica del transporte; el cifrado en tránsito lo aporta el proxy/host (Nginx+certbot, cPanel AutoSSL o Cloudflare, según dónde despliegues). No despliegues nunca en producción sirviendo por HTTP plano.
 - **Dependencias**: `bunfig.toml` bloquea instalar versiones de paquetes publicadas hace menos de 24h (protección básica frente a ataques de cadena de suministro).
 - **Fuerza bruta y filtraciones de contraseñas**: Supabase Auth ya limita intentos de login/registro por IP. Para reforzarlo aún más, en el panel de Supabase (**Authentication → Policies/Settings**) puedes activar _Leaked password protection_ y añadir un CAPTCHA (hCaptcha/Turnstile) al formulario de alta.
 
 ## Scripts disponibles
 
-| Script       | Descripción                                                       |
-| ------------ | ----------------------------------------------------------------- |
-| `dev`        | Servidor de desarrollo con recarga en caliente                    |
-| `build`      | Build de producción (preset Cloudflare, el que usa Lovable Cloud) |
-| `build:node` | Build de producción para Node (VPS / cPanel)                      |
-| `start`      | Arranca el build de Node (`.output/server/index.mjs`)             |
-| `lint`       | ESLint                                                            |
-| `format`     | Prettier                                                          |
+| Script         | Descripción                                                         |
+| -------------- | ------------------------------------------------------------------- |
+| `dev`          | Servidor de desarrollo con recarga en caliente                      |
+| `build`        | Build de producción (preset Cloudflare, el que usa Lovable Cloud)   |
+| `build:node`   | Build de producción para Node (VPS / cPanel)                        |
+| `build:static` | Build 100% estático (HTML/JS/CSS), para hosting sin Node (Hostalia) |
+| `start`        | Arranca el build de Node (`.output/server/index.mjs`)               |
+| `lint`         | ESLint                                                              |
+| `format`       | Prettier                                                            |
