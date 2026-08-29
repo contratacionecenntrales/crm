@@ -85,7 +85,7 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center bg-void bg-grid px-5 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3">
-          <div className="grid size-11 place-items-center overflow-hidden rounded-lg bg-void glow-brand">
+          <div className="grid size-11 place-items-center overflow-hidden rounded-lg bg-black glow-brand">
             <img src="/logo-mark.png" alt="Labs24k" className="size-full object-contain p-1" />
           </div>
           <div className="leading-tight">

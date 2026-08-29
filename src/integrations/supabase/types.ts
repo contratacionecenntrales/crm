@@ -8,6 +8,24 @@ export type Database = {
   };
   public: {
     Tables: {
+      configuracion: {
+        Row: {
+          id: boolean;
+          objetivo_trimestral_defecto: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          objetivo_trimestral_defecto?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          objetivo_trimestral_defecto?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       citas: {
         Row: {
           cliente: string;
@@ -77,6 +95,45 @@ export type Database = {
           id?: string;
           importe?: number;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      formaciones: {
+        Row: {
+          archivo_url: string | null;
+          categoria: string;
+          created_at: string;
+          descripcion: string | null;
+          id: string;
+          orden: number;
+          publicado: boolean;
+          tamano: string | null;
+          titulo: string;
+          video_url: string | null;
+        };
+        Insert: {
+          archivo_url?: string | null;
+          categoria?: string;
+          created_at?: string;
+          descripcion?: string | null;
+          id?: string;
+          orden?: number;
+          publicado?: boolean;
+          tamano?: string | null;
+          titulo: string;
+          video_url?: string | null;
+        };
+        Update: {
+          archivo_url?: string | null;
+          categoria?: string;
+          created_at?: string;
+          descripcion?: string | null;
+          id?: string;
+          orden?: number;
+          publicado?: boolean;
+          tamano?: string | null;
+          titulo?: string;
+          video_url?: string | null;
         };
         Relationships: [];
       };

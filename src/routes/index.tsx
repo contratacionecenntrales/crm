@@ -7,16 +7,18 @@ import { DashboardTab } from "@/components/intranet/DashboardTab";
 import { FacturacionTab, type Factura } from "@/components/intranet/FacturacionTab";
 import { AgendaTab, type Cita } from "@/components/intranet/AgendaTab";
 import { RecursosTab, type Recurso } from "@/components/intranet/RecursosTab";
+import { AcademiaTab, type Formacion } from "@/components/intranet/AcademiaTab";
+import { ConfiguracionTab, type Usuario } from "@/components/intranet/ConfiguracionTab";
 import { PerfilTab, type Perfil } from "@/components/intranet/PerfilTab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Intranet comercial Labs24k | Facturación, agenda y recursos" },
+      { title: "Intranet comercial Labs24k | Facturación, agenda, academia y recursos" },
       {
         name: "description",
         content:
-          "Portal privado del equipo comercial de Labs24k: registro de facturación, agenda de citas, descarga de PDFs corporativos y soporte directo con administración.",
+          "Portal privado del equipo comercial de Labs24k: registro de facturación, agenda de citas, formaciones de la Academia, descarga de PDFs corporativos y soporte directo con administración.",
       },
       { property: "og:title", content: "Intranet comercial Labs24k" },
       {
@@ -31,8 +33,9 @@ export const Route = createFileRoute("/")({
   component: Intranet,
 });
 
-const TABS = ["Dashboard", "Facturación", "Recursos", "Agenda", "Perfil"] as const;
-type Tab = (typeof TABS)[number];
+const TABS_BASE = ["Dashboard", "Facturación", "Recursos", "Academia", "Agenda", "Perfil"] as const;
+const TAB_CONFIGURACION = "Configuración" as const;
+type Tab = (typeof TABS_BASE)[number] | typeof TAB_CONFIGURACION;
 
 function Intranet() {
   const navigate = useNavigate();
@@ -95,16 +98,23 @@ function Intranet() {
     },
   });
 
-  const comercialesQ = useQuery({
-    queryKey: ["comerciales", uid],
+  const usuariosQ = useQuery({
+    queryKey: ["usuarios", uid],
     enabled: !!uid && rolQ.data === "admin",
     queryFn: async () => {
-      const { data, error } = await supabase.from("perfiles").select("id, nombre");
-      if (error) throw error;
-      return Object.fromEntries((data ?? []).map((p) => [p.id, p.nombre])) as Record<
-        string,
-        string
-      >;
+      const [{ data: perfilesData, error: perfilesError }, { data: rolesData, error: rolesError }] =
+        await Promise.all([
+          supabase.from("perfiles").select("id, nombre, email"),
+          supabase.from("user_roles").select("user_id, role"),
+        ]);
+      if (perfilesError) throw perfilesError;
+      if (rolesError) throw rolesError;
+      return (perfilesData ?? []).map((p): Usuario => ({
+        id: p.id,
+        nombre: p.nombre,
+        email: p.email,
+        esAdmin: (rolesData ?? []).some((r) => r.user_id === p.id && r.role === "admin"),
+      }));
     },
   });
 
@@ -118,6 +128,35 @@ function Intranet() {
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Recurso[];
+    },
+  });
+
+  const formacionesQ = useQuery({
+    queryKey: ["formaciones", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("formaciones")
+        .select(
+          "id, titulo, descripcion, categoria, archivo_url, video_url, tamano, publicado, orden",
+        )
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Formacion[];
+    },
+  });
+
+  const configuracionQ = useQuery({
+    queryKey: ["configuracion", uid],
+    enabled: !!uid && rolQ.data === "admin",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracion")
+        .select("objetivo_trimestral_defecto")
+        .eq("id", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.objetivo_trimestral_defecto ?? 55000;
     },
   });
 
@@ -139,6 +178,9 @@ function Intranet() {
   const rol = rolQ.data ?? "comercial";
   const facturas = facturasQ.data ?? [];
   const citas = citasQ.data ?? [];
+  const usuarios = usuariosQ.data ?? [];
+  const comerciales = Object.fromEntries(usuarios.map((u) => [u.id, u.nombre]));
+  const tabs: readonly Tab[] = rol === "admin" ? [...TABS_BASE, TAB_CONFIGURACION] : TABS_BASE;
   const iniciales = perfil.nombre
     .split(" ")
     .slice(0, 2)
@@ -150,7 +192,7 @@ function Intranet() {
       <header className="sticky top-0 z-30 border-b border-line bg-panel/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center overflow-hidden rounded-lg bg-void glow-brand">
+            <div className="grid size-10 place-items-center overflow-hidden rounded-lg bg-black glow-brand">
               <img src="/logo-mark.png" alt="Labs24k" className="size-full object-contain p-1" />
             </div>
             <div className="leading-tight">
@@ -227,7 +269,7 @@ function Intranet() {
         </div>
 
         <nav className="mt-8 flex flex-wrap gap-2 border-b border-line pb-px">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -255,14 +297,22 @@ function Intranet() {
               facturas={facturas}
               userId={user.id}
               esAdmin={rol === "admin"}
-              comerciales={comercialesQ.data ?? {}}
+              comerciales={comerciales}
             />
           )}
-          {tab === "Recursos" && (
-            <RecursosTab recursos={recursosQ.data ?? []} esAdmin={rol === "admin"} />
-          )}
+          {tab === "Recursos" && <RecursosTab recursos={recursosQ.data ?? []} />}
+          {tab === "Academia" && <AcademiaTab formaciones={formacionesQ.data ?? []} />}
           {tab === "Agenda" && <AgendaTab citas={citas} userId={user.id} />}
           {tab === "Perfil" && <PerfilTab perfil={perfil} rol={rol} />}
+          {tab === "Configuración" && rol === "admin" && (
+            <ConfiguracionTab
+              objetivoDefecto={Number(configuracionQ.data ?? 55000)}
+              recursos={recursosQ.data ?? []}
+              formaciones={formacionesQ.data ?? []}
+              usuarios={usuarios}
+              currentUserId={user.id}
+            />
+          )}
         </div>
       </main>
     </div>

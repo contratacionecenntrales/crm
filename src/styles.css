@@ -6,8 +6,9 @@
 
 /*
  * Labs24k — sistema de diseño alineado con el logo corporativo.
- * Superficies oscuras (void/panel/card) con el turquesa-a-marino del
- * logotipo como acento principal. Todos los colores en oklch y expuestos
+ * Superficies claras (void/panel/card) con el turquesa del logotipo como
+ * acento principal; los tonos de estado están recalculados para mantener
+ * contraste AA sobre fondo claro. Todos los colores en oklch y expuestos
  * como tokens semánticos.
  */
 
@@ -58,37 +59,37 @@
 :root {
   --radius: 0.75rem;
 
-  --void: oklch(0.145 0.021 263.2);
-  --panel: oklch(0.18 0.032 266.6);
-  --line: oklch(0.276 0.049 265.3);
-  --brand: oklch(0.75 0.13 197);
-  --lime: oklch(0.849 0.207 128.8);
-  --amber: oklch(0.837 0.164 84.4);
-  --coral: oklch(0.719 0.169 13.4);
-  --ink-100: oklch(0.968 0.007 247.9);
-  --ink-200: oklch(0.929 0.013 255.5);
-  --ink-400: oklch(0.711 0.035 256.8);
-  --ink-500: oklch(0.554 0.041 257.4);
+  --void: oklch(0.965 0.006 250);
+  --panel: oklch(0.99 0.004 250);
+  --line: oklch(0.897 0.01 255);
+  --brand: oklch(0.55 0.13 197);
+  --lime: oklch(0.5 0.15 145);
+  --amber: oklch(0.55 0.16 70);
+  --coral: oklch(0.55 0.19 25);
+  --ink-100: oklch(0.18 0.02 260);
+  --ink-200: oklch(0.28 0.02 260);
+  --ink-400: oklch(0.42 0.02 260);
+  --ink-500: oklch(0.5 0.02 260);
 
   --background: var(--void);
-  --foreground: oklch(0.929 0.013 255.5);
-  --card: oklch(0.22 0.042 264.8);
-  --card-foreground: oklch(0.968 0.007 247.9);
-  --popover: oklch(0.22 0.042 264.8);
-  --popover-foreground: oklch(0.968 0.007 247.9);
-  --primary: oklch(0.75 0.13 197);
-  --primary-foreground: oklch(0.145 0.021 263.2);
-  --secondary: oklch(0.276 0.049 265.3);
-  --secondary-foreground: oklch(0.968 0.007 247.9);
-  --muted: oklch(0.276 0.049 265.3);
-  --muted-foreground: oklch(0.711 0.035 256.8);
-  --accent: oklch(0.709 0.159 293.5);
-  --accent-foreground: oklch(0.145 0.021 263.2);
-  --destructive: oklch(0.719 0.169 13.4);
-  --destructive-foreground: oklch(0.145 0.021 263.2);
-  --border: oklch(0.276 0.049 265.3);
-  --input: oklch(0.276 0.049 265.3);
-  --ring: oklch(0.75 0.13 197);
+  --foreground: var(--ink-200);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink-100);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink-100);
+  --primary: var(--brand);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--line);
+  --secondary-foreground: var(--ink-100);
+  --muted: oklch(0.94 0.008 255);
+  --muted-foreground: var(--ink-400);
+  --accent: oklch(0.52 0.16 293);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: var(--coral);
+  --destructive-foreground: oklch(1 0 0);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
 }
 
 @layer base {
@@ -130,20 +131,22 @@
 
 @utility glow-brand {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--brand) 35%, transparent),
-    0 0 28px -6px color-mix(in oklab, var(--brand) 45%, transparent);
+    0 0 0 1px color-mix(in oklab, var(--brand) 25%, transparent),
+    0 6px 16px -6px color-mix(in oklab, var(--brand) 35%, transparent);
 }
 
 @utility glow-violet {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
-    0 0 28px -6px color-mix(in oklab, var(--accent) 45%, transparent);
+    0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent),
+    0 6px 16px -6px color-mix(in oklab, var(--accent) 35%, transparent);
 }
 
+/* Nombres heredados del tema oscuro original: sobre fondo claro ya no hace
+   falta un halo de neón en el texto, así que quedan como no-op. */
 @utility text-glow-brand {
-  text-shadow: 0 0 18px color-mix(in oklab, var(--brand) 55%, transparent);
+  text-shadow: none;
 }
 
 @utility text-glow-violet {
-  text-shadow: 0 0 18px color-mix(in oklab, var(--accent) 55%, transparent);
+  text-shadow: none;
 }

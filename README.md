@@ -1,9 +1,12 @@
 # Intranet Comercial 24K
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
-producto: _Labs24k_): facturación, agenda de citas, recursos corporativos y
-perfil del comercial, con inicio de sesión individual y control de acceso por
-roles (`comercial` / `admin`).
+producto: _Labs24k_): facturación, agenda de citas, Academia de formaciones,
+recursos corporativos y perfil del comercial, con inicio de sesión individual
+y control de acceso por roles (`comercial` / `admin`). El rol `admin` tiene
+además una pestaña de **Configuración** para gestionar todo lo demás: publicar
+formaciones y recursos, ascender/retirar administradores y fijar el objetivo
+trimestral por defecto de los comerciales nuevos.
 
 ## Stack técnico
 
@@ -11,7 +14,7 @@ roles (`comercial` / `admin`).
 - **Backend**: [Supabase](https://supabase.com) (PostgreSQL + Auth + Storage). No hay servidor Node/Express aparte: la app habla directamente con Supabase desde el cliente, protegida por Row Level Security (RLS) en cada tabla.
 - **Base de datos**: PostgreSQL gestionado por Supabase. El esquema y las políticas de seguridad viven como migraciones SQL versionadas en `supabase/migrations/`.
 - **Autenticación**: Supabase Auth (email/contraseña + Google OAuth opcional). Las contraseñas nunca las gestiona esta app: Supabase las almacena ya hasheadas (bcrypt) y nunca viajan ni se guardan en texto plano en este código.
-- **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
+- **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`, `formaciones`), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
 
 > Nota importante: esta app **no usa SQLite ni MySQL propios** porque el
 > proyecto ya estaba construido sobre Supabase (Postgres gestionado) desde su
@@ -26,11 +29,12 @@ roles (`comercial` / `admin`).
 ```
 src/
   routes/               páginas (TanStack Router basado en archivos)
-    index.tsx           intranet (Dashboard, Facturación, Recursos, Agenda, Perfil)
+    index.tsx           intranet (Dashboard, Facturación, Recursos, Academia, Agenda, Perfil, Configuración)
     auth.tsx            login / alta de comercial
   components/intranet/  una pestaña por componente
   hooks/useAuth.tsx     estado de sesión de Supabase
   integrations/supabase/ cliente Supabase (browser + server) y tipos generados
+  server.ts             entrada SSR: cabeceras de seguridad (CSP con nonce, etc.)
 supabase/migrations/    esquema de base de datos, RLS y buckets, en SQL
 ```
 
@@ -61,10 +65,10 @@ propio para independizarte por completo de Lovable. Para un proyecto propio:
    - **Nunca** copies aquí la clave `service_role`: esa es secreta y no la usa esta app.
 3. Aplica el esquema ejecutando, en orden, los ficheros de `supabase/migrations/`
    en el **SQL Editor** del panel de Supabase (o con la CLI, ver abajo). Crean:
-   - Tablas `perfiles`, `user_roles`, `facturacion`, `citas`, `recursos`.
-   - Políticas RLS para que cada comercial solo vea/edite sus propios datos, y el rol `admin` pueda ver y validar los de todos.
-   - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB) y `recursos` (privado, solo PDF, máx. 20 MB).
-   - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo.
+   - Tablas `perfiles`, `user_roles`, `facturacion`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
+   - Políticas RLS para que cada comercial solo vea/edite sus propios datos, y el rol `admin` pueda ver y validar los de todos, gestionar Academia/Recursos y asignar roles.
+   - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB), `recursos` (privado, solo PDF, máx. 20 MB) y `formaciones` (privado, solo PDF, máx. 30 MB).
+   - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo, usando el objetivo trimestral por defecto configurado en `configuracion`.
 
    Con la [CLI de Supabase](https://supabase.com/docs/guides/cli) instalada:
 
@@ -84,6 +88,9 @@ propio para independizarte por completo de Lovable. Para un proyecto propio:
    ```
 
    El `uuid` lo ves en **Authentication → Users** dentro del panel de Supabase.
+   Este paso manual solo hace falta para el **primer** administrador: a partir
+   de ahí, cualquier admin puede ascender o retirar a otros comerciales desde
+   la pestaña **Configuración → Comerciales y roles** de la propia intranet.
 
 5. **(Opcional) Login con Google.** En **Authentication → Providers → Google**
    del panel de Supabase, activa el proveedor y añade tu Client ID/Secret de
@@ -199,10 +206,12 @@ o un proveedor con soporte Node.
 
 - **Rutas protegidas**: la intranet (`/`) redirige a `/auth` si no hay sesión activa; todos los datos, además, están protegidos por RLS en la base de datos (no solo por ocultar la pantalla).
 - **Contraseñas**: hasheadas y gestionadas por completo por Supabase Auth; esta app nunca las ve en claro ni las guarda.
-- **RLS por fila**: cada comercial solo puede leer/editar sus propias facturas y citas; solo `admin` puede ver los datos de todo el equipo o cambiar el estado de una factura (protegido también por un trigger en base de datos, no solo por la interfaz).
+- **RLS por fila**: cada comercial solo puede leer/editar sus propias facturas y citas; solo `admin` puede ver los datos de todo el equipo, cambiar el estado de una factura, gestionar Academia/Recursos o asignar roles (protegido también por triggers y políticas en base de datos, no solo por la interfaz).
 - **Subida de ficheros**: validación de tipo MIME y tamaño máximo tanto en el cliente (antes de subir) como en el propio bucket de Supabase Storage (`allowed_mime_types` / `file_size_limit`), y nombres de fichero saneados. Los buckets son privados: la descarga se hace con URLs firmadas de corta duración, nunca con enlaces públicos permanentes.
+- **Cabeceras HTTP de seguridad** (`src/server.ts`, aplicadas a toda respuesta): `Content-Security-Policy` estricta (scripts solo desde el propio origen, con un nonce distinto por petición — nada de `unsafe-inline` para scripts), `X-Frame-Options: DENY` y `frame-ancestors 'none'` (anti-clickjacking), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
 - **HTTPS**: la app es agnóstica del transporte; el cifrado en tránsito lo aporta el proxy/host (Nginx+certbot, cPanel AutoSSL o Cloudflare, según dónde despliegues). No despliegues nunca en producción sirviendo por HTTP plano.
 - **Dependencias**: `bunfig.toml` bloquea instalar versiones de paquetes publicadas hace menos de 24h (protección básica frente a ataques de cadena de suministro).
+- **Fuerza bruta y filtraciones de contraseñas**: Supabase Auth ya limita intentos de login/registro por IP. Para reforzarlo aún más, en el panel de Supabase (**Authentication → Policies/Settings**) puedes activar *Leaked password protection* y añadir un CAPTCHA (hCaptcha/Turnstile) al formulario de alta.
 
 ## Scripts disponibles
 
