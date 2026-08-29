@@ -1,0 +1,148 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Labs24k — sistema de diseño "24K Gold".
+ * Superficies oscuras (void/panel/card) con acento corporativo en oro.
+ * Todos los colores en oklch y expuestos como tokens semánticos.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  --color-void: var(--void);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-lime: var(--lime);
+  --color-amber: var(--amber);
+  --color-coral: var(--coral);
+  --color-ink-100: var(--ink-100);
+  --color-ink-200: var(--ink-200);
+  --color-ink-400: var(--ink-400);
+  --color-ink-500: var(--ink-500);
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --void: oklch(0.145 0.021 263.2);
+  --panel: oklch(0.18 0.032 266.6);
+  --line: oklch(0.276 0.049 265.3);
+  --brand: oklch(0.82 0.15 87);
+  --lime: oklch(0.849 0.207 128.8);
+  --amber: oklch(0.75 0.15 55);
+  --coral: oklch(0.719 0.169 13.4);
+  --ink-100: oklch(0.968 0.007 247.9);
+  --ink-200: oklch(0.929 0.013 255.5);
+  --ink-400: oklch(0.711 0.035 256.8);
+  --ink-500: oklch(0.554 0.041 257.4);
+
+  --background: var(--void);
+  --foreground: oklch(0.929 0.013 255.5);
+  --card: oklch(0.22 0.042 264.8);
+  --card-foreground: oklch(0.968 0.007 247.9);
+  --popover: oklch(0.22 0.042 264.8);
+  --popover-foreground: oklch(0.968 0.007 247.9);
+  --primary: oklch(0.82 0.15 87);
+  --primary-foreground: oklch(0.145 0.021 263.2);
+  --secondary: oklch(0.276 0.049 265.3);
+  --secondary-foreground: oklch(0.968 0.007 247.9);
+  --muted: oklch(0.276 0.049 265.3);
+  --muted-foreground: oklch(0.711 0.035 256.8);
+  --accent: oklch(0.709 0.159 293.5);
+  --accent-foreground: oklch(0.145 0.021 263.2);
+  --destructive: oklch(0.719 0.169 13.4);
+  --destructive-foreground: oklch(0.145 0.021 263.2);
+  --border: oklch(0.276 0.049 265.3);
+  --input: oklch(0.276 0.049 265.3);
+  --ring: oklch(0.82 0.15 87);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-display);
+  }
+}
+
+@keyframes gridpan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 44px 44px;
+  }
+}
+
+@utility bg-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--ink-400) 8%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink-400) 8%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 44px 44px;
+  animation: gridpan 22s linear infinite;
+}
+
+@utility glow-gold {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--brand) 35%, transparent),
+    0 0 28px -6px color-mix(in oklab, var(--brand) 45%, transparent);
+}
+
+@utility glow-violet {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
+    0 0 28px -6px color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+@utility text-glow-gold {
+  text-shadow: 0 0 18px color-mix(in oklab, var(--brand) 55%, transparent);
+}
+
+@utility text-glow-violet {
+  text-shadow: 0 0 18px color-mix(in oklab, var(--accent) 55%, transparent);
+}
