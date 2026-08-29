@@ -178,7 +178,7 @@ export function FacturacionTab({
           <button
             type="submit"
             disabled={crear.isPending}
-            className="w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-gold disabled:opacity-60"
+            className="w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-brand disabled:opacity-60"
           >
             {crear.isPending ? "Subiendo…" : "Registrar factura"}
           </button>

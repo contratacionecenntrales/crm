@@ -193,7 +193,7 @@ function SubirRecursoForm() {
         <button
           type="submit"
           disabled={subir.isPending}
-          className="w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-gold disabled:opacity-60"
+          className="w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-brand disabled:opacity-60"
         >
           {subir.isPending ? "Publicando…" : "Publicar recurso"}
         </button>

@@ -85,16 +85,19 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center bg-void bg-grid px-5 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-lg bg-brand glow-gold">
-            <span className="font-mono text-sm font-bold text-primary-foreground">24</span>
+          <div className="grid size-11 place-items-center overflow-hidden rounded-lg bg-void glow-brand">
+            <img src="/logo-mark.png" alt="Labs24k" className="size-full object-contain p-1" />
           </div>
           <div className="leading-tight">
-            <p className="font-mono text-xs font-semibold tracking-[0.22em] text-brand text-glow-gold">
+            <p className="font-mono text-xs font-semibold tracking-[0.22em] text-brand text-glow-brand">
               LABS24K
             </p>
             <p className="text-[11px] text-ink-400">Portal de Gestión Comercial</p>
           </div>
         </div>
+        <p className="mt-2 text-[11px] italic text-ink-500">
+          "Donde la tecnología y el éxito se encuentran."
+        </p>
 
         <div className="mt-6 rounded-2xl border border-line bg-panel p-6">
           <h1 className="text-2xl font-bold text-ink-100">
@@ -154,7 +157,7 @@ function AuthPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="mt-2 w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-gold disabled:opacity-60"
+              className="mt-2 w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-brand disabled:opacity-60"
             >
               {enviando ? "Procesando…" : modo === "login" ? "Entrar" : "Crear cuenta"}
             </button>

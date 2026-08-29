@@ -5,9 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Labs24k — sistema de diseño "24K Gold".
- * Superficies oscuras (void/panel/card) con acento corporativo en oro.
- * Todos los colores en oklch y expuestos como tokens semánticos.
+ * Labs24k — sistema de diseño alineado con el logo corporativo.
+ * Superficies oscuras (void/panel/card) con el turquesa-a-marino del
+ * logotipo como acento principal. Todos los colores en oklch y expuestos
+ * como tokens semánticos.
  */
 
 @theme inline {
@@ -60,9 +61,9 @@
   --void: oklch(0.145 0.021 263.2);
   --panel: oklch(0.18 0.032 266.6);
   --line: oklch(0.276 0.049 265.3);
-  --brand: oklch(0.82 0.15 87);
+  --brand: oklch(0.75 0.13 197);
   --lime: oklch(0.849 0.207 128.8);
-  --amber: oklch(0.75 0.15 55);
+  --amber: oklch(0.837 0.164 84.4);
   --coral: oklch(0.719 0.169 13.4);
   --ink-100: oklch(0.968 0.007 247.9);
   --ink-200: oklch(0.929 0.013 255.5);
@@ -75,7 +76,7 @@
   --card-foreground: oklch(0.968 0.007 247.9);
   --popover: oklch(0.22 0.042 264.8);
   --popover-foreground: oklch(0.968 0.007 247.9);
-  --primary: oklch(0.82 0.15 87);
+  --primary: oklch(0.75 0.13 197);
   --primary-foreground: oklch(0.145 0.021 263.2);
   --secondary: oklch(0.276 0.049 265.3);
   --secondary-foreground: oklch(0.968 0.007 247.9);
@@ -87,7 +88,7 @@
   --destructive-foreground: oklch(0.145 0.021 263.2);
   --border: oklch(0.276 0.049 265.3);
   --input: oklch(0.276 0.049 265.3);
-  --ring: oklch(0.82 0.15 87);
+  --ring: oklch(0.75 0.13 197);
 }
 
 @layer base {
@@ -127,7 +128,7 @@
   animation: gridpan 22s linear infinite;
 }
 
-@utility glow-gold {
+@utility glow-brand {
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--brand) 35%, transparent),
     0 0 28px -6px color-mix(in oklab, var(--brand) 45%, transparent);
@@ -139,7 +140,7 @@
     0 0 28px -6px color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
-@utility text-glow-gold {
+@utility text-glow-brand {
   text-shadow: 0 0 18px color-mix(in oklab, var(--brand) 55%, transparent);
 }
 

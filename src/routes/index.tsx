@@ -150,11 +150,11 @@ function Intranet() {
       <header className="sticky top-0 z-30 border-b border-line bg-panel/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-lg bg-brand glow-gold">
-              <span className="font-mono text-sm font-bold text-primary-foreground">24</span>
+            <div className="grid size-10 place-items-center overflow-hidden rounded-lg bg-void glow-brand">
+              <img src="/logo-mark.png" alt="Labs24k" className="size-full object-contain p-1" />
             </div>
             <div className="leading-tight">
-              <p className="font-mono text-xs font-semibold tracking-[0.22em] text-brand text-glow-gold">
+              <p className="font-mono text-xs font-semibold tracking-[0.22em] text-brand text-glow-brand">
                 LABS24K
               </p>
               <p className="text-[11px] text-ink-400">Portal de Gestión Comercial</p>
@@ -215,8 +215,9 @@ function Intranet() {
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-ink-500">{tab}</p>
             <h1 className="mt-1 text-3xl font-bold text-ink-100 sm:text-4xl">
-              Hola, <span className="text-brand text-glow-gold">{perfil.nombre.split(" ")[0]}</span>
-              . Tu mes va por buen camino.
+              Hola,{" "}
+              <span className="text-brand text-glow-brand">{perfil.nombre.split(" ")[0]}</span>. Tu
+              mes va por buen camino.
             </h1>
           </div>
           <div className="font-mono text-xs text-ink-400">
@@ -232,7 +233,7 @@ function Intranet() {
               onClick={() => setTab(t)}
               className={
                 t === tab
-                  ? "rounded-lg bg-brand/15 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-widest text-brand text-glow-gold glow-gold"
+                  ? "rounded-lg bg-brand/15 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-widest text-brand text-glow-brand glow-brand"
                   : "rounded-lg px-4 py-2 font-mono text-xs font-semibold uppercase tracking-widest text-ink-400 transition hover:text-ink-200"
               }
             >

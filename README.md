@@ -1,7 +1,7 @@
 # Intranet Comercial 24K
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
-producto: *Labs24k*): facturación, agenda de citas, recursos corporativos y
+producto: _Labs24k_): facturación, agenda de citas, recursos corporativos y
 perfil del comercial, con inicio de sesión individual y control de acceso por
 roles (`comercial` / `admin`).
 
@@ -168,14 +168,14 @@ funciona en un hosting compartido "solo PHP"**. Necesitas un plan de cPanel
 cuyo proveedor incluya la función **"Setup Node.js App"** (muy habitual hoy en
 día en hostings compartidos y VPS con cPanel/WHM):
 
-1. En cPanel → **Setup Node.js App** → *Create Application*.
+1. En cPanel → **Setup Node.js App** → _Create Application_.
    - Versión de Node: 20 o superior.
    - Modo de la aplicación: `Production`.
    - Application root: la carpeta donde subirás el proyecto (ej. `intranet-24k`).
    - Application URL: tu dominio o subdominio (ej. `intranet.24k.com`).
    - **Application startup file**: `.output/server/index.mjs`.
-2. Sube el código por Git o FTP/SFTP a la *Application root*.
-3. Desde el terminal que ofrece "Setup Node.js App" (botón *Enter to the virtual environment*):
+2. Sube el código por Git o FTP/SFTP a la _Application root_.
+3. Desde el terminal que ofrece "Setup Node.js App" (botón _Enter to the virtual environment_):
 
    ```bash
    npm ci
@@ -206,11 +206,11 @@ o un proveedor con soporte Node.
 
 ## Scripts disponibles
 
-| Script | Descripción |
-| --- | --- |
-| `dev` | Servidor de desarrollo con recarga en caliente |
-| `build` | Build de producción (preset Cloudflare, el que usa Lovable Cloud) |
-| `build:node` | Build de producción para Node (VPS / cPanel) |
-| `start` | Arranca el build de Node (`.output/server/index.mjs`) |
-| `lint` | ESLint |
-| `format` | Prettier |
+| Script       | Descripción                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| `dev`        | Servidor de desarrollo con recarga en caliente                    |
+| `build`      | Build de producción (preset Cloudflare, el que usa Lovable Cloud) |
+| `build:node` | Build de producción para Node (VPS / cPanel)                      |
+| `start`      | Arranca el build de Node (`.output/server/index.mjs`)             |
+| `lint`       | ESLint                                                            |
+| `format`     | Prettier                                                          |

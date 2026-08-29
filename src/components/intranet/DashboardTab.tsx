@@ -22,11 +22,11 @@ export function DashboardTab({
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-line bg-card p-5 glow-gold">
+        <div className="rounded-2xl border border-line bg-card p-5 glow-brand">
           <p className="font-mono text-[11px] uppercase tracking-widest text-ink-400">
             Facturación subida
           </p>
-          <p className="mt-2 font-mono text-3xl font-bold text-brand text-glow-gold">
+          <p className="mt-2 font-mono text-3xl font-bold text-brand text-glow-brand">
             {eur.format(total)}
           </p>
           <p className="mt-2 text-xs text-ink-500">{facturas.length} facturas registradas</p>
