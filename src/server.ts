@@ -97,7 +97,11 @@ async function withSecurityHeaders(response: Response): Promise<Response> {
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      "frame-ancestors 'none'",
+      // Lovable's editor embeds the live preview in an iframe from
+      // lovable.dev / gptengineer.app and talks to it over postMessage
+      // (see previewAuthStorage.ts) — blocking that framing breaks the
+      // preview entirely. Anyone else embedding this origin is still denied.
+      "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://gptengineer.app https://*.gptengineer.app",
       `script-src 'self' 'nonce-${nonce}'`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
@@ -105,7 +109,9 @@ async function withSecurityHeaders(response: Response): Promise<Response> {
       `connect-src 'self' ${supabaseConnectSrc()}`,
     ].join("; "),
   );
-  headers.set("X-Frame-Options", "DENY");
+  // No X-Frame-Options: it can only express one fixed rule (e.g. DENY) and
+  // would either fight the allowlist above or reintroduce the same preview
+  // breakage; frame-ancestors alone is what every current browser honors.
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()");

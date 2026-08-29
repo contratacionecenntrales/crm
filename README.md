@@ -1,10 +1,11 @@
 # Intranet Comercial 24K
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
-producto: _Labs24k_): facturación, agenda de citas, Academia de formaciones,
-recursos corporativos y perfil del comercial, con inicio de sesión individual
-y control de acceso por roles (`comercial` / `admin`). El rol `admin` tiene
-además una pestaña de **Configuración** para gestionar todo lo demás: publicar
+producto: _Labs24k_): facturación, agenda de citas con calendario mensual,
+Academia de formaciones, recursos corporativos y perfil del comercial (con
+cambio de contraseña propio), con inicio de sesión individual y control de
+acceso por roles (`comercial` / `admin`). El rol `admin` tiene además una
+pestaña de **Configuración** para gestionar todo lo demás: publicar
 formaciones y recursos, ascender/retirar administradores y fijar el objetivo
 trimestral por defecto de los comerciales nuevos.
 
@@ -211,7 +212,7 @@ o un proveedor con soporte Node.
 - **Cabeceras HTTP de seguridad** (`src/server.ts`, aplicadas a toda respuesta): `Content-Security-Policy` estricta (scripts solo desde el propio origen, con un nonce distinto por petición — nada de `unsafe-inline` para scripts), `X-Frame-Options: DENY` y `frame-ancestors 'none'` (anti-clickjacking), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
 - **HTTPS**: la app es agnóstica del transporte; el cifrado en tránsito lo aporta el proxy/host (Nginx+certbot, cPanel AutoSSL o Cloudflare, según dónde despliegues). No despliegues nunca en producción sirviendo por HTTP plano.
 - **Dependencias**: `bunfig.toml` bloquea instalar versiones de paquetes publicadas hace menos de 24h (protección básica frente a ataques de cadena de suministro).
-- **Fuerza bruta y filtraciones de contraseñas**: Supabase Auth ya limita intentos de login/registro por IP. Para reforzarlo aún más, en el panel de Supabase (**Authentication → Policies/Settings**) puedes activar *Leaked password protection* y añadir un CAPTCHA (hCaptcha/Turnstile) al formulario de alta.
+- **Fuerza bruta y filtraciones de contraseñas**: Supabase Auth ya limita intentos de login/registro por IP. Para reforzarlo aún más, en el panel de Supabase (**Authentication → Policies/Settings**) puedes activar _Leaked password protection_ y añadir un CAPTCHA (hCaptcha/Turnstile) al formulario de alta.
 
 ## Scripts disponibles
 

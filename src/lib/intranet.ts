@@ -21,6 +21,10 @@ export function formatHora(value: string) {
   });
 }
 
+export function mayusInicial(texto: string) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 export type EstadoFactura = "Pendiente" | "Aprobada" | "Pagada";
 export type EstadoCita = "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
 
