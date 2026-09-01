@@ -1,0 +1,77 @@
+// Prisma schema for the CRM's Labs Command Center 360 feature.
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderPriority {
+  ROUTINE
+  URGENT
+  STAT
+}
+
+enum ResultFlag {
+  NORMAL
+  ABNORMAL
+  CRITICAL
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String?
+  dob       DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  labOrders LabOrder[]
+}
+
+model LabOrder {
+  id           String        @id @default(cuid())
+  orderNumber  String        @unique
+  testName     String
+  status       OrderStatus   @default(PENDING)
+  priority     OrderPriority @default(ROUTINE)
+  orderedAt    DateTime      @default(now())
+  completedAt  DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+
+  result LabResult?
+
+  @@index([status])
+  @@index([contactId])
+}
+
+model LabResult {
+  id          String     @id @default(cuid())
+  summary     String
+  flag        ResultFlag @default(NORMAL)
+  reportedAt  DateTime   @default(now())
+  reportedBy  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  labOrder   LabOrder @relation(fields: [labOrderId], references: [id], onDelete: Cascade)
+  labOrderId String   @unique
+}
