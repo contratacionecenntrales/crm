@@ -59,3 +59,25 @@ recorded results per contact.
 - **API routes** — `GET/PATCH /api/orders`, `/api/orders/[id]`, and
   `POST /api/orders/[id]/result` back the UI and can be used
   independently.
+
+## End-to-end tests
+
+The e2e suite (Playwright) covers the dashboard, order detail flows, and
+the API routes' edge cases (validation, 404s, malformed JSON).
+
+1. Create a dedicated test database (kept separate from your dev data,
+   since the suite resets it before each run):
+
+   ```bash
+   createdb crm_labs_test
+   ```
+
+2. Run the suite — it applies migrations, seeds a fixed fixture, and
+   boots its own dev server automatically:
+
+   ```bash
+   npm run test:e2e
+   ```
+
+   Override the test database with `TEST_DATABASE_URL` if it isn't at
+   the default `postgresql://postgres:postgres@localhost:5432/crm_labs_test`.

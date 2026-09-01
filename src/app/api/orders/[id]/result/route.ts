@@ -7,11 +7,22 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await request.json();
 
-  const summary = typeof body.summary === "string" ? body.summary.trim() : "";
-  const flag = typeof body.flag === "string" ? body.flag : "NORMAL";
-  const reportedBy = typeof body.reportedBy === "string" ? body.reportedBy.trim() : undefined;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const payload = body as Record<string, unknown>;
+
+  const summary = typeof payload.summary === "string" ? payload.summary.trim() : "";
+  const flag = typeof payload.flag === "string" ? payload.flag : "NORMAL";
+  const reportedBy =
+    typeof payload.reportedBy === "string" ? payload.reportedBy.trim() : undefined;
 
   if (!summary) {
     return NextResponse.json({ error: "Summary is required" }, { status: 400 });

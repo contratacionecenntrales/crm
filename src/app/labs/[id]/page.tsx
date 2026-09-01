@@ -85,7 +85,12 @@ export default async function LabOrderDetailPage({
             <p className="font-medium text-gray-900">Result</p>
             <FlagBadge flag={serialized.result.flag} />
           </div>
-          <p className="mt-2 whitespace-pre-wrap text-gray-700">{serialized.result.summary}</p>
+          <p
+            data-testid="result-summary-display"
+            className="mt-2 whitespace-pre-wrap text-gray-700"
+          >
+            {serialized.result.summary}
+          </p>
           <p className="mt-2 text-xs text-gray-400">
             Reported {formatDateTime(serialized.result.reportedAt)}
             {serialized.result.reportedBy ? ` by ${serialized.result.reportedBy}` : ""}

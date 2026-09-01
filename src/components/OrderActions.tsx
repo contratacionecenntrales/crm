@@ -54,7 +54,7 @@ export function OrderActions({ order }: { order: SerializedOrder }) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-medium text-gray-900">Update status</p>
+        <h2 className="text-sm font-medium text-gray-900">Update status</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           {ORDER_STATUSES.map((status) => (
             <button
@@ -78,12 +78,18 @@ export function OrderActions({ order }: { order: SerializedOrder }) {
           onSubmit={submitResult}
           className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <p className="text-sm font-medium text-gray-900">
+          <h2 className="text-sm font-medium text-gray-900">
             {order.result ? "Update result" : "Record result"}
-          </p>
+          </h2>
 
-          <label className="mt-3 block text-xs font-medium text-gray-500">Summary</label>
+          <label
+            htmlFor="result-summary"
+            className="mt-3 block text-xs font-medium text-gray-500"
+          >
+            Summary
+          </label>
           <textarea
+            id="result-summary"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={3}
@@ -93,8 +99,11 @@ export function OrderActions({ order }: { order: SerializedOrder }) {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-gray-500">Flag</label>
+              <label htmlFor="result-flag" className="block text-xs font-medium text-gray-500">
+                Flag
+              </label>
               <select
+                id="result-flag"
                 value={flag}
                 onChange={(e) => setFlag(e.target.value as typeof flag)}
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-500 focus:outline-none"
@@ -107,8 +116,14 @@ export function OrderActions({ order }: { order: SerializedOrder }) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500">Reported by</label>
+              <label
+                htmlFor="result-reported-by"
+                className="block text-xs font-medium text-gray-500"
+              >
+                Reported by
+              </label>
               <input
+                id="result-reported-by"
                 value={reportedBy}
                 onChange={(e) => setReportedBy(e.target.value)}
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-500 focus:outline-none"

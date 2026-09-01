@@ -18,12 +18,15 @@ export async function GET(request: NextRequest) {
   }
 
   if (q) {
-    where.OR = [
-      { orderNumber: { contains: q, mode: "insensitive" } },
-      { testName: { contains: q, mode: "insensitive" } },
-      { contact: { firstName: { contains: q, mode: "insensitive" } } },
-      { contact: { lastName: { contains: q, mode: "insensitive" } } },
-    ];
+    const words = q.split(/\s+/).filter(Boolean);
+    where.AND = words.map((word) => ({
+      OR: [
+        { orderNumber: { contains: word, mode: "insensitive" } },
+        { testName: { contains: word, mode: "insensitive" } },
+        { contact: { firstName: { contains: word, mode: "insensitive" } } },
+        { contact: { lastName: { contains: word, mode: "insensitive" } } },
+      ],
+    }));
   }
 
   const orders = await prisma.labOrder.findMany({
