@@ -14,7 +14,7 @@ trimestral por defecto de los comerciales nuevos.
 - **Frontend/SSR**: React 19 + [TanStack Start](https://tanstack.com/start) (Vite + Nitro), Tailwind CSS 4.
 - **Backend**: [Supabase](https://supabase.com) (PostgreSQL + Auth + Storage). No hay servidor Node/Express aparte: la app habla directamente con Supabase desde el cliente, protegida por Row Level Security (RLS) en cada tabla.
 - **Base de datos**: PostgreSQL gestionado por Supabase. El esquema y las políticas de seguridad viven como migraciones SQL versionadas en `supabase/migrations/`.
-- **Autenticación**: Supabase Auth (email/contraseña + Google OAuth opcional). Las contraseñas nunca las gestiona esta app: Supabase las almacena ya hasheadas (bcrypt) y nunca viajan ni se guardan en texto plano en este código.
+- **Autenticación**: Supabase Auth (email/contraseña; Google OAuth activable, ver sección 2). Las contraseñas nunca las gestiona esta app: Supabase las almacena ya hasheadas (bcrypt) y nunca viajan ni se guardan en texto plano en este código.
 - **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`, `formaciones`), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
 
 > Nota importante: esta app **no usa SQLite ni MySQL propios** porque el
@@ -93,11 +93,20 @@ propio para independizarte por completo de Lovable. Para un proyecto propio:
    de ahí, cualquier admin puede ascender o retirar a otros comerciales desde
    la pestaña **Configuración → Comerciales y roles** de la propia intranet.
 
-5. **(Opcional) Login con Google.** En **Authentication → Providers → Google**
-   del panel de Supabase, activa el proveedor y añade tu Client ID/Secret de
-   Google Cloud. El botón "Continuar con Google" ya está implementado con la
-   API estándar de Supabase (`supabase.auth.signInWithOAuth`), así que
-   funciona igual da igual dónde despliegues el frontend.
+5. **(Opcional) Login con Google.** El botón "Continuar con Google" se quitó
+   de `/auth` porque, sin configurar el proveedor, Supabase redirige a una
+   página de error en bruto (`Unsupported provider: missing OAuth secret`) en
+   vez de un mensaje entendible. Para activarlo:
+   1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
+      crea una credencial **OAuth client ID** de tipo _Web application_. Como
+      _Authorized redirect URI_ pon `<tu SUPABASE_URL>/auth/v1/callback`
+      (el dominio exacto de tu `.env`, con `/auth/v1/callback` al final).
+   2. Copia el _Client ID_ y el _Client secret_ que te da Google.
+   3. En el panel de Supabase → **Authentication → Providers → Google**,
+      actívalo y pega ahí esas dos claves.
+   4. Vuelve a añadir el botón en `src/routes/auth.tsx`: un `<button>` que
+      llame a `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } })`
+      (es la API estándar de Supabase, funciona igual en cualquier hosting).
 
 ## 3. Variables de entorno
 

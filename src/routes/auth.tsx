@@ -69,18 +69,6 @@ function AuthPage() {
     }
   }
 
-  async function onGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) {
-      toast.error("No se pudo iniciar sesión con Google");
-    }
-    // On success Supabase redirects the browser to Google; there is nothing
-    // to navigate to here.
-  }
-
   return (
     <div className="grid min-h-screen place-items-center bg-void bg-grid px-5 py-12">
       <div className="w-full max-w-md">
@@ -162,13 +150,6 @@ function AuthPage() {
               {enviando ? "Procesando…" : modo === "login" ? "Entrar" : "Crear cuenta"}
             </button>
           </form>
-
-          <button
-            onClick={onGoogle}
-            className="mt-3 w-full rounded-xl border border-line bg-card py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-ink-200 transition hover:border-brand"
-          >
-            Continuar con Google
-          </button>
 
           <button
             onClick={() => setModo(modo === "login" ? "registro" : "login")}
