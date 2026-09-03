@@ -3,12 +3,14 @@
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
 producto: _Labs24k_): CRM de leads, facturación con liquidación de
 comisiones, agenda de citas con calendario mensual, Centro de Formación con
-cursos y cuestionarios, recursos corporativos y perfil del comercial (con
-cambio de contraseña propio), con inicio de sesión individual y control de
-acceso por roles (`comercial` / `admin`). El rol `admin` tiene además una
-pestaña de **Configuración** para gestionar todo lo demás: publicar
-recursos, ascender/retirar administradores y fijar el objetivo trimestral y
-el porcentaje de comisión por defecto de los comerciales nuevos.
+cursos y cuestionarios, Sala de Entrevistas (pipeline de candidatos) y
+Backoffice (tickets y campañas), recursos corporativos y perfil del
+comercial (con cambio de contraseña propio), con inicio de sesión
+individual y control de acceso por **roles y permisos por módulo**. El rol
+`admin` tiene además una pestaña de **Configuración** para gestionar todo
+lo demás: publicar recursos, asignar roles, editar la matriz de permisos y
+fijar el objetivo trimestral y el porcentaje de comisión por defecto de los
+comerciales nuevos.
 
 Las **comisiones** se generan solas: en cuanto admin marca una factura como
 `Pagada`, se crea automáticamente una comisión `Pendiente` para el comercial
@@ -25,6 +27,22 @@ veces quiera; la corrección se hace en el servidor (función
 curso se puede marcar como **obligatorio**: admin ve entonces, por curso,
 qué comerciales lo tienen completo (módulos + cuestionario aprobado) y
 quién sigue pendiente.
+
+**Permisos por módulo**: además de `admin`/`comercial`, existen los roles
+`account_manager`, `entrevistador` y `admin_staff` — un usuario puede tener
+varios a la vez. Qué pestañas ve cada rol se define en una matriz
+editable desde Configuración (rol × módulo); `admin` siempre tiene acceso
+completo y no depende de la tabla, para que nadie pueda autobloquearse.
+
+La **Sala de Entrevistas** es un pipeline de candidatos tipo kanban
+(Recibido → Entrevista → Prueba → Oferta → Contratado → **Onboarding** /
+Descartado), visible para `admin`, `entrevistador` y `admin_staff`.
+
+El **Backoffice** reúne métricas en vivo (leads y tickets por estado, vía
+Supabase Realtime — sin polling), un sistema de tickets internos (cualquiera
+abre uno; `admin`/`admin_staff` lo gestionan) y gestión de campañas
+(vinculadas a los leads por nombre de campaña), con conteo de leads por
+campaña.
 
 ## Stack técnico
 
@@ -47,7 +65,7 @@ quién sigue pendiente.
 ```
 src/
   routes/               páginas (TanStack Router basado en archivos)
-    index.tsx           intranet (Dashboard, Leads, Facturación, Comisiones, Recursos, Academia, Agenda, Perfil, Configuración)
+    index.tsx           intranet (Dashboard, Leads, Facturación, Comisiones, Recursos, Academia, Agenda, Entrevistas, Backoffice, Perfil, Configuración)
     auth.tsx            login / alta de comercial
   components/intranet/  una pestaña por componente
   hooks/useAuth.tsx     estado de sesión de Supabase
@@ -80,11 +98,13 @@ La app queda disponible en `http://localhost:3000` (o el puerto que indique la c
    - **Nunca** copies aquí la clave `service_role`: esa es secreta y no la usa esta app.
 3. Aplica el esquema ejecutando, en orden, los ficheros de `supabase/migrations/`
    en el **SQL Editor** del panel de Supabase (o con la CLI, ver abajo). Crean:
-   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `comisiones`, `liquidaciones`, `citas`, `recursos`, `configuracion` (ajustes globales, fila única) y el Centro de Formación: `cursos`, `modulos_curso`, `preguntas_curso`, `opciones_pregunta`, `progreso_modulo` y `resultados_cuestionario`.
-   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus comisiones y liquidaciones, sus citas, su progreso y sus resultados de cuestionario), y el rol `admin` pueda ver y validar los de todos, reasignar leads, aprobar/liquidar comisiones, gestionar cursos/Recursos y asignar roles.
+   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `comisiones`, `liquidaciones`, `citas`, `recursos`, `configuracion` (ajustes globales, fila única), el Centro de Formación (`cursos`, `modulos_curso`, `preguntas_curso`, `opciones_pregunta`, `progreso_modulo`, `resultados_cuestionario`), la matriz `permisos_modulo`, la Sala de Entrevistas (`candidatos`) y el Backoffice (`tickets`, `campanas`).
+   - Los roles `admin`, `comercial`, `account_manager`, `entrevistador` y `admin_staff` en el enum `app_role` (un usuario puede tener varios a la vez).
+   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus comisiones y liquidaciones, sus citas, su progreso y sus resultados de cuestionario, sus tickets), el equipo de selección (`admin`/`entrevistador`/`admin_staff`) gestione candidatos, `admin`/`admin_staff` gestionen tickets y `admin`/`admin_staff`/`account_manager` gestionen campañas; el rol `admin` puede además ver y validar los datos de todos, reasignar leads, aprobar/liquidar comisiones, gestionar cursos/Recursos, asignar roles y editar la matriz de permisos.
    - Un trigger en `facturacion` que genera la comisión automáticamente al marcar una factura `Pagada`, una función `crear_liquidacion(comercial)` (solo admin) que agrupa las comisiones aprobadas de un comercial en una liquidación nueva, y una función `enviar_cuestionario(curso, respuestas)` que corrige el test en el servidor y guarda el resultado (nadie puede fabricarse su propio aprobado).
    - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB), `recursos` (privado, solo PDF, máx. 20 MB) y `formaciones` (privado, solo PDF, máx. 30 MB).
    - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo, usando el objetivo trimestral por defecto configurado en `configuracion`.
+   - Las tablas `tickets` y `leads` añadidas a la publicación `supabase_realtime`, para que el panel de Backoffice reciba las métricas en vivo sin sondeo (polling).
 
    Con la [CLI de Supabase](https://supabase.com/docs/guides/cli) instalada:
 

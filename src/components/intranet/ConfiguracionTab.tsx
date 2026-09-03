@@ -2,13 +2,27 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  MODULO_LABEL,
+  MODULOS,
+  ROLES,
+  ROLE_LABEL,
+  type AppRole,
+  type Modulo,
+} from "@/lib/intranet";
 import type { Recurso } from "./RecursosTab";
 
 export type Usuario = {
   id: string;
   nombre: string;
   email: string;
-  esAdmin: boolean;
+  roles: AppRole[];
+};
+
+export type Permiso = {
+  role: AppRole;
+  modulo: string;
+  acceso: boolean;
 };
 
 const TAMANO_MAXIMO_PDF = 30 * 1024 * 1024; // 30 MB
@@ -25,12 +39,14 @@ export function ConfiguracionTab({
   comisionPorcentajeDefecto,
   recursos,
   usuarios,
+  permisos,
   currentUserId,
 }: {
   objetivoDefecto: number;
   comisionPorcentajeDefecto: number;
   recursos: Recurso[];
   usuarios: Usuario[];
+  permisos: Permiso[];
   currentUserId: string;
 }) {
   return (
@@ -42,6 +58,7 @@ export function ConfiguracionTab({
         />
         <RolesCard usuarios={usuarios} currentUserId={currentUserId} />
       </div>
+      <PermisosCard permisos={permisos} />
       <RecursosCard recursos={recursos} />
     </div>
   );
@@ -128,18 +145,24 @@ function RolesCard({ usuarios, currentUserId }: { usuarios: Usuario[]; currentUs
   const qc = useQueryClient();
 
   const cambiarRol = useMutation({
-    mutationFn: async ({ userId, aAdmin }: { userId: string; aAdmin: boolean }) => {
-      if (aAdmin) {
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role: "admin" });
+    mutationFn: async ({
+      userId,
+      role,
+      activo,
+    }: {
+      userId: string;
+      role: AppRole;
+      activo: boolean;
+    }) => {
+      if (activo) {
+        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("user_roles")
           .delete()
           .eq("user_id", userId)
-          .eq("role", "admin");
+          .eq("role", role);
         if (error) throw error;
       }
     },
@@ -153,30 +176,107 @@ function RolesCard({ usuarios, currentUserId }: { usuarios: Usuario[]; currentUs
   return (
     <section className="rounded-2xl border border-line bg-panel p-5">
       <h2 className="text-lg font-semibold text-ink-100">Comerciales y roles</h2>
-      <p className="text-xs text-ink-500">Asciende o retira permisos de administrador.</p>
-      <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
+      <p className="text-xs text-ink-500">
+        Un usuario puede tener varios roles a la vez; el acceso por módulo se define abajo, en
+        Permisos.
+      </p>
+      <div className="mt-4 max-h-96 space-y-2 overflow-y-auto pr-1">
         {usuarios.map((u) => (
-          <div
-            key={u.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card p-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-ink-100">{u.nombre}</p>
-              <p className="truncate text-[11px] text-ink-500">{u.email}</p>
+          <div key={u.id} className="rounded-xl border border-line bg-card p-3">
+            <p className="truncate text-sm font-medium text-ink-100">{u.nombre}</p>
+            <p className="truncate text-[11px] text-ink-500">{u.email}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {ROLES.map((role) => {
+                const activo = u.roles.includes(role);
+                const bloqueado = role === "admin" && u.id === currentUserId;
+                return (
+                  <button
+                    key={role}
+                    disabled={bloqueado || cambiarRol.isPending}
+                    onClick={() => cambiarRol.mutate({ userId: u.id, role, activo: !activo })}
+                    title={bloqueado ? "No puedes quitarte el rol de admin a ti mismo" : undefined}
+                    className={`shrink-0 rounded-md px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      activo ? "bg-accent/15 text-accent" : "bg-secondary text-ink-400"
+                    }`}
+                  >
+                    {ROLE_LABEL[role]}
+                  </button>
+                );
+              })}
             </div>
-            <button
-              disabled={u.id === currentUserId || cambiarRol.isPending}
-              onClick={() => cambiarRol.mutate({ userId: u.id, aAdmin: !u.esAdmin })}
-              title={u.id === currentUserId ? "No puedes cambiar tu propio rol" : undefined}
-              className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                u.esAdmin ? "bg-accent/15 text-accent" : "bg-secondary text-ink-400"
-              }`}
-            >
-              {u.esAdmin ? "Admin · quitar" : "Hacer admin"}
-            </button>
           </div>
         ))}
         {usuarios.length === 0 && <p className="py-6 text-sm text-ink-500">Sin comerciales.</p>}
+      </div>
+    </section>
+  );
+}
+
+function PermisosCard({ permisos }: { permisos: Permiso[] }) {
+  const qc = useQueryClient();
+
+  const toggle = useMutation({
+    mutationFn: async ({
+      role,
+      modulo,
+      acceso,
+    }: {
+      role: AppRole;
+      modulo: Modulo;
+      acceso: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("permisos_modulo")
+        .update({ acceso })
+        .eq("role", role)
+        .eq("modulo", modulo);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["permisos"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rolesNoAdmin = ROLES.filter((r) => r !== "admin");
+
+  return (
+    <section className="rounded-2xl border border-line bg-panel p-5">
+      <h2 className="text-lg font-semibold text-ink-100">Permisos por módulo</h2>
+      <p className="text-xs text-ink-500">
+        Qué pestañas ve cada rol. Admin siempre tiene acceso completo y no depende de esta tabla.
+      </p>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="text-left font-mono text-[10px] uppercase tracking-widest text-ink-400">
+              <th className="pb-2 pr-3 font-medium">Módulo</th>
+              {rolesNoAdmin.map((role) => (
+                <th key={role} className="pb-2 pr-3 text-center font-medium">
+                  {ROLE_LABEL[role]}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {MODULOS.map((modulo) => (
+              <tr key={modulo}>
+                <td className="py-2 pr-3 text-ink-200">{MODULO_LABEL[modulo]}</td>
+                {rolesNoAdmin.map((role) => {
+                  const acceso =
+                    permisos.find((p) => p.role === role && p.modulo === modulo)?.acceso ?? false;
+                  return (
+                    <td key={role} className="py-2 pr-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={acceso}
+                        onChange={(e) => toggle.mutate({ role, modulo, acceso: e.target.checked })}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );

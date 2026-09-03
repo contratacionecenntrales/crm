@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardTab } from "@/components/intranet/DashboardTab";
@@ -22,8 +22,15 @@ import {
   type Comision,
   type Liquidacion,
 } from "@/components/intranet/LiquidacionesTab";
-import { ConfiguracionTab, type Usuario } from "@/components/intranet/ConfiguracionTab";
+import { EntrevistasTab, type Candidato } from "@/components/intranet/EntrevistasTab";
+import { BackofficeTab, type Ticket, type Campana } from "@/components/intranet/BackofficeTab";
+import {
+  ConfiguracionTab,
+  type Usuario,
+  type Permiso,
+} from "@/components/intranet/ConfiguracionTab";
 import { PerfilTab, type Perfil } from "@/components/intranet/PerfilTab";
+import type { AppRole, Modulo } from "@/lib/intranet";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,21 +54,32 @@ export const Route = createFileRoute("/")({
   component: Intranet,
 });
 
-const TABS_BASE = [
-  "Dashboard",
+const TABS_GATEADAS = [
   "Leads",
   "Facturación",
   "Comisiones",
   "Recursos",
   "Academia",
   "Agenda",
-  "Perfil",
+  "Entrevistas",
+  "Backoffice",
 ] as const;
+const TAB_MODULO: Record<(typeof TABS_GATEADAS)[number], Modulo> = {
+  Leads: "leads",
+  Facturación: "facturacion",
+  Comisiones: "comisiones",
+  Recursos: "recursos",
+  Academia: "academia",
+  Agenda: "agenda",
+  Entrevistas: "entrevistas",
+  Backoffice: "backoffice",
+};
 const TAB_CONFIGURACION = "Configuración" as const;
-type Tab = (typeof TABS_BASE)[number] | typeof TAB_CONFIGURACION;
+type Tab = "Dashboard" | (typeof TABS_GATEADAS)[number] | "Perfil" | typeof TAB_CONFIGURACION;
 
 function Intranet() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("Dashboard");
 
@@ -92,6 +110,26 @@ function Intranet() {
       const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", uid!);
       if (error) throw error;
       return data?.some((r) => r.role === "admin") ? "admin" : "comercial";
+    },
+  });
+
+  const misRolesQ = useQuery({
+    queryKey: ["misRoles", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", uid!);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.role as AppRole);
+    },
+  });
+
+  const permisosQ = useQuery({
+    queryKey: ["permisos", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("permisos_modulo").select("role, modulo, acceso");
+      if (error) throw error;
+      return (data ?? []) as Permiso[];
     },
   });
 
@@ -179,7 +217,7 @@ function Intranet() {
         id: p.id,
         nombre: p.nombre,
         email: p.email,
-        esAdmin: (rolesData ?? []).some((r) => r.user_id === p.id && r.role === "admin"),
+        roles: (rolesData ?? []).filter((r) => r.user_id === p.id).map((r) => r.role as AppRole),
       }));
     },
   });
@@ -273,6 +311,63 @@ function Intranet() {
     },
   });
 
+  const candidatosQ = useQuery({
+    queryKey: ["candidatos", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("candidatos")
+        .select(
+          "id, nombre, email, telefono, puesto, fase, notas, entrevistador_id, creado_por, created_at",
+        )
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Candidato[];
+    },
+  });
+
+  const ticketsQ = useQuery({
+    queryKey: ["tickets", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, titulo, descripcion, estado, prioridad, creado_por, asignado_a, created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Ticket[];
+    },
+  });
+
+  const campanasQ = useQuery({
+    queryKey: ["campanas", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campanas")
+        .select("id, nombre, presupuesto, activa")
+        .order("nombre", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Campana[];
+    },
+  });
+
+  useEffect(() => {
+    if (!uid) return;
+    const canal = supabase
+      .channel("backoffice-tiempo-real")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () =>
+        queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () =>
+        queryClient.invalidateQueries({ queryKey: ["leads"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [uid, queryClient]);
+
   const configuracionQ = useQuery({
     queryKey: ["configuracion", uid],
     enabled: !!uid && rolQ.data === "admin",
@@ -310,7 +405,22 @@ function Intranet() {
   const citas = citasQ.data ?? [];
   const usuarios = usuariosQ.data ?? [];
   const comerciales = Object.fromEntries(usuarios.map((u) => [u.id, u.nombre]));
-  const tabs: readonly Tab[] = rol === "admin" ? [...TABS_BASE, TAB_CONFIGURACION] : TABS_BASE;
+  const misRoles = misRolesQ.data ?? [];
+  const permisos = permisosQ.data ?? [];
+  const modulosPermitidos = new Set<Modulo>(
+    rol === "admin"
+      ? TABS_GATEADAS.map((t) => TAB_MODULO[t])
+      : permisos
+          .filter((p) => misRoles.includes(p.role) && p.acceso)
+          .map((p) => p.modulo as Modulo),
+  );
+  const tabs: Tab[] = [
+    "Dashboard",
+    ...TABS_GATEADAS.filter((t) => modulosPermitidos.has(TAB_MODULO[t])),
+    "Perfil",
+    ...(rol === "admin" ? [TAB_CONFIGURACION] : []),
+  ];
+  const puedeGestionarTickets = rol === "admin" || misRoles.includes("admin_staff");
   const iniciales = perfil.nombre
     .split(" ")
     .slice(0, 2)
@@ -462,6 +572,23 @@ function Intranet() {
             />
           )}
           {tab === "Agenda" && <AgendaTab citas={citas} userId={user.id} />}
+          {tab === "Entrevistas" && (
+            <EntrevistasTab
+              candidatos={candidatosQ.data ?? []}
+              userId={user.id}
+              comerciales={comerciales}
+            />
+          )}
+          {tab === "Backoffice" && (
+            <BackofficeTab
+              leads={leadsQ.data ?? []}
+              tickets={ticketsQ.data ?? []}
+              campanas={campanasQ.data ?? []}
+              userId={user.id}
+              puedeGestionarTickets={puedeGestionarTickets}
+              comerciales={comerciales}
+            />
+          )}
           {tab === "Perfil" && <PerfilTab perfil={perfil} rol={rol} />}
           {tab === "Configuración" && rol === "admin" && (
             <ConfiguracionTab
@@ -471,6 +598,7 @@ function Intranet() {
               )}
               recursos={recursosQ.data ?? []}
               usuarios={usuarios}
+              permisos={permisos}
               currentUserId={user.id}
             />
           )}

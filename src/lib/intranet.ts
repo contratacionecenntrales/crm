@@ -30,6 +30,51 @@ export type EstadoCita = "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
 export type EstadoLead = "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
 export type EstadoComision = "Pendiente" | "Aprobada" | "Liquidada" | "Cancelada";
 export type EstadoLiquidacion = "Pendiente" | "Pagada" | "Cancelada";
+export type FaseCandidato =
+  "Recibido" | "Entrevista" | "Prueba" | "Oferta" | "Contratado" | "Onboarding" | "Descartado";
+export type EstadoTicket = "Abierto" | "En proceso" | "Resuelto" | "Cerrado";
+export type PrioridadTicket = "Baja" | "Media" | "Alta";
+
+export type AppRole = "admin" | "comercial" | "account_manager" | "entrevistador" | "admin_staff";
+
+export const ROLES: AppRole[] = [
+  "admin",
+  "comercial",
+  "account_manager",
+  "entrevistador",
+  "admin_staff",
+];
+
+export const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  comercial: "Comercial",
+  account_manager: "Account Manager",
+  entrevistador: "Entrevistador",
+  admin_staff: "Admin Staff",
+};
+
+export const MODULOS = [
+  "leads",
+  "facturacion",
+  "comisiones",
+  "recursos",
+  "academia",
+  "agenda",
+  "entrevistas",
+  "backoffice",
+] as const;
+export type Modulo = (typeof MODULOS)[number];
+
+export const MODULO_LABEL: Record<Modulo, string> = {
+  leads: "Leads",
+  facturacion: "Facturación",
+  comisiones: "Comisiones",
+  recursos: "Recursos",
+  academia: "Academia",
+  agenda: "Agenda",
+  entrevistas: "Entrevistas",
+  backoffice: "Backoffice",
+};
 
 export const estadoFacturaClass: Record<EstadoFactura, string> = {
   Pendiente: "bg-accent/15 text-accent",
@@ -63,4 +108,37 @@ export const estadoLiquidacionClass: Record<EstadoLiquidacion, string> = {
   Pendiente: "bg-amber/15 text-amber",
   Pagada: "bg-lime/15 text-lime",
   Cancelada: "bg-coral/15 text-coral",
+};
+
+export const FASES_CANDIDATO: FaseCandidato[] = [
+  "Recibido",
+  "Entrevista",
+  "Prueba",
+  "Oferta",
+  "Contratado",
+  "Onboarding",
+  "Descartado",
+];
+
+export const faseCandidatoClass: Record<FaseCandidato, string> = {
+  Recibido: "bg-secondary text-ink-400",
+  Entrevista: "bg-accent/15 text-accent",
+  Prueba: "bg-amber/15 text-amber",
+  Oferta: "bg-brand/15 text-brand",
+  Contratado: "bg-lime/15 text-lime",
+  Onboarding: "bg-lime/15 text-lime",
+  Descartado: "bg-coral/15 text-coral",
+};
+
+export const estadoTicketClass: Record<EstadoTicket, string> = {
+  Abierto: "bg-coral/15 text-coral",
+  "En proceso": "bg-amber/15 text-amber",
+  Resuelto: "bg-brand/15 text-brand",
+  Cerrado: "bg-lime/15 text-lime",
+};
+
+export const prioridadTicketClass: Record<PrioridadTicket, string> = {
+  Baja: "bg-secondary text-ink-400",
+  Media: "bg-amber/15 text-amber",
+  Alta: "bg-coral/15 text-coral",
 };

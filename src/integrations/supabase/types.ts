@@ -29,6 +29,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      candidatos: {
+        Row: {
+          id: string;
+          nombre: string;
+          email: string | null;
+          telefono: string | null;
+          puesto: string;
+          fase: Database["public"]["Enums"]["fase_candidato"];
+          notas: string | null;
+          entrevistador_id: string | null;
+          creado_por: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          email?: string | null;
+          telefono?: string | null;
+          puesto: string;
+          fase?: Database["public"]["Enums"]["fase_candidato"];
+          notas?: string | null;
+          entrevistador_id?: string | null;
+          creado_por: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          email?: string | null;
+          telefono?: string | null;
+          puesto?: string;
+          fase?: Database["public"]["Enums"]["fase_candidato"];
+          notas?: string | null;
+          entrevistador_id?: string | null;
+          creado_por?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      campanas: {
+        Row: {
+          id: string;
+          nombre: string;
+          presupuesto: number | null;
+          activa: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          presupuesto?: number | null;
+          activa?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          presupuesto?: number | null;
+          activa?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       comisiones: {
         Row: {
           id: string;
@@ -410,6 +476,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      permisos_modulo: {
+        Row: {
+          role: Database["public"]["Enums"]["app_role"];
+          modulo: string;
+          acceso: boolean;
+        };
+        Insert: {
+          role: Database["public"]["Enums"]["app_role"];
+          modulo: string;
+          acceso?: boolean;
+        };
+        Update: {
+          role?: Database["public"]["Enums"]["app_role"];
+          modulo?: string;
+          acceso?: boolean;
+        };
+        Relationships: [];
+      };
+      tickets: {
+        Row: {
+          id: string;
+          titulo: string;
+          descripcion: string | null;
+          estado: Database["public"]["Enums"]["estado_ticket"];
+          prioridad: Database["public"]["Enums"]["prioridad_ticket"];
+          creado_por: string;
+          asignado_a: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          titulo: string;
+          descripcion?: string | null;
+          estado?: Database["public"]["Enums"]["estado_ticket"];
+          prioridad?: Database["public"]["Enums"]["prioridad_ticket"];
+          creado_por: string;
+          asignado_a?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          titulo?: string;
+          descripcion?: string | null;
+          estado?: Database["public"]["Enums"]["estado_ticket"];
+          prioridad?: Database["public"]["Enums"]["prioridad_ticket"];
+          creado_por?: string;
+          asignado_a?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       recursos: {
         Row: {
           archivo_url: string;
@@ -488,12 +608,22 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: "admin" | "comercial";
+      app_role: "admin" | "comercial" | "account_manager" | "entrevistador" | "admin_staff";
       estado_cita: "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
       estado_comision: "Pendiente" | "Aprobada" | "Liquidada" | "Cancelada";
       estado_factura: "Pendiente" | "Aprobada" | "Pagada";
       estado_lead: "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
       estado_liquidacion: "Pendiente" | "Pagada" | "Cancelada";
+      estado_ticket: "Abierto" | "En proceso" | "Resuelto" | "Cerrado";
+      prioridad_ticket: "Baja" | "Media" | "Alta";
+      fase_candidato:
+        | "Recibido"
+        | "Entrevista"
+        | "Prueba"
+        | "Oferta"
+        | "Contratado"
+        | "Onboarding"
+        | "Descartado";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -615,12 +745,23 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "comercial"],
+      app_role: ["admin", "comercial", "account_manager", "entrevistador", "admin_staff"],
       estado_cita: ["Pendiente", "Realizada", "Cerrada", "Cancelada"],
       estado_comision: ["Pendiente", "Aprobada", "Liquidada", "Cancelada"],
       estado_factura: ["Pendiente", "Aprobada", "Pagada"],
       estado_lead: ["Nuevo", "Contactado", "Cita agendada", "Ganado", "Descartado"],
       estado_liquidacion: ["Pendiente", "Pagada", "Cancelada"],
+      estado_ticket: ["Abierto", "En proceso", "Resuelto", "Cerrado"],
+      prioridad_ticket: ["Baja", "Media", "Alta"],
+      fase_candidato: [
+        "Recibido",
+        "Entrevista",
+        "Prueba",
+        "Oferta",
+        "Contratado",
+        "Onboarding",
+        "Descartado",
+      ],
     },
   },
 } as const;
