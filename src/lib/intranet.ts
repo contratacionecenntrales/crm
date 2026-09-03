@@ -28,6 +28,8 @@ export function mayusInicial(texto: string) {
 export type EstadoFactura = "Pendiente" | "Aprobada" | "Pagada";
 export type EstadoCita = "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
 export type EstadoLead = "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
+export type EstadoComision = "Pendiente" | "Aprobada" | "Liquidada" | "Cancelada";
+export type EstadoLiquidacion = "Pendiente" | "Pagada" | "Cancelada";
 
 export const estadoFacturaClass: Record<EstadoFactura, string> = {
   Pendiente: "bg-accent/15 text-accent",
@@ -48,4 +50,17 @@ export const estadoLeadClass: Record<EstadoLead, string> = {
   "Cita agendada": "bg-brand/15 text-brand",
   Ganado: "bg-lime/15 text-lime",
   Descartado: "bg-coral/15 text-coral",
+};
+
+export const estadoComisionClass: Record<EstadoComision, string> = {
+  Pendiente: "bg-amber/15 text-amber",
+  Aprobada: "bg-brand/15 text-brand",
+  Liquidada: "bg-lime/15 text-lime",
+  Cancelada: "bg-coral/15 text-coral",
+};
+
+export const estadoLiquidacionClass: Record<EstadoLiquidacion, string> = {
+  Pendiente: "bg-amber/15 text-amber",
+  Pagada: "bg-lime/15 text-lime",
+  Cancelada: "bg-coral/15 text-coral",
 };

@@ -9,6 +9,11 @@ import { AgendaTab, type Cita } from "@/components/intranet/AgendaTab";
 import { RecursosTab, type Recurso } from "@/components/intranet/RecursosTab";
 import { AcademiaTab, type Formacion } from "@/components/intranet/AcademiaTab";
 import { LeadsTab, type Lead } from "@/components/intranet/LeadsTab";
+import {
+  LiquidacionesTab,
+  type Comision,
+  type Liquidacion,
+} from "@/components/intranet/LiquidacionesTab";
 import { ConfiguracionTab, type Usuario } from "@/components/intranet/ConfiguracionTab";
 import { PerfilTab, type Perfil } from "@/components/intranet/PerfilTab";
 
@@ -38,6 +43,7 @@ const TABS_BASE = [
   "Dashboard",
   "Leads",
   "Facturación",
+  "Comisiones",
   "Recursos",
   "Academia",
   "Agenda",
@@ -122,6 +128,34 @@ function Intranet() {
     },
   });
 
+  const comisionesQ = useQuery({
+    queryKey: ["comisiones", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comisiones")
+        .select(
+          "id, factura_id, user_id, concepto, importe, porcentaje, estado, liquidacion_id, created_at",
+        )
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Comision[];
+    },
+  });
+
+  const liquidacionesQ = useQuery({
+    queryKey: ["liquidaciones", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("liquidaciones")
+        .select("id, user_id, importe_total, estado, created_at, pagada_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Liquidacion[];
+    },
+  });
+
   const usuariosQ = useQuery({
     queryKey: ["usuarios", uid],
     enabled: !!uid && rolQ.data === "admin",
@@ -176,11 +210,14 @@ function Intranet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("configuracion")
-        .select("objetivo_trimestral_defecto")
+        .select("objetivo_trimestral_defecto, comision_porcentaje_defecto")
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
-      return data?.objetivo_trimestral_defecto ?? 55000;
+      return {
+        objetivoDefecto: data?.objetivo_trimestral_defecto ?? 55000,
+        comisionPorcentajeDefecto: data?.comision_porcentaje_defecto ?? 10,
+      };
     },
   });
 
@@ -332,13 +369,25 @@ function Intranet() {
               comerciales={comerciales}
             />
           )}
+          {tab === "Comisiones" && (
+            <LiquidacionesTab
+              comisiones={comisionesQ.data ?? []}
+              liquidaciones={liquidacionesQ.data ?? []}
+              userId={user.id}
+              esAdmin={rol === "admin"}
+              comerciales={comerciales}
+            />
+          )}
           {tab === "Recursos" && <RecursosTab recursos={recursosQ.data ?? []} />}
           {tab === "Academia" && <AcademiaTab formaciones={formacionesQ.data ?? []} />}
           {tab === "Agenda" && <AgendaTab citas={citas} userId={user.id} />}
           {tab === "Perfil" && <PerfilTab perfil={perfil} rol={rol} />}
           {tab === "Configuración" && rol === "admin" && (
             <ConfiguracionTab
-              objetivoDefecto={Number(configuracionQ.data ?? 55000)}
+              objetivoDefecto={Number(configuracionQ.data?.objetivoDefecto ?? 55000)}
+              comisionPorcentajeDefecto={Number(
+                configuracionQ.data?.comisionPorcentajeDefecto ?? 10,
+              )}
               recursos={recursosQ.data ?? []}
               formaciones={formacionesQ.data ?? []}
               usuarios={usuarios}

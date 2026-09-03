@@ -23,12 +23,14 @@ function sanitizarNombreArchivo(nombre: string) {
 
 export function ConfiguracionTab({
   objetivoDefecto,
+  comisionPorcentajeDefecto,
   recursos,
   formaciones,
   usuarios,
   currentUserId,
 }: {
   objetivoDefecto: number;
+  comisionPorcentajeDefecto: number;
   recursos: Recurso[];
   formaciones: Formacion[];
   usuarios: Usuario[];
@@ -37,7 +39,10 @@ export function ConfiguracionTab({
   return (
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-2">
-        <ObjetivoDefectoCard objetivoDefecto={objetivoDefecto} />
+        <ObjetivoDefectoCard
+          objetivoDefecto={objetivoDefecto}
+          comisionPorcentajeDefecto={comisionPorcentajeDefecto}
+        />
         <RolesCard usuarios={usuarios} currentUserId={currentUserId} />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
@@ -48,9 +53,16 @@ export function ConfiguracionTab({
   );
 }
 
-function ObjetivoDefectoCard({ objetivoDefecto }: { objetivoDefecto: number }) {
+function ObjetivoDefectoCard({
+  objetivoDefecto,
+  comisionPorcentajeDefecto,
+}: {
+  objetivoDefecto: number;
+  comisionPorcentajeDefecto: number;
+}) {
   const qc = useQueryClient();
   const [valor, setValor] = useState(String(objetivoDefecto));
+  const [porcentaje, setPorcentaje] = useState(String(comisionPorcentajeDefecto));
 
   const guardar = useMutation({
     mutationFn: async () => {
@@ -58,13 +70,14 @@ function ObjetivoDefectoCard({ objetivoDefecto }: { objetivoDefecto: number }) {
         .from("configuracion")
         .update({
           objetivo_trimestral_defecto: Number(valor.replace(",", ".")) || 0,
+          comision_porcentaje_defecto: Number(porcentaje.replace(",", ".")) || 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", true);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Objetivo por defecto actualizado");
+      toast.success("Ajustes por defecto actualizados");
       qc.invalidateQueries({ queryKey: ["configuracion"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -72,9 +85,9 @@ function ObjetivoDefectoCard({ objetivoDefecto }: { objetivoDefecto: number }) {
 
   return (
     <section className="rounded-2xl border border-line bg-panel p-5">
-      <h2 className="text-lg font-semibold text-ink-100">Objetivo trimestral por defecto</h2>
+      <h2 className="text-lg font-semibold text-ink-100">Ajustes por defecto</h2>
       <p className="text-xs text-ink-500">
-        Se asigna automáticamente a cada comercial nuevo que se registre.
+        Se aplican a cada comercial nuevo y a cada comisión generada automáticamente.
       </p>
       <form
         className="mt-4 flex flex-wrap items-end gap-3"
@@ -85,13 +98,24 @@ function ObjetivoDefectoCard({ objetivoDefecto }: { objetivoDefecto: number }) {
       >
         <label className="block">
           <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-ink-400">
-            Objetivo €
+            Objetivo trimestral €
           </span>
           <input
             inputMode="decimal"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
             className="w-40 rounded-xl border border-line bg-card px-3 py-2.5 font-mono text-sm text-ink-100 outline-none focus:border-brand"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-ink-400">
+            Comisión %
+          </span>
+          <input
+            inputMode="decimal"
+            value={porcentaje}
+            onChange={(e) => setPorcentaje(e.target.value)}
+            className="w-28 rounded-xl border border-line bg-card px-3 py-2.5 font-mono text-sm text-ink-100 outline-none focus:border-brand"
           />
         </label>
         <button

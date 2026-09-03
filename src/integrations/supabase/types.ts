@@ -12,17 +12,56 @@ export type Database = {
         Row: {
           id: boolean;
           objetivo_trimestral_defecto: number;
+          comision_porcentaje_defecto: number;
           updated_at: string;
         };
         Insert: {
           id?: boolean;
           objetivo_trimestral_defecto?: number;
+          comision_porcentaje_defecto?: number;
           updated_at?: string;
         };
         Update: {
           id?: boolean;
           objetivo_trimestral_defecto?: number;
+          comision_porcentaje_defecto?: number;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      comisiones: {
+        Row: {
+          id: string;
+          factura_id: string;
+          user_id: string;
+          concepto: string;
+          importe: number;
+          porcentaje: number;
+          estado: Database["public"]["Enums"]["estado_comision"];
+          liquidacion_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          factura_id: string;
+          user_id: string;
+          concepto: string;
+          importe: number;
+          porcentaje: number;
+          estado?: Database["public"]["Enums"]["estado_comision"];
+          liquidacion_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          factura_id?: string;
+          user_id?: string;
+          concepto?: string;
+          importe?: number;
+          porcentaje?: number;
+          estado?: Database["public"]["Enums"]["estado_comision"];
+          liquidacion_id?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -188,6 +227,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      liquidaciones: {
+        Row: {
+          id: string;
+          user_id: string;
+          importe_total: number;
+          estado: Database["public"]["Enums"]["estado_liquidacion"];
+          created_at: string;
+          pagada_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          importe_total: number;
+          estado?: Database["public"]["Enums"]["estado_liquidacion"];
+          created_at?: string;
+          pagada_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          importe_total?: number;
+          estado?: Database["public"]["Enums"]["estado_liquidacion"];
+          created_at?: string;
+          pagada_at?: string | null;
+        };
+        Relationships: [];
+      };
       perfiles: {
         Row: {
           created_at: string;
@@ -281,12 +347,20 @@ export type Database = {
         };
         Returns: boolean;
       };
+      crear_liquidacion: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: "admin" | "comercial";
       estado_cita: "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
+      estado_comision: "Pendiente" | "Aprobada" | "Liquidada" | "Cancelada";
       estado_factura: "Pendiente" | "Aprobada" | "Pagada";
       estado_lead: "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
+      estado_liquidacion: "Pendiente" | "Pagada" | "Cancelada";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -410,8 +484,10 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "comercial"],
       estado_cita: ["Pendiente", "Realizada", "Cerrada", "Cancelada"],
+      estado_comision: ["Pendiente", "Aprobada", "Liquidada", "Cancelada"],
       estado_factura: ["Pendiente", "Aprobada", "Pagada"],
       estado_lead: ["Nuevo", "Contactado", "Cita agendada", "Ganado", "Descartado"],
+      estado_liquidacion: ["Pendiente", "Pagada", "Cancelada"],
     },
   },
 } as const;

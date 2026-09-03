@@ -1,13 +1,21 @@
 # Intranet Comercial 24K
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
-producto: _Labs24k_): CRM de leads, facturación, agenda de citas con
-calendario mensual, Academia de formaciones, recursos corporativos y perfil
-del comercial (con cambio de contraseña propio), con inicio de sesión
-individual y control de acceso por roles (`comercial` / `admin`). El rol
-`admin` tiene además una pestaña de **Configuración** para gestionar todo lo
-demás: publicar formaciones y recursos, ascender/retirar administradores y
-fijar el objetivo trimestral por defecto de los comerciales nuevos.
+producto: _Labs24k_): CRM de leads, facturación con liquidación de
+comisiones, agenda de citas con calendario mensual, Academia de formaciones,
+recursos corporativos y perfil del comercial (con cambio de contraseña
+propio), con inicio de sesión individual y control de acceso por roles
+(`comercial` / `admin`). El rol `admin` tiene además una pestaña de
+**Configuración** para gestionar todo lo demás: publicar formaciones y
+recursos, ascender/retirar administradores y fijar el objetivo trimestral y
+el porcentaje de comisión por defecto de los comerciales nuevos.
+
+Las **comisiones** se generan solas: en cuanto admin marca una factura como
+`Pagada`, se crea automáticamente una comisión `Pendiente` para el comercial
+(según el % configurado). Admin la aprueba, agrupa las comisiones aprobadas
+de un comercial en una **liquidación** con un clic, y confirma el pago
+cuando se transfiere. Todo queda auditado con RLS: nadie puede fabricarse
+una comisión propia, solo el trigger de facturación las crea.
 
 ## Stack técnico
 
@@ -30,7 +38,7 @@ fijar el objetivo trimestral por defecto de los comerciales nuevos.
 ```
 src/
   routes/               páginas (TanStack Router basado en archivos)
-    index.tsx           intranet (Dashboard, Facturación, Recursos, Academia, Agenda, Perfil, Configuración)
+    index.tsx           intranet (Dashboard, Leads, Facturación, Comisiones, Recursos, Academia, Agenda, Perfil, Configuración)
     auth.tsx            login / alta de comercial
   components/intranet/  una pestaña por componente
   hooks/useAuth.tsx     estado de sesión de Supabase
@@ -63,8 +71,9 @@ La app queda disponible en `http://localhost:3000` (o el puerto que indique la c
    - **Nunca** copies aquí la clave `service_role`: esa es secreta y no la usa esta app.
 3. Aplica el esquema ejecutando, en orden, los ficheros de `supabase/migrations/`
    en el **SQL Editor** del panel de Supabase (o con la CLI, ver abajo). Crean:
-   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
-   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus citas), y el rol `admin` pueda ver y validar los de todos, reasignar leads, gestionar Academia/Recursos y asignar roles.
+   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `comisiones`, `liquidaciones`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
+   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus comisiones y liquidaciones, sus citas), y el rol `admin` pueda ver y validar los de todos, reasignar leads, aprobar/liquidar comisiones, gestionar Academia/Recursos y asignar roles.
+   - Un trigger en `facturacion` que genera la comisión automáticamente al marcar una factura `Pagada`, y una función `crear_liquidacion(comercial)` (solo admin) que agrupa las comisiones aprobadas de un comercial en una liquidación nueva.
    - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB), `recursos` (privado, solo PDF, máx. 20 MB) y `formaciones` (privado, solo PDF, máx. 30 MB).
    - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo, usando el objetivo trimestral por defecto configurado en `configuracion`.
 
