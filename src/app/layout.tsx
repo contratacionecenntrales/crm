@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Labs Command Center 360",
-  description: "CRM lab test order tracking and command center",
+  title: "Bóveda Labs24K",
+  description: "Bóveda Labs24K — CRM lab test order tracking and command center",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
