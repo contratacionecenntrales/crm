@@ -6,7 +6,8 @@ test.beforeAll(() => resetDb());
 test.describe("Labs Command Center dashboard", () => {
   test("shows stat tiles reflecting the seeded orders", async ({ page }) => {
     await page.goto("/labs");
-    await expect(page.getByRole("heading", { name: "Bóveda Labs24K" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Laboratorio" })).toBeVisible();
+    await expect(page.getByText("Bóveda Labs24K")).toBeVisible();
 
     await expect(page.getByTestId("stat-total-value")).toHaveText("4");
     await expect(page.getByTestId("stat-pending-value")).toHaveText("1");
