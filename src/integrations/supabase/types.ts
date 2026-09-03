@@ -137,42 +137,168 @@ export type Database = {
         };
         Relationships: [];
       };
-      formaciones: {
+      cursos: {
         Row: {
-          archivo_url: string | null;
-          categoria: string;
-          created_at: string;
-          descripcion: string | null;
           id: string;
-          orden: number;
-          publicado: boolean;
-          tamano: string | null;
           titulo: string;
-          video_url: string | null;
+          descripcion: string | null;
+          obligatorio: boolean;
+          publicado: boolean;
+          orden: number;
+          created_at: string;
         };
         Insert: {
-          archivo_url?: string | null;
-          categoria?: string;
-          created_at?: string;
-          descripcion?: string | null;
           id?: string;
-          orden?: number;
-          publicado?: boolean;
-          tamano?: string | null;
           titulo: string;
-          video_url?: string | null;
+          descripcion?: string | null;
+          obligatorio?: boolean;
+          publicado?: boolean;
+          orden?: number;
+          created_at?: string;
         };
         Update: {
-          archivo_url?: string | null;
-          categoria?: string;
-          created_at?: string;
-          descripcion?: string | null;
           id?: string;
-          orden?: number;
-          publicado?: boolean;
-          tamano?: string | null;
           titulo?: string;
+          descripcion?: string | null;
+          obligatorio?: boolean;
+          publicado?: boolean;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      modulos_curso: {
+        Row: {
+          id: string;
+          curso_id: string;
+          titulo: string;
+          descripcion: string | null;
+          archivo_url: string | null;
+          video_url: string | null;
+          tamano: string | null;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          curso_id: string;
+          titulo: string;
+          descripcion?: string | null;
+          archivo_url?: string | null;
           video_url?: string | null;
+          tamano?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          curso_id?: string;
+          titulo?: string;
+          descripcion?: string | null;
+          archivo_url?: string | null;
+          video_url?: string | null;
+          tamano?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      preguntas_curso: {
+        Row: {
+          id: string;
+          curso_id: string;
+          enunciado: string;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          curso_id: string;
+          enunciado: string;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          curso_id?: string;
+          enunciado?: string;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      opciones_pregunta: {
+        Row: {
+          id: string;
+          pregunta_id: string;
+          texto: string;
+          es_correcta: boolean;
+          orden: number;
+        };
+        Insert: {
+          id?: string;
+          pregunta_id: string;
+          texto: string;
+          es_correcta?: boolean;
+          orden?: number;
+        };
+        Update: {
+          id?: string;
+          pregunta_id?: string;
+          texto?: string;
+          es_correcta?: boolean;
+          orden?: number;
+        };
+        Relationships: [];
+      };
+      progreso_modulo: {
+        Row: {
+          id: string;
+          user_id: string;
+          modulo_id: string;
+          completado_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          modulo_id: string;
+          completado_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          modulo_id?: string;
+          completado_at?: string;
+        };
+        Relationships: [];
+      };
+      resultados_cuestionario: {
+        Row: {
+          id: string;
+          user_id: string;
+          curso_id: string;
+          aciertos: number;
+          total: number;
+          aprobado: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          curso_id: string;
+          aciertos: number;
+          total: number;
+          aprobado: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          curso_id?: string;
+          aciertos?: number;
+          total?: number;
+          aprobado?: boolean;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -352,6 +478,13 @@ export type Database = {
           p_user_id: string;
         };
         Returns: string;
+      };
+      enviar_cuestionario: {
+        Args: {
+          p_curso_id: string;
+          p_respuestas: Json;
+        };
+        Returns: { aciertos: number; total: number; aprobado: boolean }[];
       };
     };
     Enums: {

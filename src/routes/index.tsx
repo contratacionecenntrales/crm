@@ -7,7 +7,15 @@ import { DashboardTab } from "@/components/intranet/DashboardTab";
 import { FacturacionTab, type Factura } from "@/components/intranet/FacturacionTab";
 import { AgendaTab, type Cita } from "@/components/intranet/AgendaTab";
 import { RecursosTab, type Recurso } from "@/components/intranet/RecursosTab";
-import { AcademiaTab, type Formacion } from "@/components/intranet/AcademiaTab";
+import {
+  AcademiaTab,
+  type Curso,
+  type ModuloCurso,
+  type PreguntaCurso,
+  type OpcionPregunta,
+  type ProgresoModulo,
+  type ResultadoCuestionario,
+} from "@/components/intranet/AcademiaTab";
 import { LeadsTab, type Lead } from "@/components/intranet/LeadsTab";
 import {
   LiquidacionesTab,
@@ -24,7 +32,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Portal privado del equipo comercial de Labs24k: CRM de leads, registro de facturación, agenda de citas, formaciones de la Academia, descarga de PDFs corporativos y soporte directo con administración.",
+          "Portal privado del equipo comercial de Labs24k: CRM de leads, registro de facturación, agenda de citas, cursos y cuestionarios del Centro de Formación, descarga de PDFs corporativos y soporte directo con administración.",
       },
       { property: "og:title", content: "Intranet comercial Labs24k" },
       {
@@ -189,18 +197,79 @@ function Intranet() {
     },
   });
 
-  const formacionesQ = useQuery({
-    queryKey: ["formaciones", uid],
+  const cursosQ = useQuery({
+    queryKey: ["cursos", uid],
     enabled: !!uid,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("formaciones")
-        .select(
-          "id, titulo, descripcion, categoria, archivo_url, video_url, tamano, publicado, orden",
-        )
+        .from("cursos")
+        .select("id, titulo, descripcion, obligatorio, publicado, orden")
         .order("orden", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Formacion[];
+      return (data ?? []) as Curso[];
+    },
+  });
+
+  const modulosQ = useQuery({
+    queryKey: ["modulos", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("modulos_curso")
+        .select("id, curso_id, titulo, descripcion, archivo_url, video_url, tamano, orden")
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ModuloCurso[];
+    },
+  });
+
+  const preguntasQ = useQuery({
+    queryKey: ["preguntas", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("preguntas_curso")
+        .select("id, curso_id, enunciado, orden")
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as PreguntaCurso[];
+    },
+  });
+
+  const opcionesQ = useQuery({
+    queryKey: ["opciones", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opciones_pregunta")
+        .select("id, pregunta_id, texto, es_correcta, orden")
+        .order("orden", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as OpcionPregunta[];
+    },
+  });
+
+  const progresoQ = useQuery({
+    queryKey: ["progreso", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("progreso_modulo")
+        .select("id, user_id, modulo_id");
+      if (error) throw error;
+      return (data ?? []) as ProgresoModulo[];
+    },
+  });
+
+  const resultadosQ = useQuery({
+    queryKey: ["resultados", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("resultados_cuestionario")
+        .select("id, user_id, curso_id, aciertos, total, aprobado");
+      if (error) throw error;
+      return (data ?? []) as ResultadoCuestionario[];
     },
   });
 
@@ -379,7 +448,19 @@ function Intranet() {
             />
           )}
           {tab === "Recursos" && <RecursosTab recursos={recursosQ.data ?? []} />}
-          {tab === "Academia" && <AcademiaTab formaciones={formacionesQ.data ?? []} />}
+          {tab === "Academia" && (
+            <AcademiaTab
+              cursos={cursosQ.data ?? []}
+              modulos={modulosQ.data ?? []}
+              preguntas={preguntasQ.data ?? []}
+              opciones={opcionesQ.data ?? []}
+              progreso={progresoQ.data ?? []}
+              resultados={resultadosQ.data ?? []}
+              userId={user.id}
+              esAdmin={rol === "admin"}
+              comerciales={comerciales}
+            />
+          )}
           {tab === "Agenda" && <AgendaTab citas={citas} userId={user.id} />}
           {tab === "Perfil" && <PerfilTab perfil={perfil} rol={rol} />}
           {tab === "Configuración" && rol === "admin" && (
@@ -389,7 +470,6 @@ function Intranet() {
                 configuracionQ.data?.comisionPorcentajeDefecto ?? 10,
               )}
               recursos={recursosQ.data ?? []}
-              formaciones={formacionesQ.data ?? []}
               usuarios={usuarios}
               currentUserId={user.id}
             />

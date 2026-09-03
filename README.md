@@ -2,11 +2,11 @@
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
 producto: _Labs24k_): CRM de leads, facturación con liquidación de
-comisiones, agenda de citas con calendario mensual, Academia de formaciones,
-recursos corporativos y perfil del comercial (con cambio de contraseña
-propio), con inicio de sesión individual y control de acceso por roles
-(`comercial` / `admin`). El rol `admin` tiene además una pestaña de
-**Configuración** para gestionar todo lo demás: publicar formaciones y
+comisiones, agenda de citas con calendario mensual, Centro de Formación con
+cursos y cuestionarios, recursos corporativos y perfil del comercial (con
+cambio de contraseña propio), con inicio de sesión individual y control de
+acceso por roles (`comercial` / `admin`). El rol `admin` tiene además una
+pestaña de **Configuración** para gestionar todo lo demás: publicar
 recursos, ascender/retirar administradores y fijar el objetivo trimestral y
 el porcentaje de comisión por defecto de los comerciales nuevos.
 
@@ -17,13 +17,22 @@ de un comercial en una **liquidación** con un clic, y confirma el pago
 cuando se transfiere. Todo queda auditado con RLS: nadie puede fabricarse
 una comisión propia, solo el trigger de facturación las crea.
 
+El **Centro de Formación** organiza el contenido en cursos con módulos
+(PDF y/o vídeo) y un cuestionario de evaluación opcional. Cada comercial
+marca sus módulos como vistos y puede resolver el cuestionario cuantas
+veces quiera; la corrección se hace en el servidor (función
+`enviar_cuestionario`), así que nadie puede autoasignarse un aprobado. Un
+curso se puede marcar como **obligatorio**: admin ve entonces, por curso,
+qué comerciales lo tienen completo (módulos + cuestionario aprobado) y
+quién sigue pendiente.
+
 ## Stack técnico
 
 - **Frontend/SSR**: React 19 + [TanStack Start](https://tanstack.com/start) (Vite + Nitro), Tailwind CSS 4.
 - **Backend**: [Supabase](https://supabase.com) (PostgreSQL + Auth + Storage). No hay servidor Node/Express aparte: la app habla directamente con Supabase desde el cliente, protegida por Row Level Security (RLS) en cada tabla.
 - **Base de datos**: PostgreSQL gestionado por Supabase. El esquema y las políticas de seguridad viven como migraciones SQL versionadas en `supabase/migrations/`.
 - **Autenticación**: Supabase Auth (email/contraseña; Google OAuth activable, ver sección 2). Las contraseñas nunca las gestiona esta app: Supabase las almacena ya hasheadas (bcrypt) y nunca viajan ni se guardan en texto plano en este código.
-- **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`, `formaciones`), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
+- **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`, `formaciones` — este último aloja el material de los módulos del Centro de Formación), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
 
 > Nota importante: esta app **no usa SQLite ni MySQL propios** porque
 > Supabase (Postgres gestionado) da autenticación, RLS y Storage "de
@@ -71,9 +80,9 @@ La app queda disponible en `http://localhost:3000` (o el puerto que indique la c
    - **Nunca** copies aquí la clave `service_role`: esa es secreta y no la usa esta app.
 3. Aplica el esquema ejecutando, en orden, los ficheros de `supabase/migrations/`
    en el **SQL Editor** del panel de Supabase (o con la CLI, ver abajo). Crean:
-   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `comisiones`, `liquidaciones`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
-   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus comisiones y liquidaciones, sus citas), y el rol `admin` pueda ver y validar los de todos, reasignar leads, aprobar/liquidar comisiones, gestionar Academia/Recursos y asignar roles.
-   - Un trigger en `facturacion` que genera la comisión automáticamente al marcar una factura `Pagada`, y una función `crear_liquidacion(comercial)` (solo admin) que agrupa las comisiones aprobadas de un comercial en una liquidación nueva.
+   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `comisiones`, `liquidaciones`, `citas`, `recursos`, `configuracion` (ajustes globales, fila única) y el Centro de Formación: `cursos`, `modulos_curso`, `preguntas_curso`, `opciones_pregunta`, `progreso_modulo` y `resultados_cuestionario`.
+   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus comisiones y liquidaciones, sus citas, su progreso y sus resultados de cuestionario), y el rol `admin` pueda ver y validar los de todos, reasignar leads, aprobar/liquidar comisiones, gestionar cursos/Recursos y asignar roles.
+   - Un trigger en `facturacion` que genera la comisión automáticamente al marcar una factura `Pagada`, una función `crear_liquidacion(comercial)` (solo admin) que agrupa las comisiones aprobadas de un comercial en una liquidación nueva, y una función `enviar_cuestionario(curso, respuestas)` que corrige el test en el servidor y guarda el resultado (nadie puede fabricarse su propio aprobado).
    - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB), `recursos` (privado, solo PDF, máx. 20 MB) y `formaciones` (privado, solo PDF, máx. 30 MB).
    - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo, usando el objetivo trimestral por defecto configurado en `configuracion`.
 

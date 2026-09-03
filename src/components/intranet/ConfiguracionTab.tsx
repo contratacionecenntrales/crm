@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Recurso } from "./RecursosTab";
-import type { Formacion } from "./AcademiaTab";
 
 export type Usuario = {
   id: string;
@@ -25,14 +24,12 @@ export function ConfiguracionTab({
   objetivoDefecto,
   comisionPorcentajeDefecto,
   recursos,
-  formaciones,
   usuarios,
   currentUserId,
 }: {
   objetivoDefecto: number;
   comisionPorcentajeDefecto: number;
   recursos: Recurso[];
-  formaciones: Formacion[];
   usuarios: Usuario[];
   currentUserId: string;
 }) {
@@ -45,10 +42,7 @@ export function ConfiguracionTab({
         />
         <RolesCard usuarios={usuarios} currentUserId={currentUserId} />
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <FormacionesCard formaciones={formaciones} />
-        <RecursosCard recursos={recursos} />
-      </div>
+      <RecursosCard recursos={recursos} />
     </div>
   );
 }
@@ -183,179 +177,6 @@ function RolesCard({ usuarios, currentUserId }: { usuarios: Usuario[]; currentUs
           </div>
         ))}
         {usuarios.length === 0 && <p className="py-6 text-sm text-ink-500">Sin comerciales.</p>}
-      </div>
-    </section>
-  );
-}
-
-function FormacionesCard({ formaciones }: { formaciones: Formacion[] }) {
-  const qc = useQueryClient();
-  const [titulo, setTitulo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [categoria, setCategoria] = useState("General");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [archivo, setArchivo] = useState<File | null>(null);
-
-  function onArchivoChange(file: File | null) {
-    if (!file) {
-      setArchivo(null);
-      return;
-    }
-    if (file.type !== "application/pdf") {
-      toast.error("Solo se admiten archivos PDF");
-      return;
-    }
-    if (file.size > TAMANO_MAXIMO_PDF) {
-      toast.error("El archivo supera el tamaño máximo de 30 MB");
-      return;
-    }
-    setArchivo(file);
-  }
-
-  const publicar = useMutation({
-    mutationFn: async () => {
-      if (!archivo && !videoUrl.trim()) {
-        throw new Error("Adjunta un PDF o un enlace de vídeo");
-      }
-      let archivo_url: string | null = null;
-      let tamano: string | null = null;
-      if (archivo) {
-        const ruta = `${crypto.randomUUID()}-${sanitizarNombreArchivo(archivo.name)}`;
-        const { error } = await supabase.storage
-          .from("formaciones")
-          .upload(ruta, archivo, { contentType: archivo.type });
-        if (error) throw error;
-        archivo_url = ruta;
-        tamano = (archivo.size / (1024 * 1024)).toFixed(1) + " MB";
-      }
-      const { error } = await supabase.from("formaciones").insert({
-        titulo,
-        descripcion: descripcion || null,
-        categoria,
-        archivo_url,
-        video_url: videoUrl.trim() || null,
-        tamano,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Formación publicada");
-      setTitulo("");
-      setDescripcion("");
-      setCategoria("General");
-      setVideoUrl("");
-      setArchivo(null);
-      qc.invalidateQueries({ queryKey: ["formaciones"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const togglePublicado = useMutation({
-    mutationFn: async ({ id, publicado }: { id: string; publicado: boolean }) => {
-      const { error } = await supabase.from("formaciones").update({ publicado }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["formaciones"] }),
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const eliminar = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("formaciones").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Formación eliminada");
-      qc.invalidateQueries({ queryKey: ["formaciones"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <section className="rounded-2xl border border-line bg-panel p-5">
-      <h2 className="text-lg font-semibold text-ink-100">Academia</h2>
-      <p className="text-xs text-ink-500">Publica formaciones (PDF y/o vídeo).</p>
-      <form
-        className="mt-4 space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          publicar.mutate();
-        }}
-      >
-        <input
-          required
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Título"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm text-ink-100 outline-none placeholder:text-ink-500 focus:border-brand"
-        />
-        <input
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          placeholder="Descripción breve"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm text-ink-100 outline-none placeholder:text-ink-500 focus:border-brand"
-        />
-        <input
-          required
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          placeholder="Categoría"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm text-ink-100 outline-none placeholder:text-ink-500 focus:border-brand"
-        />
-        <input
-          type="url"
-          value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
-          placeholder="Enlace de vídeo (opcional)"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2.5 text-sm text-ink-100 outline-none placeholder:text-ink-500 focus:border-brand"
-        />
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => onArchivoChange(e.target.files?.[0] ?? null)}
-          className="w-full rounded-xl border border-line bg-card px-3 py-2 text-xs text-ink-400 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-brand/15 file:px-3 file:py-1.5 file:font-mono file:text-[11px] file:font-semibold file:text-brand focus:border-brand"
-        />
-        <span className="block text-[10px] text-ink-500">PDF opcional · máx. 30 MB</span>
-        <button
-          type="submit"
-          disabled={publicar.isPending}
-          className="w-full rounded-xl bg-brand py-2.5 font-mono text-xs font-semibold uppercase tracking-widest text-primary-foreground glow-brand disabled:opacity-60"
-        >
-          {publicar.isPending ? "Publicando…" : "Publicar formación"}
-        </button>
-      </form>
-
-      <div className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">
-        {formaciones.map((f) => (
-          <div
-            key={f.id}
-            className="flex items-center justify-between gap-2 rounded-xl border border-line bg-card p-3"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-ink-100">{f.titulo}</p>
-              <p className="truncate text-[11px] text-ink-500">{f.categoria}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                onClick={() => togglePublicado.mutate({ id: f.id, publicado: !f.publicado })}
-                className={`rounded-md px-2 py-1 font-mono text-[10px] uppercase tracking-widest ${
-                  f.publicado ? "bg-lime/15 text-lime" : "bg-secondary text-ink-400"
-                }`}
-              >
-                {f.publicado ? "Publicada" : "Borrador"}
-              </button>
-              <button
-                onClick={() => eliminar.mutate(f.id)}
-                className="rounded-md px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-coral hover:bg-coral/10"
-              >
-                Borrar
-              </button>
-            </div>
-          </div>
-        ))}
-        {formaciones.length === 0 && (
-          <p className="py-6 text-sm text-ink-500">Sin formaciones todavía.</p>
-        )}
       </div>
     </section>
   );
