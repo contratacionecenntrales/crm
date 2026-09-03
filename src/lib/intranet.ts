@@ -27,6 +27,7 @@ export function mayusInicial(texto: string) {
 
 export type EstadoFactura = "Pendiente" | "Aprobada" | "Pagada";
 export type EstadoCita = "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
+export type EstadoLead = "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
 
 export const estadoFacturaClass: Record<EstadoFactura, string> = {
   Pendiente: "bg-accent/15 text-accent",
@@ -39,4 +40,12 @@ export const estadoCitaClass: Record<EstadoCita, string> = {
   Realizada: "bg-brand/15 text-brand",
   Cerrada: "bg-lime/15 text-lime",
   Cancelada: "bg-coral/15 text-coral",
+};
+
+export const estadoLeadClass: Record<EstadoLead, string> = {
+  Nuevo: "bg-secondary text-ink-400",
+  Contactado: "bg-amber/15 text-amber",
+  "Cita agendada": "bg-brand/15 text-brand",
+  Ganado: "bg-lime/15 text-lime",
+  Descartado: "bg-coral/15 text-coral",
 };

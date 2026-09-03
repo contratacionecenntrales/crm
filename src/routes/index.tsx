@@ -8,17 +8,18 @@ import { FacturacionTab, type Factura } from "@/components/intranet/FacturacionT
 import { AgendaTab, type Cita } from "@/components/intranet/AgendaTab";
 import { RecursosTab, type Recurso } from "@/components/intranet/RecursosTab";
 import { AcademiaTab, type Formacion } from "@/components/intranet/AcademiaTab";
+import { LeadsTab, type Lead } from "@/components/intranet/LeadsTab";
 import { ConfiguracionTab, type Usuario } from "@/components/intranet/ConfiguracionTab";
 import { PerfilTab, type Perfil } from "@/components/intranet/PerfilTab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Intranet comercial Labs24k | Facturación, agenda, academia y recursos" },
+      { title: "Intranet comercial Labs24k | Leads, facturación, agenda y academia" },
       {
         name: "description",
         content:
-          "Portal privado del equipo comercial de Labs24k: registro de facturación, agenda de citas, formaciones de la Academia, descarga de PDFs corporativos y soporte directo con administración.",
+          "Portal privado del equipo comercial de Labs24k: CRM de leads, registro de facturación, agenda de citas, formaciones de la Academia, descarga de PDFs corporativos y soporte directo con administración.",
       },
       { property: "og:title", content: "Intranet comercial Labs24k" },
       {
@@ -33,7 +34,15 @@ export const Route = createFileRoute("/")({
   component: Intranet,
 });
 
-const TABS_BASE = ["Dashboard", "Facturación", "Recursos", "Academia", "Agenda", "Perfil"] as const;
+const TABS_BASE = [
+  "Dashboard",
+  "Leads",
+  "Facturación",
+  "Recursos",
+  "Academia",
+  "Agenda",
+  "Perfil",
+] as const;
 const TAB_CONFIGURACION = "Configuración" as const;
 type Tab = (typeof TABS_BASE)[number] | typeof TAB_CONFIGURACION;
 
@@ -95,6 +104,21 @@ function Intranet() {
         .order("fecha_cita", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Cita[];
+    },
+  });
+
+  const leadsQ = useQuery({
+    queryKey: ["leads", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select(
+          "id, empresa, contacto, telefono, email, ciudad, sector, campana, notas, estado, asignado_a, creado_por, created_at",
+        )
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Lead[];
     },
   });
 
@@ -290,6 +314,14 @@ function Intranet() {
               facturas={facturas}
               citas={citas}
               objetivo={Number(perfil.objetivo_trimestral)}
+            />
+          )}
+          {tab === "Leads" && (
+            <LeadsTab
+              leads={leadsQ.data ?? []}
+              userId={user.id}
+              esAdmin={rol === "admin"}
+              comerciales={comerciales}
             />
           )}
           {tab === "Facturación" && (

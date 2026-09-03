@@ -1,13 +1,13 @@
 # Intranet Comercial 24K
 
 Portal privado de gestión comercial para el equipo de **24k.com** (marca de
-producto: _Labs24k_): facturación, agenda de citas con calendario mensual,
-Academia de formaciones, recursos corporativos y perfil del comercial (con
-cambio de contraseña propio), con inicio de sesión individual y control de
-acceso por roles (`comercial` / `admin`). El rol `admin` tiene además una
-pestaña de **Configuración** para gestionar todo lo demás: publicar
-formaciones y recursos, ascender/retirar administradores y fijar el objetivo
-trimestral por defecto de los comerciales nuevos.
+producto: _Labs24k_): CRM de leads, facturación, agenda de citas con
+calendario mensual, Academia de formaciones, recursos corporativos y perfil
+del comercial (con cambio de contraseña propio), con inicio de sesión
+individual y control de acceso por roles (`comercial` / `admin`). El rol
+`admin` tiene además una pestaña de **Configuración** para gestionar todo lo
+demás: publicar formaciones y recursos, ascender/retirar administradores y
+fijar el objetivo trimestral por defecto de los comerciales nuevos.
 
 ## Stack técnico
 
@@ -63,8 +63,8 @@ La app queda disponible en `http://localhost:3000` (o el puerto que indique la c
    - **Nunca** copies aquí la clave `service_role`: esa es secreta y no la usa esta app.
 3. Aplica el esquema ejecutando, en orden, los ficheros de `supabase/migrations/`
    en el **SQL Editor** del panel de Supabase (o con la CLI, ver abajo). Crean:
-   - Tablas `perfiles`, `user_roles`, `facturacion`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
-   - Políticas RLS para que cada comercial solo vea/edite sus propios datos, y el rol `admin` pueda ver y validar los de todos, gestionar Academia/Recursos y asignar roles.
+   - Tablas `perfiles`, `user_roles`, `leads`, `facturacion`, `citas`, `recursos`, `formaciones` (Academia) y `configuracion` (ajustes globales, fila única).
+   - Políticas RLS para que cada comercial solo vea/edite sus propios datos (leads asignados, sus facturas, sus citas), y el rol `admin` pueda ver y validar los de todos, reasignar leads, gestionar Academia/Recursos y asignar roles.
    - Los buckets de Storage `comprobantes` (privado, PDF/imagen, máx. 10 MB), `recursos` (privado, solo PDF, máx. 20 MB) y `formaciones` (privado, solo PDF, máx. 30 MB).
    - Un trigger que crea automáticamente el perfil y el rol `comercial` al registrarse un usuario nuevo, usando el objetivo trimestral por defecto configurado en `configuracion`.
 
@@ -274,11 +274,11 @@ Si tu hosting sí admite Node, prefiere las secciones 5 o 6.
 
 ## Scripts disponibles
 
-| Script         | Descripción                                                         |
-| -------------- | ------------------------------------------------------------------- |
-| `dev`          | Servidor de desarrollo con recarga en caliente                      |
+| Script         | Descripción                                                            |
+| -------------- | ---------------------------------------------------------------------- |
+| `dev`          | Servidor de desarrollo con recarga en caliente                         |
 | `build`        | Build de producción para Node (VPS / cPanel); `build:node` es un alias |
-| `build:static` | Build 100% estático (HTML/JS/CSS), para hosting sin Node (Hostalia) |
-| `start`        | Arranca el build de Node (`.output/server/index.mjs`)               |
-| `lint`         | ESLint                                                              |
-| `format`       | Prettier                                                            |
+| `build:static` | Build 100% estático (HTML/JS/CSS), para hosting sin Node (Hostalia)    |
+| `start`        | Arranca el build de Node (`.output/server/index.mjs`)                  |
+| `lint`         | ESLint                                                                 |
+| `format`       | Prettier                                                               |

@@ -137,6 +137,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      leads: {
+        Row: {
+          id: string;
+          empresa: string;
+          contacto: string | null;
+          telefono: string | null;
+          email: string | null;
+          ciudad: string | null;
+          sector: string | null;
+          campana: string | null;
+          notas: string | null;
+          estado: Database["public"]["Enums"]["estado_lead"];
+          asignado_a: string | null;
+          creado_por: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          empresa: string;
+          contacto?: string | null;
+          telefono?: string | null;
+          email?: string | null;
+          ciudad?: string | null;
+          sector?: string | null;
+          campana?: string | null;
+          notas?: string | null;
+          estado?: Database["public"]["Enums"]["estado_lead"];
+          asignado_a?: string | null;
+          creado_por: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          empresa?: string;
+          contacto?: string | null;
+          telefono?: string | null;
+          email?: string | null;
+          ciudad?: string | null;
+          sector?: string | null;
+          campana?: string | null;
+          notas?: string | null;
+          estado?: Database["public"]["Enums"]["estado_lead"];
+          asignado_a?: string | null;
+          creado_por?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       perfiles: {
         Row: {
           created_at: string;
@@ -235,6 +286,7 @@ export type Database = {
       app_role: "admin" | "comercial";
       estado_cita: "Pendiente" | "Realizada" | "Cerrada" | "Cancelada";
       estado_factura: "Pendiente" | "Aprobada" | "Pagada";
+      estado_lead: "Nuevo" | "Contactado" | "Cita agendada" | "Ganado" | "Descartado";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -359,6 +411,7 @@ export const Constants = {
       app_role: ["admin", "comercial"],
       estado_cita: ["Pendiente", "Realizada", "Cerrada", "Cancelada"],
       estado_factura: ["Pendiente", "Aprobada", "Pagada"],
+      estado_lead: ["Nuevo", "Contactado", "Cita agendada", "Ganado", "Descartado"],
     },
   },
 } as const;
