@@ -47,11 +47,11 @@ function isH3SwallowedErrorBody(body: string): boolean {
 // Extra hosts the client talks to directly, beyond our own origin: the
 // Supabase project (auth/db/storage REST + realtime websocket) and the
 // Google Fonts stylesheet. SUPABASE_URL is read at request time so this
-// works against any project (Lovable Cloud or self-hosted Supabase).
+// works against any Supabase project without redeploying.
 function supabaseConnectSrc(): string {
   const url = process.env["SUPABASE_URL"];
-  const origins = new Set(["https://*.supabase.co", "https://*.lovable.cloud"]);
-  const wsOrigins = new Set(["wss://*.supabase.co", "wss://*.lovable.cloud"]);
+  const origins = new Set(["https://*.supabase.co"]);
+  const wsOrigins = new Set(["wss://*.supabase.co"]);
   if (url) {
     try {
       const origin = new URL(url).origin;
@@ -97,11 +97,7 @@ async function withSecurityHeaders(response: Response): Promise<Response> {
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      // Lovable's editor embeds the live preview in an iframe from
-      // lovable.dev / gptengineer.app and talks to it over postMessage
-      // (see previewAuthStorage.ts) — blocking that framing breaks the
-      // preview entirely. Anyone else embedding this origin is still denied.
-      "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://gptengineer.app https://*.gptengineer.app",
+      "frame-ancestors 'self'",
       `script-src 'self' 'nonce-${nonce}'`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",

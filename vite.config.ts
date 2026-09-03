@@ -1,34 +1,25 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
 
-// Lovable Cloud always builds for Cloudflare Workers regardless of this
-// setting. Outside Lovable's sandbox:
-//   - DEPLOY_TARGET=node   -> plain Node server at .output/server/index.mjs
-//                             (VPS or cPanel "Setup Node.js App")
-//   - DEPLOY_TARGET=static -> fully static HTML/JS/CSS in .output/public,
-//                             no server at all (classic shared hosting,
-//                             e.g. Hostalia, that only serves plain files)
-// See README.md.
-const deployTarget = process.env["DEPLOY_TARGET"];
-const deployingToNode = deployTarget === "node";
-const deployingStatic = deployTarget === "static";
-
-export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
-    ...(deployingStatic
-      ? {
-          prerender: { enabled: true, crawlLinks: true },
-          pages: [{ path: "/" }, { path: "/auth" }],
-        }
-      : {}),
-  },
-  ...(deployingToNode ? { nitro: { preset: "node-server" } } : {}),
-});
+export default defineConfig(({ command }) => ({
+  plugins: [
+    tsConfigPaths(),
+    tailwindcss(),
+    tanstackStart({
+      // Redirect TanStack Start's bundled server entry to src/server.ts (our
+      // SSR security-headers wrapper).
+      server: { entry: "server" },
+    }),
+    viteReact(),
+    // Nitro only matters for `vite build`; the dev server doesn't need it.
+    // node-server always: for a fully static export (DEPLOY_TARGET=static,
+    // see package.json's build:static / scripts/export-static.mjs) we still
+    // build a real Node server first and scrape its rendered HTML, rather
+    // than relying on TanStack Start's built-in prerenderer.
+    ...(command === "build" ? [nitro({ preset: "node-server" })] : []),
+  ],
+}));

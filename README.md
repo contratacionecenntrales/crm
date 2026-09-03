@@ -17,13 +17,13 @@ trimestral por defecto de los comerciales nuevos.
 - **Autenticación**: Supabase Auth (email/contraseña; Google OAuth activable, ver sección 2). Las contraseñas nunca las gestiona esta app: Supabase las almacena ya hasheadas (bcrypt) y nunca viajan ni se guardan en texto plano en este código.
 - **Almacenamiento de ficheros**: Supabase Storage, con buckets privados (`comprobantes`, `recursos`, `formaciones`), límite de tamaño y lista blanca de tipos MIME aplicados también a nivel de base de datos (no solo en el navegador).
 
-> Nota importante: esta app **no usa SQLite ni MySQL propios** porque el
-> proyecto ya estaba construido sobre Supabase (Postgres gestionado) desde su
-> generación en Lovable. Mantenerlo así da autenticación, RLS y Storage
-> "de fábrica" con mucho menos código propio que mantener y auditar. Todo el
-> esquema es SQL estándar (`supabase/migrations/`) y se puede migrar a
-> cualquier Postgres, incluido uno propio en tu VPS o cPanel, si en el futuro
-> quieres independizarte también de Supabase.
+> Nota importante: esta app **no usa SQLite ni MySQL propios** porque
+> Supabase (Postgres gestionado) da autenticación, RLS y Storage "de
+> fábrica" con mucho menos código propio que mantener y auditar. Todo el
+> esquema es SQL estándar (`supabase/migrations/`), no depende de ningún
+> servicio de terceros más allá del propio Supabase, y se puede migrar a
+> cualquier Postgres, incluido uno propio en tu VPS o cPanel, si en el
+> futuro quieres independizarte también de Supabase.
 
 ## Estructura del proyecto
 
@@ -54,9 +54,6 @@ bun run dev        # o: npm run dev
 La app queda disponible en `http://localhost:3000` (o el puerto que indique la consola).
 
 ## 2. Base de datos (Supabase)
-
-Puedes usar el proyecto Supabase ya conectado por Lovable Cloud, o crear uno
-propio para independizarte por completo de Lovable. Para un proyecto propio:
 
 1. Crea una cuenta y un proyecto en [supabase.com](https://supabase.com) (tiene plan gratuito).
 2. En **Project Settings → API** copia:
@@ -129,12 +126,12 @@ define estas variables como variables de entorno del propio servidor/host
 
 ## 4. Compilar para producción
 
-Este proyecto usa Nitro (vía TanStack Start) para el build de servidor.
-**Por defecto compila para Cloudflare Workers** (config heredada de Lovable
-Cloud). Para un hosting tradicional (VPS o cPanel) usa el target Node:
+Este proyecto usa Nitro (vía TanStack Start) para el build de servidor, con
+el preset `node-server` por defecto: no depende de ninguna plataforma en
+concreto, corre en cualquier VPS o cPanel con Node.
 
 ```bash
-bun run build:node     # o: npm run build:node
+bun run build     # o: npm run build (build:node hace lo mismo)
 # genera .output/public (estáticos) y .output/server/index.mjs (servidor Node)
 ```
 
@@ -225,11 +222,16 @@ ficheros por FTP).
 bun run build:static     # o: npm run build:static
 ```
 
-Esto genera `.output/public/` con:
+`build:static` primero hace el build de Node normal y luego arranca ese
+servidor un instante en un puerto local (`scripts/export-static.mjs`) para
+descargar el HTML real de `/` y `/auth` y guardarlo junto a los assets; así
+no depende del prerenderizado propio de TanStack Start, que asume una
+estructura de carpetas de servidor distinta a la de Nitro. El resultado en
+`.output/public/` queda:
 
 - `index.html` y `auth/index.html` — una página HTML ya renderizada por cada
-  ruta (`/` y `/auth`), así que no hace falta ninguna regla de reescritura:
-  Apache sirve cada carpeta con su propio `index.html` de forma nativa.
+  ruta, así que no hace falta ninguna regla de reescritura: Apache sirve
+  cada carpeta con su propio `index.html` de forma nativa.
 - `assets/` — el JavaScript y CSS de la aplicación.
 - `.htaccess` — cabeceras de seguridad equivalentes a las del despliegue en
   Node (ver sección 8), compresión y caché para los ficheros de `assets/`.
@@ -265,7 +267,7 @@ Si tu hosting sí admite Node, prefiere las secciones 5 o 6.
 - **Contraseñas**: hasheadas y gestionadas por completo por Supabase Auth; esta app nunca las ve en claro ni las guarda. El propio comercial puede cambiarla desde Perfil, reautenticándose primero con la contraseña actual.
 - **RLS por fila**: cada comercial solo puede leer/editar sus propias facturas y citas; solo `admin` puede ver los datos de todo el equipo, cambiar el estado de una factura, gestionar Academia/Recursos o asignar roles (protegido también por triggers y políticas en base de datos, no solo por la interfaz).
 - **Subida de ficheros**: validación de tipo MIME y tamaño máximo tanto en el cliente (antes de subir) como en el propio bucket de Supabase Storage (`allowed_mime_types` / `file_size_limit`), y nombres de fichero saneados. Los buckets son privados: la descarga se hace con URLs firmadas de corta duración, nunca con enlaces públicos permanentes.
-- **Cabeceras HTTP de seguridad** (`src/server.ts` en Node/Cloudflare, `.htaccess` en el build estático — aplicadas a toda respuesta): `Content-Security-Policy` (en el despliegue con servidor, con un nonce distinto por petición para los scripts — nada de `unsafe-inline` ahí), `frame-ancestors` restringido al propio dominio más el editor de Lovable (así la vista previa de Lovable sigue funcionando sin abrirle la puerta a cualquier otra web), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
+- **Cabeceras HTTP de seguridad** (`src/server.ts` en el despliegue con servidor, `.htaccess` en el build estático — aplicadas a toda respuesta): `Content-Security-Policy` (en el despliegue con servidor, con un nonce distinto por petición para los scripts — nada de `unsafe-inline` ahí), `frame-ancestors 'self'` (nadie puede enmarcar la intranet en un iframe salvo el propio dominio), `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Strict-Transport-Security`.
 - **HTTPS**: la app es agnóstica del transporte; el cifrado en tránsito lo aporta el proxy/host (Nginx+certbot, cPanel AutoSSL o Cloudflare, según dónde despliegues). No despliegues nunca en producción sirviendo por HTTP plano.
 - **Dependencias**: `bunfig.toml` bloquea instalar versiones de paquetes publicadas hace menos de 24h (protección básica frente a ataques de cadena de suministro).
 - **Fuerza bruta y filtraciones de contraseñas**: Supabase Auth ya limita intentos de login/registro por IP. Para reforzarlo aún más, en el panel de Supabase (**Authentication → Policies/Settings**) puedes activar _Leaked password protection_ y añadir un CAPTCHA (hCaptcha/Turnstile) al formulario de alta.
@@ -275,8 +277,7 @@ Si tu hosting sí admite Node, prefiere las secciones 5 o 6.
 | Script         | Descripción                                                         |
 | -------------- | ------------------------------------------------------------------- |
 | `dev`          | Servidor de desarrollo con recarga en caliente                      |
-| `build`        | Build de producción (preset Cloudflare, el que usa Lovable Cloud)   |
-| `build:node`   | Build de producción para Node (VPS / cPanel)                        |
+| `build`        | Build de producción para Node (VPS / cPanel); `build:node` es un alias |
 | `build:static` | Build 100% estático (HTML/JS/CSS), para hosting sin Node (Hostalia) |
 | `start`        | Arranca el build de Node (`.output/server/index.mjs`)               |
 | `lint`         | ESLint                                                              |
