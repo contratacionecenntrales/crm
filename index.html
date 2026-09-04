@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Labs Command Center 360 - Oficina virtual SaaS de la red comercial de Labs24k.">
+<meta name="theme-color" content="#0B0F19">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0F19'/%3E%3Cpath d='M17 5L9 19h6l-1.5 8L23 13h-7z' fill='%233B82F6'/%3E%3C/svg%3E">
+<title>Labs Command Center 360 | Labs24k</title>
+<style>
+/* ==========================================================================
+   LABS COMMAND CENTER 360 - Hoja de estilos corporativa Labs24k
+   Sin dependencias externas. Preparada para hosting compartido (Hostalia).
+   ========================================================================== */
+:root{
+  --bg:#0B0F19;
+  --panel:#111827;
+  --card:#1E293B;
+  --card-2:#0F172A;
+  --line:#1F2937;
+  --line-soft:rgba(148,163,184,.14);
+  --txt:#E5E7EB;
+  --txt-2:#94A3B8;
+  --txt-3:#64748B;
+  --blue:#3B82F6;
+  --blue-d:#1D4ED8;
+  --green:#10B981;
+  --amber:#F59E0B;
+  --red:#EF4444;
+  --violet:#8B5CF6;
+  --cyan:#06B6D4;
+  --r:16px;
+  --r-sm:10px;
+  --sidebar:272px;
+  --shadow:0 10px 30px -12px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--blue);text-decoration:none}
+svg{display:block}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#243044;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#334155}
+
+/* ---------- LOGIN ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(1000px 600px at 15% 0%,rgba(59,130,246,.16),transparent 60%),
+             radial-gradient(900px 600px at 100% 100%,rgba(16,185,129,.12),transparent 60%),var(--bg)}
+.login-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);
+  border-radius:22px;padding:34px;box-shadow:var(--shadow)}
+.login-card h1{font-size:26px;margin:0 0 4px;letter-spacing:.14em}
+.login-card .sub{color:var(--txt-2);font-size:13px;margin:0 0 26px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.role-opt{border:1px solid var(--line);background:var(--card-2);border-radius:var(--r-sm);
+  padding:12px;text-align:left;transition:.16s}
+.role-opt:hover{border-color:rgba(59,130,246,.5)}
+.role-opt.on{border-color:var(--blue);background:rgba(59,130,246,.12);box-shadow:0 0 0 1px var(--blue) inset}
+.role-opt strong{display:block;font-size:13px;color:#fff}
+.role-opt span{font-size:11px;color:var(--txt-3)}
+
+/* ---------- LAYOUT ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--panel);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh}
+.brand{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  justify-content:space-between;gap:8px}
+.brand h1{font-size:17px;font-weight:800;letter-spacing:.16em;margin:0;color:var(--blue)}
+.brand h1 span{color:#fff}
+.badge-role{font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:6px;
+  background:rgba(59,130,246,.14);color:#93C5FD;border:1px solid rgba(59,130,246,.3);white-space:nowrap}
+.nav{flex:1;overflow-y:auto;padding:14px 12px}
+.nav-sec{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-3);
+  padding:14px 12px 6px}
+.nav-item{width:100%;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;
+  color:var(--txt-2);font-size:13.5px;font-weight:500;transition:.15s;text-align:left;margin-bottom:2px}
+.nav-item:hover{background:rgba(148,163,184,.08);color:#E2E8F0}
+.nav-item.on{background:var(--blue);color:#fff;box-shadow:0 8px 20px -8px rgba(59,130,246,.9)}
+.nav-item .dot{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  border-radius:20px;padding:1px 7px}
+.nav-item.on .dot{background:rgba(255,255,255,.25)}
+.user-card{border-top:1px solid var(--line);padding:14px;background:rgba(15,23,42,.5);
+  display:flex;align-items:center;gap:11px}
+.avatar{width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:rgba(59,130,246,.18);
+  border:1px solid rgba(59,130,246,.35);color:#93C5FD;font-weight:700;display:flex;
+  align-items:center;justify-content:center}
+.user-card .nm{font-size:13px;font-weight:600;color:#fff}
+.user-card .ph{font-size:11.5px;color:var(--txt-2)}
+.trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:62px;border-bottom:1px solid var(--line);background:rgba(17,24,39,.86);
+  backdrop-filter:blur(8px);padding:0 24px;display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:20}
+.topbar h2{font-size:16px;font-weight:600;color:#fff;margin:0}
+.topbar .crumb{font-size:11px;color:var(--txt-3)}
+.spacer{flex:1}
+.pill-live{font-size:11px;color:#6EE7B7;background:rgba(6,78,59,.4);border:1px solid rgba(6,95,70,.6);
+  padding:5px 11px;border-radius:20px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.blip{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blip 1.6s infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+.search{display:flex;align-items:center;gap:8px;background:var(--card-2);border:1px solid var(--line);
+  border-radius:10px;padding:7px 12px;width:280px;color:var(--txt-3)}
+.search input{background:none;border:none;outline:none;width:100%;font-size:13px}
+.icon-btn{width:34px;height:34px;border-radius:10px;background:var(--card-2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--txt-2);transition:.15s;position:relative}
+.icon-btn:hover{color:#fff;border-color:#334155}
+.icon-btn .n{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:9px;
+  font-weight:700;border-radius:10px;padding:1px 5px}
+.burger{display:none}
+.content{padding:24px;flex:1}
+.view{max-width:1480px;margin:0 auto;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- PRIMITIVAS ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.card.flat{background:rgba(30,41,59,.6)}
+.card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-h h3{margin:0;font-size:14.5px;font-weight:600;color:#fff}
+.card-h h3 svg{display:inline-block;vertical-align:-3px;margin-right:5px}
+.card-h p{margin:3px 0 0;font-size:12px;color:var(--txt-3)}
+.chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--line-soft);
+  background:var(--card-2);color:var(--txt-2);white-space:nowrap}
+.chip.blue{background:rgba(59,130,246,.12);color:#93C5FD;border-color:rgba(59,130,246,.32)}
+.chip.green{background:rgba(16,185,129,.12);color:#6EE7B7;border-color:rgba(16,185,129,.32)}
+.chip.amber{background:rgba(245,158,11,.12);color:#FCD34D;border-color:rgba(245,158,11,.32)}
+.chip.red{background:rgba(239,68,68,.12);color:#FCA5A5;border-color:rgba(239,68,68,.32)}
+.chip.violet{background:rgba(139,92,246,.12);color:#C4B5FD;border-color:rgba(139,92,246,.32)}
+.btn{padding:9px 16px;border-radius:11px;font-size:12.5px;font-weight:600;display:inline-flex;
+  align-items:center;gap:8px;transition:.15s;white-space:nowrap}
+.btn-p{background:var(--blue);color:#fff;box-shadow:0 8px 18px -8px rgba(59,130,246,.9)}
+.btn-p:hover{background:#2563EB}
+.btn-g{background:var(--green);color:#04231A;box-shadow:0 8px 18px -8px rgba(16,185,129,.9)}
+.btn-g:hover{background:#059669;color:#fff}
+.btn-s{background:#1F2937;color:#CBD5E1;border:1px solid var(--line)}
+.btn-s:hover{background:#273244;color:#fff}
+.btn-xs{padding:6px 11px;border-radius:9px;font-size:11.5px;font-weight:600}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:repeat(2,1fr)}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.g-hero{grid-template-columns:1.15fr 1fr 1fr}
+.g-21{grid-template-columns:2fr 1fr}
+.g-cal{grid-template-columns:1.3fr 1fr}
+.g-sideR{grid-template-columns:1fr 380px}
+.g-sideL{grid-template-columns:340px 1fr}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;align-items:center;gap:10px}
+.muted{color:var(--txt-3)}
+.small{font-size:12px}
+.tiny{font-size:11px}
+.up{color:#6EE7B7}
+.down{color:#FCA5A5}
+.delta{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.delta.up{background:rgba(16,185,129,.14)}
+.delta.down{background:rgba(239,68,68,.14)}
+
+/* formularios */
+label.f{display:block;font-size:11.5px;font-weight:500;color:var(--txt-2);margin-bottom:6px}
+.inp{width:100%;background:var(--card-2);border:1px solid #29354a;border-radius:11px;
+  padding:10px 13px;font-size:13px;outline:none;transition:.15s}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.14)}
+select.inp{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2394A3B8' stroke-width='2'><path d='M3 5l4 4 4-4'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.field{margin-bottom:14px}
+
+/* tablas */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--txt-3);font-weight:600;padding:11px 14px;background:rgba(15,23,42,.6);
+  border-bottom:1px solid var(--line)}
+.tbl td{padding:13px 14px;font-size:13px;border-bottom:1px solid rgba(31,41,55,.7)}
+.tbl tbody tr:hover{background:rgba(148,163,184,.05)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl .w{color:#fff;font-weight:500}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+
+/* barras de progreso */
+.bar{height:6px;border-radius:6px;background:rgba(148,163,184,.14);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:6px;background:var(--blue);transition:width .5s}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+.legend div{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--txt-2)}
+.legend i{width:8px;height:8px;border-radius:3px;display:block}
+.stackbar{display:flex;height:9px;border-radius:6px;overflow:hidden;background:rgba(148,163,184,.1)}
+.stackbar i{display:block;height:100%}
+
+/* KPI */
+.kpi .lbl{font-size:12px;color:var(--txt-2);display:flex;align-items:center;gap:7px}
+.kpi .val{font-size:29px;font-weight:700;color:#fff;letter-spacing:-.02em;margin:8px 0 2px}
+.ico-box{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line-soft);background:var(--card-2)}
+.ico-box.blue{background:rgba(59,130,246,.14);color:#93C5FD;border-color:rgba(59,130,246,.3)}
+.ico-box.green{background:rgba(16,185,129,.14);color:#6EE7B7;border-color:rgba(16,185,129,.3)}
+.ico-box.violet{background:rgba(139,92,246,.14);color:#C4B5FD;border-color:rgba(139,92,246,.3)}
+.ico-box.amber{background:rgba(245,158,11,.14);color:#FCD34D;border-color:rgba(245,158,11,.3)}
+.ico-box.cyan{background:rgba(6,182,212,.14);color:#67E8F9;border-color:rgba(6,182,212,.3)}
+.ico-box.red{background:rgba(239,68,68,.14);color:#FCA5A5;border-color:rgba(239,68,68,.3)}
+
+/* listas rank */
+.rank{display:flex;flex-direction:column;gap:14px}
+.rank-it{display:flex;align-items:center;gap:12px}
+.rank-it .nm{font-size:12.5px;color:#E2E8F0}
+.rank-it .vl{margin-left:auto;font-size:12px;color:var(--txt-2);font-weight:600}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl:before{content:'';position:absolute;left:6px;top:4px;bottom:4px;width:1px;background:var(--line)}
+.tl-it{position:relative;padding-bottom:16px}
+.tl-it:last-child{padding-bottom:0}
+.tl-it:before{content:'';position:absolute;left:-19px;top:5px;width:9px;height:9px;border-radius:50%;
+  background:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+.tl-it.g:before{background:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+.tl-it.a:before{background:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+
+/* embudo kanban */
+.kan{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:14px;overflow-x:auto;padding-bottom:6px}
+.kan-col{background:rgba(15,23,42,.6);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:190px}
+.kan-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;
+  font-weight:600;color:#E2E8F0}
+.kan-card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;
+  transition:.15s;cursor:pointer}
+.kan-card:hover{border-color:rgba(59,130,246,.5);transform:translateY(-1px)}
+.kan-card .t{font-size:12.5px;color:#fff;font-weight:500;margin-bottom:5px}
+
+/* calendario */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .dow{font-size:10.5px;text-transform:uppercase;color:var(--txt-3);text-align:center;padding:4px 0;letter-spacing:.06em}
+.cal .day{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--card-2);
+  padding:6px;font-size:12px;color:var(--txt-2);position:relative;transition:.15s}
+.cal .day:hover{border-color:rgba(59,130,246,.5)}
+.cal .day.out{opacity:.28}
+.cal .day.today{border-color:var(--blue);background:rgba(59,130,246,.12);color:#fff;font-weight:600}
+.cal .day .ev{position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:3px}
+.cal .day .ev i{width:5px;height:5px;border-radius:50%;background:var(--blue);display:block}
+.cal .day .ev i.g{background:var(--green)}
+.cal .day .ev i.a{background:var(--amber)}
+
+/* academia */
+.prog-ring{position:relative;width:64px;height:64px}
+.mod-card{background:rgba(30,41,59,.6);border:1px solid var(--line);border-radius:var(--r);padding:18px;
+  display:flex;flex-direction:column;justify-content:space-between;transition:.16s}
+.mod-card:hover{border-color:rgba(59,130,246,.5);transform:translateY(-2px)}
+
+/* documento presupuesto */
+.doc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px}
+.doc-h{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);
+  padding-bottom:18px;margin-bottom:18px}
+.doc-line{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed rgba(148,163,184,.16);font-size:13px}
+.doc-total{display:flex;justify-content:space-between;align-items:center;background:var(--card-2);
+  border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px}
+
+/* toast */
+.toast{position:fixed;right:20px;bottom:20px;z-index:100;background:var(--card);
+  border:1px solid rgba(16,185,129,.4);border-left:3px solid var(--green);border-radius:12px;
+  padding:13px 17px;font-size:13px;color:#D1FAE5;box-shadow:var(--shadow);animation:slide .25s ease}
+@keyframes slide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(2,6,16,.72);backdrop-filter:blur(3px);z-index:90;
+  display:flex;align-items:center;justify-content:center;padding:20px;animation:fade .2s}
+.modal{width:100%;max-width:520px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:24px;box-shadow:var(--shadow);max-height:88vh;overflow-y:auto}
+
+/* responsive */
+@media(max-width:1300px){.g-hero{grid-template-columns:1fr 1fr}.g-hero>.card:first-child{grid-column:1/-1}}
+@media(max-width:1200px){.g-4{grid-template-columns:repeat(2,1fr)}
+  .g-sideR,.g-sideL,.g-21,.g-cal{grid-template-columns:1fr}}
+@media(max-width:1024px){
+  .sidebar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:.25s}
+  .sidebar.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.7)}
+  .burger{display:flex}
+  .search{display:none}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:55}
+}
+@media(max-width:860px){
+  .g-3,.g-2,.g-hero{grid-template-columns:1fr}
+  .content{padding:16px}
+  .kpi .val{font-size:24px}
+  .doc{padding:18px}
+}
+@media(max-width:600px){
+  .g-4{grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+  .topbar h2{font-size:14px}
+  .role-grid{grid-template-columns:1fr}
+}
+
+/* ==========================================================================
+   MODULO DE PRESUPUESTOS: catalogo, documento formal y hoja de ruta
+   ========================================================================== */
+.pack-list{padding-right:2px}
+.pack{background:var(--card-2);border:1px solid var(--line);border-radius:14px;padding:13px;
+  margin-bottom:9px;cursor:pointer;transition:.15s}
+.pack:hover{border-color:#334155}
+.pack.on{border-color:var(--blue);background:rgba(30,58,138,.22);box-shadow:0 8px 22px -14px rgba(59,130,246,.9)}
+.pack:focus-visible,.kan-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.94em;letter-spacing:.01em}
+.btn.on-tab{background:var(--blue);color:#fff;border-color:var(--blue)}
+.rec{color:#6EE7B7}
+
+/* ---------- DOCUMENTO ---------- */
+.doc.pdf{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:30px}
+.doc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+  padding-bottom:16px;border-bottom:2px solid var(--blue)}
+.doc-brand{font-size:20px;font-weight:800;letter-spacing:.14em;color:var(--blue)}
+.doc-brand span{color:var(--txt)}
+.doc-kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+.doc-title{font-size:22px;line-height:1.25;font-weight:700;color:var(--txt);margin:22px 0 6px;
+  text-wrap:balance;max-width:62ch}
+.doc-lead{font-size:13px;color:var(--txt-2);max-width:72ch;margin:0 0 18px}
+.doc-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:14px 0;margin:16px 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.doc-meta .k,.doc-parties .k,.doc-sign .k{display:block;font-size:10px;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--txt-3);margin-bottom:4px}
+.doc-meta .v{font-size:13px;font-weight:600;color:var(--txt)}
+.doc-parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:var(--card-2);
+  border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px}
+.doc-parties .v.big{font-size:15px;font-weight:700;color:var(--txt)}
+.doc-parties .tel{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
+  color:var(--blue);margin:3px 0 2px}
+.doc-hero{text-align:center;border:1px solid rgba(59,130,246,.4);border-radius:14px;padding:20px;
+  margin:6px 0 24px;background:linear-gradient(180deg,rgba(59,130,246,.14),rgba(59,130,246,0))}
+.doc-hero .amount{font-size:36px;font-weight:800;color:var(--txt);letter-spacing:-.02em;margin:6px 0 4px;
+  font-variant-numeric:tabular-nums}
+.doc-sec{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--txt-2);margin:26px 0 12px}
+.doc-sec .n{width:22px;height:22px;border-radius:6px;background:var(--blue);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:12px;letter-spacing:0}
+.doc-tbl td{vertical-align:top}
+.doc-tbl td,.doc-tbl th{font-variant-numeric:tabular-nums}
+.doc-sum{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.doc-sum .l{display:flex;justify-content:space-between;gap:16px;padding:11px 16px;font-size:13px;
+  border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.doc-sum .l:last-child{border-bottom:none}
+.doc-sum .l.tot{background:var(--card-2);font-size:16px;font-weight:800;color:var(--txt);
+  border-top:2px solid var(--blue)}
+.doc-box{background:var(--card-2);border:1px solid var(--line);border-left:3px solid var(--blue);
+  border-radius:10px;padding:15px;margin-bottom:16px}
+.doc-box .bt{font-size:12.5px;font-weight:700;color:var(--txt);margin-bottom:8px}
+.doc-box .li{font-size:12.5px;color:var(--txt-2);margin-bottom:5px}
+.doc-note{font-size:11.5px;color:var(--txt-3);line-height:1.6;padding:12px 0;border-top:1px dashed var(--line)}
+.doc-why{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.doc-why>div{text-align:center;padding:14px;border:1px solid var(--line);border-radius:12px}
+.doc-why .ok{color:var(--green);display:flex;justify-content:center;margin-bottom:8px}
+.doc-why .t{font-size:12.5px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.doc-sign{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin:28px 0 10px}
+.doc-sign .line{height:34px;border-bottom:1px solid var(--txt-3);margin:6px 0 8px}
+.doc-sign .v{font-size:13px;font-weight:600;color:var(--txt)}
+.doc-foot{font-size:10.5px;color:var(--txt-3);text-align:center;padding-top:14px;
+  border-top:1px solid var(--line);margin-top:16px;line-height:1.6}
+
+/* ---------- HOJA DE RUTA ---------- */
+.week{background:var(--card-2);border:1px solid var(--line);border-radius:14px;padding:16px}
+.week .wh{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.week .wn{width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:var(--blue);color:#fff;
+  font-weight:800;display:flex;align-items:center;justify-content:center}
+.week .wt{font-size:14px;font-weight:700;color:var(--txt)}
+.week .wl{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--txt-2);margin:8px 0}
+.week .wl svg{flex:0 0 auto;color:var(--green);margin-top:2px}
+.week .wr{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;
+  font-weight:600;color:var(--blue)}
+
+@media(max-width:1000px){
+  .doc-meta,.doc-why{grid-template-columns:repeat(2,1fr)}
+  .doc-parties,.doc-sign{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .doc.pdf{padding:18px}
+  .doc-meta,.doc-why{grid-template-columns:1fr}
+  .doc-hero .amount{font-size:27px}
+  .doc-title{font-size:18px}
+}
+
+/* ==========================================================================
+   IMPRESION / EXPORTACION A PDF: solo el documento, sobre papel blanco
+   ========================================================================== */
+@media print{
+  @page{size:A4;margin:12mm}
+  :root{
+    --bg:#fff; --panel:#fff; --card:#fff; --card-2:#F8FAFC; --line:#D9E0EA;
+    --line-soft:#E5EAF1; --txt:#0B0F19; --txt-2:#475569; --txt-3:#64748B;
+  }
+  html,body{background:#fff!important;color:#0B0F19!important}
+  .app{display:block}
+  .main,.content,.view{display:block;padding:0!important;margin:0!important;max-width:none}
+  .stack,.grid{display:block!important}
+  /* se declara despues para ganar a las reglas de display anteriores */
+  .sidebar,.topbar,.toast,.scrim,.no-print,.no-print *{display:none!important}
+  .doc.pdf{border:none!important;border-radius:0;padding:0!important;background:#fff!important;
+    box-shadow:none;break-inside:auto}
+  .doc-hero{background:#EFF6FF!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc-sec .n,.week .wn{background:#3B82F6!important;color:#fff!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc-top{border-bottom-color:#3B82F6!important}
+  .doc-sum .l.tot{background:#F1F5F9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tbl th{background:#F1F5F9!important;color:#334155!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .chip{border-color:#CBD5E1!important;background:#F8FAFC!important;color:#334155!important}
+  .doc-sec,.doc-sign,.doc-why,.doc-box,.week,tr{break-inside:avoid}
+  .doc-sec{break-after:avoid}
+  .doc-why{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:10px}
+  .doc-sign,.doc-parties{display:grid!important;grid-template-columns:1fr 1fr!important}
+  .doc-meta{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:10px 24px}
+  /* compactado para que la propuesta entre en el minimo de paginas */
+  body{font-size:12px}
+  .doc-title{font-size:19px;margin:16px 0 4px}
+  .doc-hero{padding:14px;margin:4px 0 16px}
+  .doc-hero .amount{font-size:30px}
+  .doc-sec{margin:18px 0 9px}
+  .tbl td{padding:9px 10px}
+  .tbl th{padding:8px 10px}
+  .doc-sum .l{padding:8px 12px}
+  .doc-sign{margin:20px 0 8px}
+  /* texto blanco del tema oscuro: en papel debe ser tinta */
+  .doc .w,.doc-tbl .w,.tbl .w{color:#0B0F19!important}
+  .rec{color:#047857!important}
+  a{color:#1D4ED8!important;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<noscript><div style="padding:40px;text-align:center;color:#94A3B8">
+Esta aplicacion necesita JavaScript activado en el navegador.</div></noscript>
+<script>
+/* ==========================================================================
+   LABS COMMAND CENTER 360 - Nucleo de la aplicación
+   Labs24k · SPA sin dependencias (vanilla JS). Datos de demostración.
+   ========================================================================== */
+
+/* ------------------------------ ICONOS ---------------------------------- */
+var ICON = {
+  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  calendar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v4M8 19h4"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  chat:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/>',
+  filter:'<path d="M22 3H2l8 9.5V19l4 2v-8.5z"/>',
+  case:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/>',
+  cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  play:'<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>',
+  check:'<circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  euro:'<path d="M14 21a8 8 0 1 1 0-16"/><path d="M4 11h10M4 15h9"/>',
+  trend:'<path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>',
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>',
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5M12 4v12"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/>',
+  send:'<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+  refresh:'<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  spark:'<path d="M12 2l2.2 6.4L21 10l-5.5 4.1L17 21l-5-3.6L7 21l1.5-6.9L3 10l6.8-1.6z"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  building:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
+  alert:'<path d="M12 2l10 18H2z"/><path d="M12 9v5M12 17h.01"/>',
+  arrowUp:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+  arrowDown:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+};
+function ic(n, s){ s = s || 18;
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(ICON[n]||'')+'</svg>'; }
+
+/* ------------------------------ UTILES ---------------------------------- */
+function eur(n){ return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0,useGrouping:true}).format(n); }
+function num(n){ return new Intl.NumberFormat('es-ES',{useGrouping:true}).format(n); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function q(s){ return document.querySelector(s); }
+function qa(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function toast(msg){
+  var t = document.createElement('div'); t.className='toast'; t.innerHTML = ic('check',16)+' '+esc(msg);
+  t.style.display='flex'; t.style.alignItems='center'; t.style.gap='9px';
+  document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 3200);
+}
+function delta(v){
+  var up = v >= 0;
+  return '<span class="delta '+(up?'up':'down')+'">'+ic(up?'arrowUp':'arrowDown',11)+(up?'+':'')+v+'%</span>';
+}
+
+/* ------------------------------ GRAFICOS SVG ---------------------------- */
+function areaChart(data, opt){
+  opt = opt || {}; var w = 100, h = opt.h || 34, pad = 2;
+  var max = Math.max.apply(null,data), min = Math.min.apply(null,data);
+  var rng = (max-min)||1, id = 'g'+Math.random().toString(36).slice(2,8);
+  var col = opt.color || '#10B981';
+  var pts = data.map(function(v,i){
+    var x = (i/(data.length-1))*w;
+    var y = h-pad-((v-min)/rng)*(h-pad*2);
+    return [x,y];
+  });
+  var line = pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(2)+' '+p[1].toFixed(2); }).join(' ');
+  var area = line+' L'+w+' '+h+' L0 '+h+' Z';
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="width:100%;height:'+(opt.px||70)+'px">'+
+    '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="'+col+'" stop-opacity=".38"/>'+
+    '<stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#'+id+')"/>'+
+    '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>'+
+    '</svg>';
+}
+function barChart(data, labels, opt){
+  opt = opt||{}; var col = opt.color||'#F59E0B', h = opt.px||120;
+  var max = Math.max.apply(null,data)||1;
+  var bars = data.map(function(v,i){
+    var pct = Math.max(4,(v/max)*100);
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0">'+
+      '<div style="width:100%;height:'+h+'px;display:flex;align-items:flex-end">'+
+      '<div title="'+esc(labels[i]+': '+num(v))+'" style="width:100%;height:'+pct.toFixed(1)+'%;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,'+col+',rgba(0,0,0,0));opacity:'+(0.55+0.45*(v/max)).toFixed(2)+'"></div></div>'+
+      '<span style="font-size:10px;color:var(--txt-3)" class="trunc">'+esc(labels[i])+'</span></div>';
+  }).join('');
+  return '<div style="display:flex;align-items:flex-end;gap:6px">'+bars+'</div>';
+}
+function donut(pct, color, size, label){
+  size = size||64; color = color||'#3B82F6';
+  var r = 26, c = 2*Math.PI*r, off = c*(1-pct/100);
+  return '<div style="position:relative;width:'+size+'px;height:'+size+'px">'+
+    '<svg width="'+size+'" height="'+size+'" viewBox="0 0 64 64" style="transform:rotate(-90deg)">'+
+    '<circle cx="32" cy="32" r="'+r+'" fill="none" stroke="rgba(148,163,184,.16)" stroke-width="7"/>'+
+    '<circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="7" stroke-linecap="round" '+
+    'stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg>'+
+    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:'+(size/4.6).toFixed(0)+'px;font-weight:700;color:#fff">'+(label||pct+'%')+'</div></div>';
+}
+function progressRow(name, val, max, color, right){
+  var pct = Math.min(100,(val/max)*100);
+  return '<div class="rank-it"><div style="flex:1;min-width:0">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+    '<span class="nm trunc">'+esc(name)+'</span><span class="vl">'+esc(right!=null?right:num(val))+'</span></div>'+
+    '<div class="bar"><i style="width:'+pct.toFixed(1)+'%;background:'+(color||'#3B82F6')+'"></i></div></div></div>';
+}
+
+/* ------------------------------ DATOS MOCK ------------------------------ */
+var ROLES = {
+  admin:      {label:'Administrador',  desc:'Control total de la red'},
+  manager:    {label:'Jefe de Equipo', desc:'Supervision comercial'},
+  commercial: {label:'Gestión Comercial', desc:'Venta y prospección'},
+  backoffice: {label:'Back Office',    desc:'Tramitación y contratos'}
+};
+var MENU = [
+  {id:'dashboard',   label:'Panel Principal',            icon:'dashboard', sec:'General',   roles:['admin','manager','commercial','backoffice']},
+  {id:'calendar',    label:'Calendario y Citas',         icon:'calendar',  sec:'General',   roles:['admin','manager','commercial'], n:3},
+  {id:'academy',     label:'Parte de Academia',          icon:'book',      sec:'General',   roles:['admin','manager','commercial']},
+  {id:'quotes',      label:'Presupuestos',               icon:'calc',      sec:'Comercial', roles:['admin','manager','commercial']},
+  {id:'funnels',     label:'Embudos de Venta',           icon:'filter',    sec:'Comercial', roles:['admin','manager','commercial']},
+  {id:'audits',      label:'Auditorías IA',              icon:'search',    sec:'Comercial', roles:['admin','manager','commercial']},
+  {id:'clients',     label:'Estado de Clientes',         icon:'users',     sec:'Comercial', roles:['admin','manager','commercial','backoffice']},
+  {id:'contracts',   label:'Contratos y Facturación',    icon:'file',      sec:'Operaciones', roles:['admin','manager','backoffice'], n:2},
+  {id:'backoffice',  label:'Back Office y Trámites',     icon:'case',      sec:'Operaciones', roles:['admin','backoffice','manager']},
+  {id:'voice_wa',    label:'Asistentes Voz y WhatsApp',  icon:'chat',      sec:'Operaciones', roles:['admin','manager']},
+  {id:'integrations',label:'Webmail y MetaTok',          icon:'plug',      sec:'Sistema',   roles:['admin','manager']},
+  {id:'settings',    label:'Configuración de Cuenta',    icon:'cog',       sec:'Sistema',   roles:['admin','manager','commercial','backoffice']}
+];
+
+var DB = {
+  revenue: {
+    total: 1253235, delta: 12.4,
+    series: [42,48,45,58,62,57,71,68,79,86,82,97],
+    months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    sources: [
+      {n:'Command Center 360', v:544120, c:'#3B82F6'},
+      {n:'Agentes de Voz IA',  v:329130, c:'#10B981'},
+      {n:'WhatsApp y CRM',     v:194120, c:'#8B5CF6'},
+      {n:'Mantenimientos',     v:185865, c:'#F59E0B'}
+    ]
+  },
+  funnelStages: [
+    {n:'Prospección', v:115400}, {n:'Auditoría IA', v:125600},
+    {n:'Demo', v:95400}, {n:'Propuesta', v:74800}, {n:'Cierre', v:52300}
+  ],
+  callSeries: [38,52,44,61,58,72,66,81,74,88,92,97,85,94],
+  zones: [
+    {n:'Asturias',  v:412, c:'#3B82F6'}, {n:'Madrid',    v:298, c:'#10B981'},
+    {n:'Cataluña',  v:214, c:'#8B5CF6'}, {n:'C. Valenciana', v:167, c:'#F59E0B'},
+    {n:'Galicia',   v:121, c:'#06B6D4'}
+  ],
+  channels: {total:45234, delta:6.4, mobile:{v:28640,p:63}, desktop:{v:16594,p:37}},
+  topServices: [
+    {n:'Agente de Voz IA 24/7', s:'Clínicas y despachos', v:24526, up:true, ic:'mic', c:'blue'},
+    {n:'Bot WhatsApp + CRM',    s:'Inmobiliarias',        v:19310, up:true, ic:'chat', c:'green'},
+    {n:'Command Center 360',    s:'Multisede',            v:16480, up:true, ic:'dashboard', c:'violet'},
+    {n:'Auditoría IA Express',  s:'Captación',            v:9370,  up:true, ic:'search', c:'cyan'},
+    {n:'Automatización Meta',   s:'Campañas MetaTok',     v:6115,  up:false,ic:'globe', c:'amber'}
+  ],
+  movements: [
+    {id:'#LK-24512', cli:'Inmobiliaria Gijón Central', srv:'Command Center 360', d:'26/05/2026', v:3000, st:'Cobrado'},
+    {id:'#LK-24509', cli:'Clínica Dental Asturias',    srv:'Agente de Voz IA',   d:'22/05/2026', v:1800, st:'Cobrado'},
+    {id:'#LK-24501', cli:'Despacho Jurídico Oviedo',   srv:'Bot WhatsApp + CRM', d:'19/05/2026', v:1200, st:'Pendiente'},
+    {id:'#LK-24498', cli:'Talleres Norte SL',          srv:'Auditoría IA',       d:'17/05/2026', v:450,  st:'Cobrado'},
+    {id:'#LK-24491', cli:'Hotel Costa Verde',          srv:'Agente de Voz IA',   d:'14/05/2026', v:1800, st:'Vencido'}
+  ],
+  targets: [
+    {n:'Nuevos clientes', v:38, max:50, c:'#F59E0B'},
+    {n:'Llamadas salientes', v:1284, max:1500, c:'#3B82F6'},
+    {n:'Demos realizadas', v:64, max:70, c:'#10B981'}
+  ],
+  team: [
+    {n:'Juan Álvarez',   r:'Jefe de Equipo', t:'+34 600 112 233', v:184300, q:96, av:'#3B82F6'},
+    {n:'Marta Rodríguez',r:'Gestión Comercial', t:'+34 600 445 566', v:142800, q:88, av:'#10B981'},
+    {n:'Carlos Ruiz',    r:'Gestión Comercial', t:'+34 600 778 899', v:118400, q:74, av:'#8B5CF6'},
+    {n:'Lucía Fernández',r:'Gestión Comercial', t:'+34 601 223 344', v:96200,  q:61, av:'#F59E0B'},
+    {n:'Sergio Peña',    r:'Back Office',       t:'+34 601 556 677', v:0,      q:100,av:'#06B6D4'}
+  ],
+  activity: [
+    {t:'Contrato firmado - Inmobiliaria Gijón Central', s:'Marta Rodríguez · hace 12 min', k:'g'},
+    {t:'Auditoría IA completada - Talleres Norte SL',   s:'Motor IA · hace 48 min', k:''},
+    {t:'Nueva cita agendada - Hotel Costa Verde',       s:'Carlos Ruiz · hace 1 h', k:''},
+    {t:'Factura vencida - Hotel Costa Verde',           s:'Back Office · hace 3 h', k:'a'},
+    {t:'Presupuesto enviado - Clínica Dental Asturias', s:'Juan Álvarez · hace 5 h', k:'g'}
+  ],
+  appointments: [
+    {d:8,  h:'09:30', t:'Demo Command Center', c:'Inmobiliaria Gijón Central', k:'blue',  who:'Marta Rodríguez'},
+    {d:8,  h:'12:00', t:'Auditoría IA presencial', c:'Talleres Norte SL',      k:'green', who:'Carlos Ruiz'},
+    {d:9,  h:'10:00', t:'Firma de contrato', c:'Clínica Dental Asturias',      k:'green', who:'Juan Álvarez'},
+    {d:11, h:'16:30', t:'Seguimiento post-venta', c:'Despacho Jurídico Oviedo',k:'amber', who:'Sergio Peña'},
+    {d:15, h:'11:15', t:'Barrido de zona - Poligono', c:'Prospección',         k:'blue',  who:'Lucía Fernández'},
+    {d:22, h:'09:00', t:'Reunion de red comercial', c:'Interno Labs24k',       k:'violet',who:'Todo el equipo'}
+  ],
+  academy: [
+    {id:1,t:'La Mentalidad del Consultor IA', d:'Entender que no vendemos software, sino tiempo y dinero.', m:45, p:100},
+    {id:2,t:'La Rutina de Acero: Tu Día a Día', d:'Dominar el barrido de zona y la prospección local.', m:60, p:100},
+    {id:3,t:'Nichos Estratégicos y Detección de Valor', d:'Especialización en Inmobiliarias, Clínicas y Despachos.', m:50, p:35},
+    {id:4,t:'La Demo Maestra y Cierre de Ventas', d:'Cómo mostrar la tecnología para que el cliente diga "lo quiero".', m:75, p:0},
+    {id:5,t:'Gestión Administrativa y Oficina Virtual', d:'Digitalización de datos y reporte a admin@labs24k.com.', m:40, p:0}
+  ],
+  services: {
+    voice_agent:  {n:'Agente de Voz IA (VAPI/Twilio)', setup:1800, monthly:400},
+    whatsapp_bot: {n:'Automatización WhatsApp y CRM',  setup:1200, monthly:250},
+    command_center:{n:'Labs Command Center 360',       setup:3000, monthly:600},
+    audit:        {n:'Auditoría IA Express',           setup:450,  monthly:0}
+  },
+  quotes: [
+    {id:'P-2026-118', cli:'Hotel Costa Verde',        srv:'Agente de Voz IA', v:1800, st:'Enviado',  d:'02/09/2026'},
+    {id:'P-2026-117', cli:'Autoescuela Principado',   srv:'Bot WhatsApp + CRM', v:1200, st:'Aceptado',d:'28/08/2026'},
+    {id:'P-2026-116', cli:'Gestoría Llanes',          srv:'Command Center 360', v:3000, st:'En revisión', d:'25/08/2026'},
+    {id:'P-2026-115', cli:'Fisioterapia Avilés',      srv:'Auditoría IA', v:450, st:'Rechazado', d:'20/08/2026'}
+  ],
+  contracts: [
+    {id:'C-0341', cli:'Inmobiliaria Gijón Central', srv:'Command Center 360', setup:3000, m:600, st:'Activo',  f:'Emitida',   next:'01/10/2026'},
+    {id:'C-0340', cli:'Clínica Dental Asturias',    srv:'Agente de Voz IA',   setup:1800, m:400, st:'Activo',  f:'Emitida',   next:'01/10/2026'},
+    {id:'C-0338', cli:'Despacho Jurídico Oviedo',   srv:'Bot WhatsApp + CRM', setup:1200, m:250, st:'Alta',    f:'Pendiente', next:'15/09/2026'},
+    {id:'C-0335', cli:'Hotel Costa Verde',          srv:'Agente de Voz IA',   setup:1800, m:400, st:'Impago',  f:'Vencida',   next:'-'},
+    {id:'C-0331', cli:'Talleres Norte SL',          srv:'Auditoría IA',       setup:450,  m:0,   st:'Cerrado', f:'Emitida',   next:'-'}
+  ],
+  audits: [
+    {id:'A-092', cli:'Talleres Norte SL',      sec:'Automoción',   score:38, ahorro:2100, st:'Completada', d:'01/09/2026'},
+    {id:'A-091', cli:'Hotel Costa Verde',      sec:'Hostelería',   score:52, ahorro:3400, st:'Completada', d:'29/08/2026'},
+    {id:'A-090', cli:'Gestoría Llanes',        sec:'Despachos',    score:61, ahorro:1800, st:'En proceso', d:'28/08/2026'},
+    {id:'A-089', cli:'Fisioterapia Avilés',    sec:'Clínicas',     score:44, ahorro:1250, st:'Completada', d:'22/08/2026'}
+  ],
+  assistants: [
+    {n:'Recepcionista IA - Clínicas', ch:'Voz (VAPI)', st:'Activo',  calls:1284, rate:92, c:'green'},
+    {n:'Captador Inmobiliario',       ch:'WhatsApp',   st:'Activo',  calls:3412, rate:87, c:'green'},
+    {n:'Filtro de Leads Jurídico',    ch:'Voz (VAPI)', st:'Activo',  calls:642,  rate:78, c:'green'},
+    {n:'Postventa Automoción',        ch:'WhatsApp',   st:'Pausado', calls:218,  rate:64, c:'amber'}
+  ],
+  pipeline: [
+    {st:'Prospección', items:[
+      {c:'Cerrajería Express Gijón', v:1800, o:'Lucía Fernández'},
+      {c:'Academia Idiomas Oviedo',  v:1200, o:'Carlos Ruiz'},
+      {c:'Podología Siero',          v:450,  o:'Lucía Fernández'}]},
+    {st:'Auditoría IA', items:[
+      {c:'Gestoría Llanes',          v:3000, o:'Marta Rodríguez'},
+      {c:'Transportes Nalón',        v:1800, o:'Carlos Ruiz'}]},
+    {st:'Demo', items:[
+      {c:'Hotel Costa Verde',        v:1800, o:'Juan Álvarez'},
+      {c:'Autoescuela Principado',   v:1200, o:'Marta Rodríguez'}]},
+    {st:'Propuesta', items:[
+      {c:'Fisioterapia Avilés',      v:450,  o:'Lucía Fernández'},
+      {c:'Notaría Centro',           v:3000, o:'Juan Álvarez'}]},
+    {st:'Cierre', items:[
+      {c:'Inmobiliaria Gijón Central', v:3000, o:'Marta Rodríguez'},
+      {c:'Clínica Dental Asturias',    v:1800, o:'Juan Álvarez'}]}
+  ],
+  trámites: [
+    {id:1, cli:'Inmobiliaria Gijón Central', st:'En Auditoría IA',        role:'Gestión Comercial', doc:'auditoría_v1.pdf',    upd:'hace 2 h'},
+    {id:2, cli:'Clínica Dental Asturias',    st:'Implementando VAPI',     role:'Back Office',       doc:'contrato_firmado.pdf',upd:'hace 5 h'},
+    {id:3, cli:'Despacho Jurídico Oviedo',   st:'Configurando WhatsApp',  role:'Administrador',     doc:'briefing_inicial.pdf',upd:'ayer'},
+    {id:4, cli:'Hotel Costa Verde',          st:'Reclamación de impago',  role:'Back Office',       doc:'factura_0335.pdf',    upd:'ayer'},
+    {id:5, cli:'Talleres Norte SL',          st:'Entregado y cerrado',    role:'Administrador',     doc:'acta_entrega.pdf',    upd:'hace 3 d'}
+  ],
+  clients: [
+    {n:'Inmobiliaria Gijón Central', sec:'Inmobiliaria', st:'Activo',    mrr:600, alta:'12/03/2026', ges:'Marta Rodríguez', sat:96},
+    {n:'Clínica Dental Asturias',    sec:'Clínicas',     st:'Activo',    mrr:400, alta:'02/04/2026', ges:'Juan Álvarez',    sat:92},
+    {n:'Despacho Jurídico Oviedo',   sec:'Despachos',    st:'Onboarding',mrr:250, alta:'21/08/2026', ges:'Carlos Ruiz',     sat:80},
+    {n:'Hotel Costa Verde',          sec:'Hostelería',   st:'Riesgo',    mrr:400, alta:'15/01/2026', ges:'Juan Álvarez',    sat:48},
+    {n:'Talleres Norte SL',          sec:'Automoción',   st:'Cerrado',   mrr:0,   alta:'08/11/2025', ges:'Lucía Fernández', sat:70}
+  ]
+};
+
+/* ------------------------------ ESTADO --------------------------------- */
+var S = {
+  logged:false,
+  role:'admin',
+  view:'dashboard',
+  name:'Juan Álvarez',
+  phone:'+34 600 112 233',
+  email:'juan.alvarez@labs24k.com',
+  sidebar:false
+};
+
+/* ------------------------------ PERSISTENCIA LOCAL ---------------------- */
+/* Guarda el estado de la sesión de demostración en el navegador (localStorage)
+   para que no se pierda al recargar la página. No hay backend: es un espejo
+   local, no una fuente de datos compartida entre usuarios. */
+var STORAGE_KEY = 'labs360_state_v1';
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({S:S, DB:DB, PRE:PRE, INT:INT}));
+  }catch(e){ /* almacenamiento no disponible (modo privado, cuota, etc.) */ }
+}
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    var saved = JSON.parse(raw);
+    if(saved.S) Object.assign(S, saved.S, {sidebar:false});
+    if(saved.DB) Object.assign(DB, saved.DB);
+    if(saved.PRE) Object.assign(PRE, saved.PRE);
+    if(saved.INT) Object.assign(INT, saved.INT);
+  }catch(e){ /* datos guardados corruptos: se ignoran y se sigue con los de demo */ }
+}
+
+/* ------------------------------ ARRANQUE ------------------------------- */
+function boot(){ loadState(); S.logged ? renderApp() : renderLogin(); }
+
+function renderLogin(){
+  var roles = Object.keys(ROLES).map(function(k){
+    return '<button class="role-opt'+(S.role===k?' on':'')+'" data-role="'+k+'">'+
+      '<strong>'+ROLES[k].label+'</strong><span>'+ROLES[k].desc+'</span></button>'; }).join('');
+  document.body.innerHTML =
+  '<div class="login-wrap"><div class="login-card">'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">'+
+      '<div class="ico-box blue" style="width:42px;height:42px">'+ic('bolt',20)+'</div>'+
+      '<div><h1>LABS<span>24K</span></h1>'+
+      '<p class="sub" style="margin:0">Labs Command Center 360</p></div></div>'+
+    '<p class="sub">Oficina virtual de la red comercial. Selecciona tu perfil de acceso.</p>'+
+    '<div class="role-grid">'+roles+'</div>'+
+    '<div class="field"><label class="f">Nombre completo</label>'+
+      '<input class="inp" id="lg-name" value="'+esc(S.name)+'"></div>'+
+    '<div class="field"><label class="f">Teléfono de contacto</label>'+
+      '<input class="inp" id="lg-phone" value="'+esc(S.phone)+'"></div>'+
+    '<button class="btn btn-p" id="lg-go" style="width:100%;justify-content:center;margin-top:6px">'+
+      ic('logout',16)+' Entrar al Command Center</button>'+
+    '<p class="tiny muted" style="text-align:center;margin:16px 0 0">Entorno de demostración · Datos de ejemplo</p>'+
+  '</div></div>';
+
+  qa('.role-opt').forEach(function(b){ b.onclick=function(){ S.role=b.dataset.role; renderLogin(); }; });
+  q('#lg-go').onclick=function(){
+    S.name = q('#lg-name').value.trim() || 'Usuario Labs24k';
+    S.phone = q('#lg-phone').value.trim() || '+34 600 000 000';
+    S.logged = true; S.view='dashboard'; renderApp();
+  };
+}
+
+function renderApp(){
+  saveState();
+  var items = MENU.filter(function(m){ return m.roles.indexOf(S.role)>-1; });
+  if(!items.some(function(m){ return m.id===S.view; })) S.view = 'dashboard';
+  var secs = [], html='';
+  items.forEach(function(m){ if(secs.indexOf(m.sec)<0) secs.push(m.sec); });
+  secs.forEach(function(sec){
+    html += '<div class="nav-sec">'+esc(sec)+'</div>';
+    items.filter(function(m){ return m.sec===sec; }).forEach(function(m){
+      html += '<button class="nav-item'+(S.view===m.id?' on':'')+'" data-go="'+m.id+'">'+
+        ic(m.icon,17)+'<span>'+esc(m.label)+'</span>'+(m.n?'<span class="dot">'+m.n+'</span>':'')+'</button>';
+    });
+  });
+  var cur = items.filter(function(m){ return m.id===S.view; })[0] || items[0];
+
+  document.body.innerHTML =
+  '<div class="app">'+
+    (S.sidebar?'<div class="scrim" id="scrim"></div>':'')+
+    '<aside class="sidebar'+(S.sidebar?' open':'')+'">'+
+      '<div class="brand"><h1>LABS<span>24K</span></h1>'+
+        '<span class="badge-role">'+esc(ROLES[S.role].label)+'</span></div>'+
+      '<nav class="nav">'+html+'</nav>'+
+      '<div class="user-card">'+
+        '<div class="avatar">'+esc(S.name.charAt(0).toUpperCase())+'</div>'+
+        '<div style="min-width:0;flex:1"><div class="nm trunc">'+esc(S.name)+'</div>'+
+        '<div class="ph trunc">'+esc(S.phone)+'</div></div>'+
+        '<button class="icon-btn" id="logout" title="Cerrar sesión">'+ic('logout',16)+'</button>'+
+      '</div>'+
+    '</aside>'+
+    '<div class="main">'+
+      '<header class="topbar">'+
+        '<button class="icon-btn burger" id="burger" aria-label="Abrir menú">'+ic('menu',18)+'</button>'+
+        '<div><h2>'+esc(cur.label)+'</h2>'+
+        '<div class="crumb">Labs Command Center 360 · '+esc(cur.sec)+'</div></div>'+
+        '<div class="spacer"></div>'+
+        '<label class="search" for="topsearch">'+ic('search',15)+
+          '<input id="topsearch" placeholder="Buscar cliente, contrato o presupuesto..." aria-label="Buscar en la vista actual"></label>'+
+        '<button class="icon-btn" id="bell" aria-label="Notificaciones (4 sin leer)">'+ic('bell',17)+'<span class="n">4</span></button>'+
+        '<span class="pill-live"><span class="blip"></span>Nodo Hostalia operativo</span>'+
+      '</header>'+
+      '<div class="content"><div class="view" id="view"></div></div>'+
+    '</div>'+
+  '</div>';
+
+  document.body.style.overflow = S.sidebar ? 'hidden' : '';
+  qa('[data-go]').forEach(function(b){ b.onclick=function(){ S.view=b.dataset.go; S.sidebar=false; renderApp(); }; });
+  q('#logout').onclick=function(){ S.logged=false; saveState(); renderLogin(); };
+  q('#burger').onclick=function(){ S.sidebar=!S.sidebar; renderApp(); };
+  q('#bell').onclick=function(){ toast('4 avisos: 2 facturas pendientes, 1 impago y 1 cita próxima.'); };
+  if(q('#scrim')) q('#scrim').onclick=function(){ S.sidebar=false; renderApp(); };
+  q('#topsearch').oninput=function(){
+    var term = this.value.trim().toLowerCase();
+    qa('#view table.tbl tbody tr').forEach(function(tr){
+      tr.style.display = (!term || tr.textContent.toLowerCase().indexOf(term)>-1) ? '' : 'none';
+    });
+  };
+
+  var v = q('#view');
+  var VIEWS = {dashboard:viewDashboard, calendar:viewCalendar, academy:viewAcademy, quotes:viewQuotes,
+    funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
+    backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations, settings:viewSettings};
+  (VIEWS[S.view]||viewDashboard)(v);
+  window.scrollTo(0,0);
+}
+
+/* ==========================================================================
+   VISTAS / MODULOS
+   ========================================================================== */
+
+/* ------------------------------ 1. PANEL PRINCIPAL ---------------------- */
+function viewDashboard(v){
+  var R = DB.revenue, tot = R.sources.reduce(function(a,b){ return a+b.v; },0);
+
+  var kpis = [
+    {l:'Facturación acumulada', v:eur(R.total), d:12.4, i:'euro', c:'green', s:R.series},
+    {l:'Contratos activos',     v:'34',         d:8.1,  i:'file', c:'blue',  s:[18,20,22,25,24,28,30,31,33,34]},
+    {l:'MRR recurrente',        v:eur(18450),   d:5.6,  i:'trend',c:'violet',s:[9,11,12,13,14,15,16,17,18,18.4]},
+    {l:'Tasa de cierre',        v:'31,4%',      d:-2.3, i:'target',c:'amber',s:[36,35,34,33,34,32,33,31,32,31.4]}
+  ].map(function(k){
+    return '<div class="card kpi">'+
+      '<div class="row" style="justify-content:space-between;align-items:flex-start">'+
+        '<div class="lbl">'+esc(k.l)+'</div><div class="ico-box '+k.c+'">'+ic(k.i,17)+'</div></div>'+
+      '<div class="val">'+k.v+'</div>'+
+      '<div class="row">'+delta(k.d)+'<span class="tiny muted">vs mes anterior</span></div>'+
+      '<div style="margin-top:10px;margin-left:-2px">'+areaChart(k.s,{px:38,h:24,color:k.d>=0?'#10B981':'#EF4444'})+'</div>'+
+    '</div>';
+  }).join('');
+
+  /* --- tarjeta facturación con desglose apilado (estilo referencia) --- */
+  var stack = R.sources.map(function(s){
+    return '<i style="width:'+((s.v/tot)*100).toFixed(1)+'%;background:'+s.c+'"></i>'; }).join('');
+  var leg = R.sources.map(function(s){
+    return '<div><i style="background:'+s.c+'"></i>'+esc(s.n)+'</div>'; }).join('');
+  var legVals = R.sources.map(function(s){
+    return '<div style="flex:1;min-width:0"><div class="tiny muted trunc">'+esc(s.n)+'</div>'+
+      '<div style="font-size:13px;font-weight:600;color:#fff">'+eur(s.v)+'</div></div>'; }).join('');
+
+  var cardRevenue =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Facturación total de la red</h3>'+
+      '<p>Ejercicio 2026 · todas las delegaciones</p></div>'+
+      '<span class="chip">Este año</span></div>'+
+    '<div style="font-size:34px;font-weight:700;color:#fff;letter-spacing:-.02em">'+eur(R.total)+'</div>'+
+    '<div class="row" style="margin:6px 0 16px">'+delta(R.delta)+
+      '<span class="tiny muted">objetivo anual '+eur(1500000)+'</span></div>'+
+    '<div class="tiny muted" style="margin-bottom:7px">Fuentes de ingreso</div>'+
+    '<div class="stackbar">'+stack+'</div>'+
+    '<div class="legend">'+leg+'</div>'+
+    '<div class="row" style="gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+legVals+'</div>'+
+  '</div>';
+
+  /* --- embudo de ventas (area) --- */
+  var stages = DB.funnelStages.map(function(s){
+    return '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#fff">'+
+      (s.v/1000).toFixed(1).replace('.',',')+'k</div>'+
+      '<div class="tiny muted trunc">'+esc(s.n)+'</div></div>'; }).join('');
+  var cardFunnel =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Embudo de ventas</h3><p>Valor en pipeline por etapa</p></div>'+
+      '<span class="chip green">'+ic('trend',12)+' +9,2%</span></div>'+
+    areaChart([58,62,55,71,68,79,74,88,84,95,91,104],{px:104,h:40,color:'#10B981'})+
+    '<div class="row" style="gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+stages+'</div>'+
+  '</div>';
+
+  /* --- llamadas IA en curso (barras) --- */
+  var cardCalls =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Interacciones IA en curso</h3><p>Voz + WhatsApp · últimos 14 días</p></div></div>'+
+    '<div style="font-size:30px;font-weight:700;color:#fff">'+num(11141)+'</div>'+
+    '<div class="tiny muted" style="margin-bottom:12px">conversaciones gestionadas sin intervención humana</div>'+
+    barChart(DB.callSeries, DB.callSeries.map(function(_,i){ return i%2?'':(i+1); }), {px:86,color:'#F59E0B'})+
+  '</div>';
+
+  /* --- leads por zona --- */
+  var zTot = DB.zones.reduce(function(a,b){ return a+b.v; },0);
+  var cardZones =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Leads por zona</h3><p>'+num(zTot)+' leads captados</p></div>'+
+      '<span class="chip">Trimestre</span></div>'+
+    '<div class="rank">'+DB.zones.map(function(z){
+      return progressRow(z.n, z.v, DB.zones[0].v, z.c, num(z.v)+' · '+((z.v/zTot)*100).toFixed(0)+'%');
+    }).join('')+'</div>'+
+  '</div>';
+
+  /* --- canal de captación --- */
+  var ch = DB.channels;
+  var cardChannels =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Origen de las visitas</h3><p>Web corporativa + campañas MetaTok</p></div>'+
+      '<span class="chip">Hoy</span></div>'+
+    '<div class="row" style="gap:10px"><div style="font-size:28px;font-weight:700;color:#fff">'+num(ch.total)+'</div>'+delta(ch.delta)+'</div>'+
+    '<div class="grid g-2" style="margin-top:16px">'+
+      ['mobile','desktop'].map(function(k){
+        var d = ch[k], lbl = k==='mobile'?'Móvil':'Escritorio', col = k==='mobile'?'#3B82F6':'#8B5CF6';
+        return '<div style="background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:13px">'+
+          '<div class="tiny muted" style="margin-bottom:6px">'+lbl+'</div>'+
+          '<div style="font-size:18px;font-weight:700;color:#fff">'+num(d.v)+'</div>'+
+          '<div class="tiny muted" style="margin:6px 0 7px">'+d.p+'% del total</div>'+
+          '<div class="bar"><i style="width:'+d.p+'%;background:'+col+'"></i></div></div>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+
+  /* --- top servicios --- */
+  var cardTop =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Servicios más vendidos</h3><p>Ranking por facturación</p></div></div>'+
+    '<div class="rank">'+DB.topServices.map(function(s){
+      return '<div class="rank-it">'+
+        '<div class="ico-box '+s.c+'" style="width:34px;height:34px;flex:0 0 34px">'+ic(s.ic,16)+'</div>'+
+        '<div style="min-width:0;flex:1"><div class="nm trunc">'+esc(s.n)+'</div>'+
+        '<div class="tiny muted trunc">'+esc(s.s)+'</div></div>'+
+        '<div style="text-align:right"><div style="font-size:12.5px;font-weight:600;color:#fff">'+eur(s.v)+'</div>'+
+        '<div class="tiny '+(s.up?'up':'down')+'">'+(s.up?'+':'-')+(3+Math.round(s.v%7))+'%</div></div></div>';
+    }).join('')+'</div>'+
+  '</div>';
+
+  /* --- últimos movimientos --- */
+  var stChip = {'Cobrado':'green','Pendiente':'amber','Vencido':'red'};
+  var cardMov =
+  '<div class="card" style="padding:0;overflow:hidden">'+
+    '<div style="padding:18px 18px 14px" class="card-h"><div><h3>Últimos movimientos</h3>'+
+      '<p>Cobros y facturación de la red comercial</p></div>'+
+      '<button class="btn btn-s btn-xs" data-go="contracts">Ver todo</button></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Referencia</th><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Importe</th><th>Estado</th>'+
+    '</tr></thead><tbody>'+DB.movements.map(function(m){
+      return '<tr><td class="w">'+esc(m.id)+'</td><td>'+esc(m.cli)+'</td>'+
+        '<td class="muted">'+esc(m.srv)+'</td><td class="muted">'+esc(m.d)+'</td>'+
+        '<td class="w">'+eur(m.v)+'</td>'+
+        '<td><span class="chip '+stChip[m.st]+'">'+esc(m.st)+'</span></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+  '</div>';
+
+  /* --- objetivos --- */
+  var cardTargets =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Objetivos del mes</h3><p>Septiembre 2026</p></div>'+
+      donut(76,'#10B981',54)+'</div>'+
+    '<div class="rank" style="margin-top:4px">'+DB.targets.map(function(t){
+      return progressRow(t.n, t.v, t.max, t.c, num(t.v)+' / '+num(t.max));
+    }).join('')+'</div>'+
+  '</div>';
+
+  /* --- actividad --- */
+  var cardAct =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Actividad reciente</h3><p>Trazabilidad multirrol</p></div></div>'+
+    '<div class="tl">'+DB.activity.map(function(a){
+      return '<div class="tl-it '+a.k+'"><div style="font-size:12.5px;color:#E2E8F0">'+esc(a.t)+'</div>'+
+        '<div class="tiny muted">'+esc(a.s)+'</div></div>';
+    }).join('')+'</div>'+
+  '</div>';
+
+  /* --- ranking equipo --- */
+  var maxV = Math.max.apply(null, DB.team.map(function(t){ return t.v; }));
+  var cardTeam =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Rendimiento de la red comercial</h3>'+
+      '<p>Facturación generada y cumplimiento de objetivo</p></div>'+
+      '<span class="chip blue">'+DB.team.length+' miembros</span></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Comercial</th><th>Rol</th><th>Teléfono</th><th>Facturación</th><th style="width:180px">Objetivo</th>'+
+    '</tr></thead><tbody>'+DB.team.map(function(t){
+      return '<tr><td><div class="row">'+
+        '<div class="avatar" style="width:30px;height:30px;flex:0 0 30px;font-size:12px;background:'+t.av+'22;border-color:'+t.av+'55;color:'+t.av+'">'+esc(t.n.charAt(0))+'</div>'+
+        '<span class="w">'+esc(t.n)+'</span></div></td>'+
+        '<td class="muted">'+esc(t.r)+'</td><td class="muted">'+esc(t.t)+'</td>'+
+        '<td class="w">'+(t.v?eur(t.v):'-')+'</td>'+
+        '<td><div class="row"><div class="bar" style="flex:1"><i style="width:'+t.q+'%;background:'+(t.q>=85?'#10B981':t.q>=65?'#3B82F6':'#F59E0B')+'"></i></div>'+
+        '<span class="tiny muted">'+t.q+'%</span></div></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+  '</div>';
+
+  v.innerHTML =
+    '<div class="row" style="justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">'+
+      '<div><div style="font-size:19px;font-weight:700;color:#fff">Hola, '+esc(S.name.split(' ')[0])+'</div>'+
+      '<div class="small muted">Resumen ejecutivo de la red comercial Labs24k · '+
+        new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div></div>'+
+      '<div class="row"><button class="btn btn-s btn-xs" data-go="audits">'+ic('search',14)+' Nueva auditoría</button>'+
+      '<button class="btn btn-p btn-xs" data-go="quotes">'+ic('plus',14)+' Nuevo presupuesto</button></div>'+
+    '</div>'+
+    '<div class="grid g-4" style="margin-bottom:16px">'+kpis+'</div>'+
+    '<div class="grid g-hero" style="margin-bottom:16px">'+cardRevenue+cardFunnel+cardCalls+'</div>'+
+    '<div class="grid g-3" style="margin-bottom:16px">'+cardZones+cardChannels+cardTop+'</div>'+
+    '<div class="grid g-21" style="margin-bottom:16px">'+cardMov+cardTargets+'</div>'+
+    '<div class="grid g-21">'+cardTeam+cardAct+'</div>';
+
+  qa('#view [data-go]').forEach(function(b){ b.onclick=function(){ S.view=b.dataset.go; renderApp(); }; });
+}
+
+/* ------------------------------ 2. CALENDARIO --------------------------- */
+function viewCalendar(v){
+  var y=2026, m=8; /* Septiembre 2026: mes de referencia de la agenda de demostración */
+  var real = new Date();
+  var todayD = (real.getFullYear()===y && real.getMonth()===m) ? real.getDate() : null;
+  var first = new Date(y,m,1).getDay(); first = (first+6)%7;
+  var days = new Date(y,m+1,0).getDate();
+  var cells='';
+  ['L','M','X','J','V','S','D'].forEach(function(d){ cells+='<div class="dow">'+d+'</div>'; });
+  for(var i=0;i<first;i++) cells+='<div class="day out"></div>';
+  for(var d=1;d<=days;d++){
+    var evs = DB.appointments.filter(function(a){ return a.d===d; });
+    var dots = evs.length ? '<div class="ev">'+evs.map(function(e){
+      return '<i class="'+(e.k==='green'?'g':e.k==='amber'?'a':'')+'"></i>'; }).join('')+'</div>' : '';
+    cells += '<div class="day'+(d===todayD?' today':'')+'">'+d+dots+'</div>';
+  }
+
+  var list = DB.appointments.map(function(a){
+    return '<div class="card flat" style="padding:14px;display:flex;gap:13px;align-items:flex-start">'+
+      '<div class="ico-box '+(a.k==='green'?'green':a.k==='amber'?'amber':a.k==='violet'?'violet':'blue')+'">'+ic('calendar',16)+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#fff">'+esc(a.t)+'</div>'+
+      '<div class="tiny muted">'+esc(a.c)+' · '+esc(a.who)+'</div></div>'+
+      '<div style="text-align:right"><div class="chip blue">'+esc(a.h)+'</div>'+
+      '<div class="tiny muted" style="margin-top:5px">'+a.d+' sep</div></div></div>';
+  }).join('');
+
+  v.innerHTML =
+  '<div class="grid g-cal">'+
+    '<div class="card">'+
+      '<div class="card-h"><div><h3>Septiembre 2026</h3><p>Citas, demos y barridos de zona</p></div>'+
+        '<button class="btn btn-p btn-xs" id="new-cita">'+ic('plus',14)+' Nueva cita</button></div>'+
+      '<div class="cal">'+cells+'</div>'+
+      '<div class="legend" style="margin-top:16px">'+
+        '<div><i style="background:#3B82F6"></i>Demo / visita comercial</div>'+
+        '<div><i style="background:#10B981"></i>Firma o cierre</div>'+
+        '<div><i style="background:#F59E0B"></i>Seguimiento postventa</div></div>'+
+    '</div>'+
+    '<div class="stack">'+
+      '<div class="grid g-2">'+
+        '<div class="card kpi"><div class="lbl">Citas del mes</div><div class="val">'+DB.appointments.length+'</div>'+
+          '<div class="tiny muted">3 pendientes de confirmar</div></div>'+
+        '<div class="card kpi"><div class="lbl">Ratio de asistencia</div><div class="val">88%</div>'+
+          '<div class="tiny muted">media de la red</div></div>'+
+      '</div>'+
+      '<div class="card"><div class="card-h"><div><h3>Próximas citas</h3><p>Agenda de la red comercial</p></div></div>'+
+      '<div class="stack">'+list+'</div></div>'+
+    '</div>'+
+  '</div>';
+  q('#new-cita').onclick=function(){ toast('Cita creada y sincronizada con el webmail de Hostalia.'); };
+}
+
+/* ------------------------------ 3. ACADEMIA ----------------------------- */
+function viewAcademy(v){
+  var prog = Math.round(DB.academy.reduce(function(a,b){ return a+b.p; },0)/DB.academy.length);
+  var cards = DB.academy.map(function(m){
+    var done = m.p===100;
+    return '<div class="mod-card">'+
+      '<div><div class="row" style="justify-content:space-between;margin-bottom:11px">'+
+        '<span class="chip blue">Modulo '+m.id+'</span>'+
+        '<span class="chip">'+ic('clock',12)+' '+m.m+' min</span></div>'+
+      '<h4 style="margin:0 0 6px;font-size:15px;color:#fff">'+esc(m.t)+'</h4>'+
+      '<p class="small muted" style="margin:0">'+esc(m.d)+'</p></div>'+
+      '<div style="margin-top:16px"><div class="bar" style="margin-bottom:12px">'+
+        '<i style="width:'+m.p+'%;background:'+(done?'#10B981':'#3B82F6')+'"></i></div>'+
+      '<div class="row" style="justify-content:space-between">'+
+        (done?'<span class="chip green">'+ic('check',12)+' Completado</span>'
+             :'<span class="chip '+(m.p?'blue':'amber')+'">'+ic('clock',12)+' '+(m.p?m.p+'% en curso':'Pendiente')+'</span>')+
+        '<button class="btn btn-p btn-xs" data-lesson="'+m.id+'">'+ic('play',14)+' '+(m.p?'Continuar':'Empezar')+'</button>'+
+      '</div></div></div>';
+  }).join('');
+
+  v.innerHTML =
+  '<div class="card" style="margin-bottom:16px">'+
+    '<div class="card-h" style="margin:0"><div><h3>Universidad Comercial 24k</h3>'+
+      '<p>Capacítate en los estandares de venta y automatización de la compañía.</p></div>'+
+      '<div class="row" style="gap:18px">'+
+        '<div style="text-align:right"><div class="tiny muted">Certificación</div>'+
+        '<div class="chip '+(prog>=80?'green':'amber')+'" style="margin-top:4px">'+(prog>=80?'Habilitado':'En progreso')+'</div></div>'+
+        donut(prog,'#3B82F6',66)+'</div></div>'+
+  '</div>'+
+  '<div class="grid g-2">'+cards+'</div>'+
+  '<div class="card" style="margin-top:16px">'+
+    '<div class="card-h"><div><h3>Recursos de la red</h3><p>Material de apoyo descargable</p></div></div>'+
+    '<div class="grid g-3">'+
+      [['Guion de llamada en frío','PDF · 4 pag.'],['Dossier técnico Command Center','PDF · 18 pag.'],
+       ['Plantilla de barrido de zona','XLSX · 1 hoja']].map(function(r){
+        return '<div class="card flat" style="display:flex;gap:12px;align-items:center">'+
+          '<div class="ico-box blue">'+ic('file',16)+'</div>'+
+          '<div style="flex:1;min-width:0"><div class="small trunc" style="color:#fff">'+esc(r[0])+'</div>'+
+          '<div class="tiny muted">'+esc(r[1])+'</div></div>'+
+          '<button class="btn btn-s btn-xs" data-dl="1" aria-label="Descargar '+esc(r[0])+'">'+ic('download',14)+'</button></div>'; }).join('')+
+    '</div></div>';
+
+  qa('[data-lesson]').forEach(function(b){ b.onclick=function(){ toast('Reproduciendo lección '+b.dataset.lesson+' de la Universidad 24k.'); }; });
+  qa('[data-dl]').forEach(function(b){ b.onclick=function(){ toast('Descarga iniciada desde el nodo Hostalia.'); }; });
+}
+
+/* ------------------------------ 5. EMBUDOS ------------------------------ */
+function viewFunnels(v){
+  var cols = DB.pipeline.map(function(c,ci){
+    var tot = c.items.reduce(function(a,b){ return a+b.v; },0);
+    return '<div class="kan-col"><div class="kan-h"><span>'+esc(c.st)+'</span>'+
+      '<span class="chip">'+c.items.length+'</span></div>'+
+      c.items.map(function(it,i){
+        return '<div class="kan-card" data-adv="'+ci+'-'+i+'" role="button" tabindex="0" aria-label="Avanzar '+esc(it.c)+' a la siguiente etapa"><div class="t">'+esc(it.c)+'</div>'+
+          '<div class="row" style="justify-content:space-between">'+
+          '<span class="tiny muted trunc">'+esc(it.o)+'</span>'+
+          '<span class="chip blue">'+eur(it.v)+'</span></div></div>'; }).join('')+
+      '<div class="tiny muted" style="text-align:center;padding-top:6px;border-top:1px solid var(--line)">'+eur(tot)+'</div>'+
+    '</div>'; }).join('');
+
+  var total = DB.pipeline.reduce(function(a,c){ return a+c.items.reduce(function(x,y){ return x+y.v; },0); },0);
+
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    [['Valor en pipeline',eur(total),'euro','blue'],['Oportunidades',String(DB.pipeline.reduce(function(a,c){return a+c.items.length;},0)),'target','violet'],
+     ['Ticket medio',eur(Math.round(total/11)),'trend','green'],['Ciclo medio de venta','21 días','clock','amber']]
+    .map(function(k){ return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+      '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+      '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card" style="margin-bottom:16px">'+
+    '<div class="card-h"><div><h3>Embudo de conversión</h3><p>Pulsa una tarjeta para avanzarla de etapa</p></div>'+
+      '<button class="btn btn-p btn-xs" id="f-new">'+ic('plus',14)+' Nueva oportunidad</button></div>'+
+    '<div class="kan">'+cols+'</div>'+
+  '</div>'+
+  '<div class="card"><div class="card-h"><div><h3>Conversión por etapa</h3>'+
+    '<p>Porcentaje de oportunidades que superan cada fase</p></div></div>'+
+    '<div class="rank">'+[['Prospección a Auditoría',68],['Auditoría a Demo',54],['Demo a Propuesta',47],['Propuesta a Cierre',31]]
+      .map(function(r){ return progressRow(r[0], r[1], 100, r[1]>50?'#10B981':'#3B82F6', r[1]+'%'); }).join('')+
+    '</div></div>';
+
+  qa('[data-adv]').forEach(function(b){ b.onclick=function(){
+    var p=b.dataset.adv.split('-'), ci=+p[0], i=+p[1];
+    if(ci>=DB.pipeline.length-1){ toast('Oportunidad ya en fase de cierre.'); return; }
+    var it = DB.pipeline[ci].items.splice(i,1)[0];
+    DB.pipeline[ci+1].items.push(it);
+    toast(it.c+' avanza a '+DB.pipeline[ci+1].st); renderApp(); }; });
+  q('#f-new').onclick=function(){ toast('Formulario de alta enviado al Back Office.'); };
+}
+
+/* ------------------------------ 6. AUDITORIAS IA ------------------------ */
+function viewAudits(v){
+  var stChip={'Completada':'green','En proceso':'amber'};
+  v.innerHTML =
+  '<div class="grid g-sideR" style="align-items:start">'+
+    '<div class="stack">'+
+      '<div class="grid g-3">'+
+        [['Auditorías realizadas','92','search','blue'],['Ahorro medio detectado',eur(2140),'euro','green'],
+         ['Conversión a contrato','42%','target','violet']].map(function(k){
+          return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+            '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+            '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+      '</div>'+
+      '<div class="card" style="padding:0;overflow:hidden">'+
+        '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Auditorías IA realizadas</h3>'+
+          '<p>Diagnóstico automatizado de procesos del cliente</p></div></div>'+
+        '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Ref.</th><th>Cliente</th><th>Sector</th>'+
+          '<th style="width:150px">Índice digital</th><th>Ahorro anual</th><th>Estado</th><th></th></tr></thead><tbody>'+
+          DB.audits.map(function(a){
+            return '<tr><td class="w">'+esc(a.id)+'</td><td>'+esc(a.cli)+'</td><td class="muted">'+esc(a.sec)+'</td>'+
+              '<td><div class="row"><div class="bar" style="flex:1"><i style="width:'+a.score+'%;background:'+
+                (a.score<50?'#EF4444':a.score<70?'#F59E0B':'#10B981')+'"></i></div>'+
+              '<span class="tiny muted">'+a.score+'</span></div></td>'+
+              '<td class="w">'+eur(a.ahorro)+'</td>'+
+              '<td><span class="chip '+stChip[a.st]+'">'+esc(a.st)+'</span></td>'+
+              '<td><button class="btn btn-s btn-xs" data-rep="'+esc(a.cli)+'">'+ic('eye',13)+' Informe</button></td></tr>';
+          }).join('')+'</tbody></table></div></div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-h"><div><h3>Lanzar auditoría IA</h3><p>Análisis en 90 segundos</p></div></div>'+
+      '<div class="field"><label class="f">Empresa a auditar</label><input class="inp" id="a-cli" placeholder="Razon social"></div>'+
+      '<div class="field"><label class="f">Sector</label><select class="inp" id="a-sec">'+
+        ['Inmobiliaria','Clínicas','Despachos','Hostelería','Automoción','Comercio'].map(function(s){
+          return '<option>'+s+'</option>'; }).join('')+'</select></div>'+
+      '<div class="field"><label class="f">Web o teléfono principal</label><input class="inp" placeholder="www.cliente.es"></div>'+
+      '<div class="field"><label class="f">Puntos de dolor detectados</label>'+
+        '<textarea class="inp" rows="3" placeholder="Llamadas perdidas, sin respuesta fuera de horario..."></textarea></div>'+
+      '<button class="btn btn-p" id="a-run" style="width:100%;justify-content:center">'+ic('bolt',15)+' Ejecutar análisis IA</button>'+
+      '<div class="card flat" style="margin-top:16px;padding:13px">'+
+        '<div class="tiny muted" style="margin-bottom:8px">Qué analiza el motor</div>'+
+        ['Llamadas perdidas y horario de atencion','Tiempo de respuesta a leads web',
+         'Presencia y reputación digital','Procesos administrativos repetitivos'].map(function(t){
+          return '<div class="row" style="margin-bottom:7px"><span style="color:#6EE7B7">'+ic('check',13)+'</span>'+
+            '<span class="tiny">'+esc(t)+'</span></div>'; }).join('')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+
+  q('#a-run').onclick=function(){
+    var c=q('#a-cli').value.trim();
+    if(!c){ toast('Introduce la empresa a auditar.'); return; }
+    DB.audits.unshift({id:'A-0'+(93+DB.audits.length-4), cli:c, sec:q('#a-sec').value,
+      score:35+Math.floor(Math.random()*40), ahorro:900+Math.floor(Math.random()*3000),
+      st:'En proceso', d:new Date().toLocaleDateString('es-ES')});
+    toast('Auditoría lanzada. El informe llegara al Back Office.'); renderApp();
+  };
+  qa('[data-rep]').forEach(function(b){ b.onclick=function(){ toast('Abriendo informe de '+b.dataset.rep); }; });
+}
+
+/* ------------------------------ 7. CLIENTES ----------------------------- */
+function viewClients(v){
+  var stChip={'Activo':'green','Onboarding':'blue','Riesgo':'amber','Cerrado':'red'};
+  var mrr = DB.clients.reduce(function(a,b){ return a+b.mrr; },0);
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    [['Clientes en cartera',String(DB.clients.length),'users','blue'],['MRR de cartera',eur(mrr),'euro','green'],
+     ['Satisfacción media','77%','spark','violet'],['En riesgo de baja','1','alert','red']].map(function(k){
+      return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+        '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+        '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+    '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Estado del ciclo de vida del cliente</h3>'+
+      '<p>Visión compartida entre comercial, jefe de equipo, back office y administración</p></div>'+
+      '<button class="btn btn-p btn-xs" id="c-new">'+ic('plus',14)+' Alta de cliente</button></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Cliente</th><th>Sector</th><th>Estado</th>'+
+      '<th>MRR</th><th>Alta</th><th>Gestor asignado</th><th style="width:150px">Satisfacción</th><th></th></tr></thead><tbody>'+
+      DB.clients.map(function(c){
+        return '<tr><td class="w">'+esc(c.n)+'</td><td class="muted">'+esc(c.sec)+'</td>'+
+          '<td><span class="chip '+stChip[c.st]+'">'+esc(c.st)+'</span></td>'+
+          '<td class="w">'+(c.mrr?eur(c.mrr)+'/mes':'-')+'</td><td class="muted">'+esc(c.alta)+'</td>'+
+          '<td class="muted">'+esc(c.ges)+'</td>'+
+          '<td><div class="row"><div class="bar" style="flex:1"><i style="width:'+c.sat+'%;background:'+
+            (c.sat>=80?'#10B981':c.sat>=60?'#F59E0B':'#EF4444')+'"></i></div><span class="tiny muted">'+c.sat+'</span></div></td>'+
+          '<td><button class="btn btn-s btn-xs" data-cli="'+esc(c.n)+'">Ficha</button></td></tr>'; }).join('')+
+    '</tbody></table></div></div>';
+  q('#c-new').onclick=function(){ toast('Ficha de alta creada en el Back Office.'); };
+  qa('[data-cli]').forEach(function(b){ b.onclick=function(){ toast('Abriendo ficha 360 de '+b.dataset.cli); }; });
+}
+
+/* ------------------------------ 8. CONTRATOS ---------------------------- */
+function viewContracts(v){
+  var stChip={'Activo':'green','Alta':'blue','Impago':'red','Cerrado':''};
+  var fChip={'Emitida':'green','Pendiente':'amber','Vencida':'red'};
+  var mrr = DB.contracts.filter(function(c){ return c.st==='Activo'; }).reduce(function(a,b){ return a+b.m; },0);
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    [['Contratos activos','34','file','blue'],['MRR facturado',eur(mrr),'euro','green'],
+     ['Facturas pendientes','2','clock','amber'],['Impagos','1','alert','red']].map(function(k){
+      return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+        '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+        '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">'+
+    '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Contratos y facturación</h3>'+
+      '<p>Ciclo de facturación recurrente de la cartera</p></div>'+
+      '<div class="row"><button class="btn btn-s btn-xs" id="ct-exp">'+ic('download',14)+' Exportar</button>'+
+      '<button class="btn btn-p btn-xs" id="ct-new">'+ic('plus',14)+' Nuevo contrato</button></div></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Contrato</th><th>Cliente</th><th>Servicio</th>'+
+      '<th>Implantación</th><th>Cuota</th><th>Estado</th><th>Factura</th><th>Próxima emisión</th></tr></thead><tbody>'+
+      DB.contracts.map(function(c){
+        return '<tr><td class="w">'+esc(c.id)+'</td><td>'+esc(c.cli)+'</td><td class="muted">'+esc(c.srv)+'</td>'+
+          '<td>'+eur(c.setup)+'</td><td class="w">'+(c.m?eur(c.m)+'/mes':'-')+'</td>'+
+          '<td><span class="chip '+stChip[c.st]+'">'+esc(c.st)+'</span></td>'+
+          '<td><span class="chip '+fChip[c.f]+'">'+esc(c.f)+'</span></td>'+
+          '<td class="muted">'+esc(c.next)+'</td></tr>'; }).join('')+
+    '</tbody></table></div></div>'+
+  '<div class="grid g-2">'+
+    '<div class="card"><div class="card-h"><div><h3>Facturación recurrente</h3>'+
+      '<p>Evolución del MRR consolidado</p></div><span class="chip green">+5,6%</span></div>'+
+      areaChart([9.2,10.1,11.4,12.2,13.6,14.1,15.3,16.2,17.1,18.4],{px:120,h:44,color:'#3B82F6'})+
+      '<div class="row" style="justify-content:space-between;margin-top:10px">'+
+        '<span class="tiny muted">Dic 2025</span><span class="tiny muted">Sep 2026</span></div></div>'+
+    '<div class="card"><div class="card-h"><div><h3>Estado de cobros</h3>'+
+      '<p>Sobre el total emitido este trimestre</p></div></div>'+
+      '<div class="row" style="gap:20px;align-items:center">'+donut(82,'#10B981',96,'82%')+
+      '<div class="rank" style="flex:1">'+
+        progressRow('Cobrado',82,100,'#10B981','82%')+
+        progressRow('Pendiente',13,100,'#F59E0B','13%')+
+        progressRow('Impagado',5,100,'#EF4444','5%')+
+      '</div></div></div>'+
+  '</div>';
+  q('#ct-new').onclick=function(){ toast('Contrato en borrador enviado a Back Office.'); };
+  q('#ct-exp').onclick=function(){ toast('Exportación CSV generada en el servidor.'); };
+}
+
+/* ------------------------------ 9. BACK OFFICE -------------------------- */
+function viewBackoffice(v){
+  var stChip=function(s){ return /impago|reclama/i.test(s)?'red':/cerrado|entregado/i.test(s)?'green':'blue'; };
+  v.innerHTML =
+  '<div class="card" style="margin-bottom:16px">'+
+    '<div class="card-h" style="margin:0"><div><h3>Back Office y tramitación de clientes</h3>'+
+      '<p>Control de estados, trazabilidad y repositorio documental por cliente.</p></div>'+
+      '<div class="row"><button class="btn btn-s btn-xs" id="bo-up">'+ic('upload',14)+' Subir documento</button>'+
+      '<button class="btn btn-p btn-xs" id="bo-new">'+ic('plus',14)+' Nuevo trámite</button></div></div>'+
+  '</div>'+
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    [['Trámites abiertos','4','case','blue'],['Documentos en repositorio','128','file','violet'],
+     ['SLA medio de respuesta','6 h','clock','green'],['Incidencias abiertas','1','alert','amber']].map(function(k){
+      return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+        '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+        '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="grid g-21" style="align-items:start">'+
+    '<div class="card" style="padding:0;overflow:hidden">'+
+      '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Expedientes en curso</h3>'+
+        '<p>Interaccion entre comercial, jefe de equipo, back office y administrador</p></div></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Cliente / Empresa</th><th>Estado del proyecto</th>'+
+        '<th>Último rol responsable</th><th>Documentación</th><th>Actualizado</th><th></th></tr></thead><tbody>'+
+        DB.trámites.map(function(t){
+          return '<tr><td class="w">'+esc(t.cli)+'</td>'+
+            '<td><span class="chip '+stChip(t.st)+'">'+esc(t.st)+'</span></td>'+
+            '<td class="muted">'+esc(t.role)+'</td>'+
+            '<td><a href="#" data-doc="'+esc(t.doc)+'">'+esc(t.doc)+'</a></td>'+
+            '<td class="muted">'+esc(t.upd)+'</td>'+
+            '<td><button class="btn btn-s btn-xs" data-man="'+esc(t.cli)+'">Gestionar</button></td></tr>'; }).join('')+
+      '</tbody></table></div></div>'+
+    '<div class="card"><div class="card-h"><div><h3>Reparto de carga por rol</h3>'+
+      '<p>Expedientes asignados</p></div></div>'+
+      '<div class="rank">'+
+        progressRow('Back Office',2,5,'#3B82F6','2')+
+        progressRow('Gestión Comercial',1,5,'#10B981','1')+
+        progressRow('Administrador',2,5,'#8B5CF6','2')+
+      '</div>'+
+      '<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">'+
+        '<div class="tiny muted" style="margin-bottom:10px">Últimas subidas al repositorio</div>'+
+        '<div class="tl">'+DB.trámites.slice(0,4).map(function(t){
+          return '<div class="tl-it"><div style="font-size:12.5px;color:#E2E8F0">'+esc(t.doc)+'</div>'+
+            '<div class="tiny muted">'+esc(t.cli)+' · '+esc(t.upd)+'</div></div>'; }).join('')+'</div>'+
+      '</div></div>'+
+  '</div>';
+  q('#bo-new').onclick=function(){ toast('Nuevo trámite creado y notificado al equipo.'); };
+  q('#bo-up').onclick=function(){ toast('Documento subido al repositorio del cliente.'); };
+  qa('[data-man]').forEach(function(b){ b.onclick=function(){ toast('Gestionando expediente de '+b.dataset.man); }; });
+  qa('[data-doc]').forEach(function(b){ b.onclick=function(e){ e.preventDefault(); toast('Descargando '+b.dataset.doc); }; });
+}
+
+/* ------------------------------ 10. VOZ Y WHATSAPP ---------------------- */
+function viewVoice(v){
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    [['Llamadas atendidas IA',num(1926),'phone','blue'],['Mensajes WhatsApp',num(9215),'chat','green'],
+     ['Citas generadas','284','calendar','violet'],['Coste por lead',eur(4),'euro','amber']].map(function(k){
+      return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+        '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+        '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="grid g-2" style="margin-bottom:16px">'+
+    '<div class="card"><div class="card-h"><div><h3>Volumen de conversaciones</h3>'+
+      '<p>Últimos 14 días · voz y mensajería</p></div><span class="chip green">+14,8%</span></div>'+
+      areaChart(DB.callSeries,{px:130,h:44,color:'#8B5CF6'})+'</div>'+
+    '<div class="card"><div class="card-h"><div><h3>Calidad de la conversación</h3>'+
+      '<p>Evaluación automática del motor IA</p></div></div>'+
+      '<div class="row" style="gap:22px;align-items:center">'+donut(89,'#10B981',100,'89%')+
+      '<div class="rank" style="flex:1">'+
+        progressRow('Resolución sin humano',89,100,'#10B981','89%')+
+        progressRow('Derivadas a comercial',9,100,'#3B82F6','9%')+
+        progressRow('Abandonadas',2,100,'#EF4444','2%')+
+      '</div></div></div>'+
+  '</div>'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+    '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Asistentes desplegados</h3>'+
+      '<p>Agentes de voz (VAPI/Twilio) y bots de WhatsApp por cliente</p></div>'+
+      '<button class="btn btn-p btn-xs" id="as-new">'+ic('plus',14)+' Desplegar asistente</button></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Asistente</th><th>Canal</th><th>Estado</th>'+
+      '<th>Interacciones</th><th style="width:170px">Tasa de éxito</th><th></th></tr></thead><tbody>'+
+      DB.assistants.map(function(a){
+        return '<tr><td class="w">'+esc(a.n)+'</td><td class="muted">'+esc(a.ch)+'</td>'+
+          '<td><span class="chip '+a.c+'">'+esc(a.st)+'</span></td><td>'+num(a.calls)+'</td>'+
+          '<td><div class="row"><div class="bar" style="flex:1"><i style="width:'+a.rate+'%;background:'+
+            (a.rate>=85?'#10B981':'#F59E0B')+'"></i></div><span class="tiny muted">'+a.rate+'%</span></div></td>'+
+          '<td><button class="btn btn-s btn-xs" data-as="'+esc(a.n)+'">'+ic('cog',13)+' Configurar</button></td></tr>';
+      }).join('')+'</tbody></table></div></div>';
+  q('#as-new').onclick=function(){ toast('Asistente en cola de despliegue sobre el nodo Hostalia.'); };
+  qa('[data-as]').forEach(function(b){ b.onclick=function(){ toast('Abriendo configuración de '+b.dataset.as); }; });
+}
+
+/* ------------------------------ 11. INTEGRACIONES ----------------------- */
+var INT = {mail:true, meta:true, vapi:true, meta_ads:false};
+function viewIntegrations(v){
+  var cards = [
+    {k:'mail', t:'Webmail Hostalia', ic:'mail', c:'blue',
+     d:'Sincronización IMAP/SMTP para recepcion de leads y envio de propuestas desde la identidad corporativa @labs24k.com.',
+     f:'Servidor: mail.labs24k.com'},
+    {k:'meta', t:'app.metatok.ai', ic:'globe', c:'violet',
+     d:'Conexión directa con la plataforma de campañas multicanal para volcado automatico de prospectos calificados al Back Office.',
+     f:'Endpoint: api.metatok.ai/v2'},
+    {k:'vapi', t:'VAPI / Twilio', ic:'mic', c:'green',
+     d:'Telefonía inteligente para los agentes de voz: numeración, grabación y transcripción automática de llamadas.',
+     f:'Números activos: 12'},
+    {k:'meta_ads', t:'Meta Business Suite', ic:'spark', c:'amber',
+     d:'Importación de formularios de Facebook e Instagram Lead Ads directamente al embudo de ventas.',
+     f:'Requiere token de acceso'}
+  ].map(function(x){
+    var on = INT[x.k];
+    return '<div class="card flat" style="display:flex;flex-direction:column;justify-content:space-between">'+
+      '<div><div class="row" style="justify-content:space-between;margin-bottom:14px">'+
+        '<div class="ico-box '+x.c+'" style="width:46px;height:46px">'+ic(x.ic,21)+'</div>'+
+        '<span class="chip '+(on?'green':'amber')+'">'+(on?'Conectado':'Desconectado')+'</span></div>'+
+      '<h4 style="margin:0 0 6px;font-size:15px;color:#fff">'+esc(x.t)+'</h4>'+
+      '<p class="small muted" style="margin:0">'+esc(x.d)+'</p></div>'+
+      '<div class="row" style="justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">'+
+        '<span class="tiny muted">'+esc(x.f)+'</span>'+
+        '<button class="btn btn-s btn-xs" data-int="'+x.k+'">'+ic('refresh',13)+' '+(on?'Reconfigurar':'Conectar')+'</button>'+
+      '</div></div>'; }).join('');
+
+  v.innerHTML =
+  '<div class="card" style="margin-bottom:16px"><div class="card-h" style="margin:0">'+
+    '<div><h3>Conexiones y pasarelas externas</h3>'+
+    '<p>Sincroniza el correo corporativo de Hostalia y las herramientas de automatización de MetaTok.ai.</p></div>'+
+    '<span class="pill-live"><span class="blip"></span>3 de 4 activas</span></div></div>'+
+  '<div class="grid g-2" style="margin-bottom:16px">'+cards+'</div>'+
+  '<div class="grid g-2">'+
+    '<div class="card"><div class="card-h"><div><h3>Bandeja corporativa</h3>'+
+      '<p>Últimos correos entrantes de mail.labs24k.com</p></div></div>'+
+      '<div class="stack">'+[
+        ['Solicitud de información - Notaría Centro','hace 20 min','blue'],
+        ['Respuesta propuesta P-2026-117','hace 2 h','green'],
+        ['Lead MetaTok: Cerrajería Express','hace 3 h','violet'],
+        ['Aviso de renovación C-0340','ayer','amber']].map(function(m){
+        return '<div class="row" style="gap:12px"><div class="ico-box '+m[2]+'" style="width:32px;height:32px">'+ic('mail',14)+'</div>'+
+          '<div style="flex:1;min-width:0"><div class="small trunc" style="color:#E2E8F0">'+esc(m[0])+'</div>'+
+          '<div class="tiny muted">'+esc(m[1])+'</div></div></div>'; }).join('')+'</div></div>'+
+    '<div class="card"><div class="card-h"><div><h3>Registro de sincronización</h3>'+
+      '<p>Actividad de las APIs conectadas</p></div></div>'+
+      '<div class="tl">'+[
+        ['MetaTok: 14 leads importados al embudo','hace 8 min','g'],
+        ['VAPI: 32 llamadas transcritas','hace 25 min',''],
+        ['Webmail: 6 propuestas enviadas','hace 1 h',''],
+        ['Meta Business Suite: token caducado','hace 2 h','a']].map(function(t){
+        return '<div class="tl-it '+t[2]+'"><div style="font-size:12.5px;color:#E2E8F0">'+esc(t[0])+'</div>'+
+          '<div class="tiny muted">'+esc(t[1])+'</div></div>'; }).join('')+'</div></div>'+
+  '</div>';
+
+  qa('[data-int]').forEach(function(b){ b.onclick=function(){
+    var k=b.dataset.int; INT[k]=!INT[k];
+    toast(INT[k]?'Integración conectada correctamente.':'Integración desconectada.'); renderApp(); }; });
+}
+
+/* ------------------------------ 12. CONFIGURACION ----------------------- */
+function viewSettings(v){
+  v.innerHTML =
+  '<div class="grid g-sideR" style="align-items:start">'+
+    '<div class="card">'+
+      '<div class="card-h"><div><h3>Configuración de cuenta personal</h3>'+
+        '<p>Actualiza tus credenciales corporativas y los datos visibles en la red comercial.</p></div></div>'+
+      '<div class="grid g-2">'+
+        '<div class="field"><label class="f">Nombre completo (obligatorio en tarjeta)</label>'+
+          '<input class="inp" id="s-name" value="'+esc(S.name)+'"></div>'+
+        '<div class="field"><label class="f">Teléfono de contacto (obligatorio en tarjeta)</label>'+
+          '<input class="inp" id="s-phone" value="'+esc(S.phone)+'"></div>'+
+      '</div>'+
+      '<div class="field"><label class="f">Correo corporativo</label>'+
+        '<input class="inp" id="s-mail" value="'+esc(S.email)+'"></div>'+
+      '<div class="grid g-2">'+
+        '<div class="field"><label class="f">Perfil de acceso</label>'+
+          '<select class="inp" id="s-role">'+Object.keys(ROLES).map(function(k){
+            return '<option value="'+k+'"'+(S.role===k?' selected':'')+'>'+ROLES[k].label+'</option>'; }).join('')+
+          '</select></div>'+
+        '<div class="field"><label class="f">Delegación</label>'+
+          '<select class="inp"><option>Asturias</option><option>Madrid</option><option>Cataluña</option></select></div>'+
+      '</div>'+
+      '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px">'+
+        '<button class="btn btn-s" id="s-cancel">Cancelar</button>'+
+        '<button class="btn btn-p" id="s-save">'+ic('save',15)+' Guardar cambios</button></div>'+
+    '</div>'+
+    '<div class="stack">'+
+      '<div class="card"><div class="card-h"><div><h3>Tarjeta de la red</h3>'+
+        '<p>Así te ven los compañeros y el cliente</p></div></div>'+
+        '<div class="card flat" style="text-align:center;padding:22px">'+
+          '<div class="avatar" style="width:62px;height:62px;font-size:22px;margin:0 auto 12px">'+esc(S.name.charAt(0).toUpperCase())+'</div>'+
+          '<div style="font-size:16px;font-weight:600;color:#fff">'+esc(S.name)+'</div>'+
+          '<div class="small muted">'+esc(ROLES[S.role].label)+' · Labs24k</div>'+
+          '<div class="row" style="justify-content:center;gap:8px;margin-top:12px">'+
+            '<span class="chip blue">'+ic('phone',12)+' '+esc(S.phone)+'</span></div>'+
+          '<div class="tiny muted" style="margin-top:8px">'+esc(S.email)+'</div>'+
+        '</div></div>'+
+      '<div class="card"><div class="card-h"><div><h3>Seguridad y avisos</h3>'+
+        '<p>Preferencias de la cuenta</p></div></div>'+
+        '<div class="stack">'+[
+          ['Verificación en dos pasos','Activa',true],
+          ['Avisos de nuevos leads','Activos',true],
+          ['Resumen diario por correo','Activo',true],
+          ['Acceso desde IP externa','Restringido',false]].map(function(r){
+          return '<div class="row" style="justify-content:space-between">'+
+            '<span class="small">'+esc(r[0])+'</span>'+
+            '<span class="chip '+(r[2]?'green':'amber')+'">'+esc(r[1])+'</span></div>'; }).join('')+
+        '</div></div>'+
+    '</div>'+
+  '</div>';
+
+  q('#s-save').onclick=function(){
+    S.name=q('#s-name').value.trim()||S.name;
+    S.phone=q('#s-phone').value.trim()||S.phone;
+    S.email=q('#s-mail').value.trim()||S.email;
+    S.role=q('#s-role').value;
+    toast('Datos actualizados correctamente en el servidor.'); renderApp();
+  };
+  q('#s-cancel').onclick=function(){ renderApp(); };
+}
+
+/* Activa con teclado (Enter/Espacio) las tarjetas clicables marcadas role="button" */
+document.addEventListener('keydown', function(e){
+  if((e.key==='Enter'||e.key===' ') && e.target && e.target.getAttribute && e.target.getAttribute('role')==='button'){
+    e.preventDefault(); e.target.click();
+  }
+});
+
+/* ------------------------------ INICIO ---------------------------------- */
+document.addEventListener('DOMContentLoaded', boot);
+
+/* ==========================================================================
+   MODULO AVANZADO: PRESUPUESTOS Y CATALOGO DE PACKS / SERVICIOS
+   Labs24k · Grupo Evolvix Global SL
+   Estructura del documento tomada de la propuesta real EXP-2026-FISIOENMISMANOS
+   ========================================================================== */
+
+/* ---------------------------- CATALOGO OFICIAL --------------------------- */
+var CATALOGO = [
+  { g:'Packs comerciales', items:[
+    {id:'pack_voice', n:'Pack Agente de Voz IA (VAPI + Twilio)', cat:'Atención y cualificación', code:'VOZ',
+     p:1800, m:400, d:'Agente de voz autónomo conversacional para llamadas salientes y entrantes con integración CRM.'},
+    {id:'pack_whatsapp', n:'Pack Automatización WhatsApp y MetaTok', cat:'Captación multicanal', code:'WSP',
+     p:1200, m:250, d:'Bots conversacionales de alta conversión integrados con app.metatok.ai y flujos Make/n8n.'},
+    {id:'pack_command', n:'Labs Command Center 360™ (SaaS integral)', cat:'Oficina virtual completa', code:'360',
+     p:3000, m:600, d:'Suite de gestión comercial, back office, auditorías IA y seguimiento de expedientes.'},
+    {id:'pack_audit', n:'Auditoría Tecnológica y de Procesos IA', cat:'Consultoría estratégica', code:'AUD',
+     p:900, m:0, d:'Análisis profundo de flujos de negocio inmobiliario, clínico o de despachos con plan de automatización.'}
+  ]},
+  { g:'Módulos técnicos de ingeniería', items:[
+    {id:'mod_voice', n:'Agente de Voz Humanoide (IA Voice Agent)', cat:'Ingeniería de voz', code:'VOZ',
+     p:1100, m:0, d:'Despliegue de asistente de voz con procesamiento de lenguaje natural para la atención telefónica 24/7: recordatorio de citas, cualificación de nuevas consultas y gestión de llamadas sin intervención humana.'},
+    {id:'mod_calib', n:'Configuración y Calibración de Voz AI', cat:'Ingeniería de voz', code:'VOZ',
+     p:300, m:0, d:'Modelado acústico profesional y personalización de la voz del asistente, con entonación natural y cercana, adecuada para el trato con el cliente final.'},
+    {id:'mod_wa_citas', n:'Asistente de WhatsApp para Gestión de Citas', cat:'Mensajería', code:'WSP',
+     p:700, m:0, d:'Recordatorio automático 24 h antes de cada cita. Si el cliente indica que quiere cambiar fecha u hora, el asistente detecta la solicitud y deriva la conversación al responsable para su gestión personal.'},
+    {id:'mod_wa_api', n:'Conectividad Oficial WhatsApp Business API', cat:'Infraestructura', code:'WSP',
+     p:300, m:0, d:'Integración y alta de la API oficial de Meta para garantizar comunicaciones directas y estables, con exclusión absoluta de riesgos de bloqueo de la cuenta.'},
+    {id:'mod_crm', n:'Integración CRM y volcado de leads', cat:'Infraestructura', code:'CRM',
+     p:450, m:0, d:'Sincronización bidireccional de contactos, citas y estados con el CRM del cliente o con el Command Center 360™.'},
+    {id:'mod_rgpd', n:'Encargado de tratamiento y adecuación RGPD', cat:'Cumplimiento', code:'RGPD',
+     p:150, m:0, d:'Contrato de encargado de tratamiento específico, registro de actividades y textos legales conforme a RGPD y LOPDGDD.'}
+  ]},
+  { g:'Servicios recurrentes', items:[
+    {id:'rec_soporte', n:'Soporte y Mantenimiento Tecnológico Continuo', cat:'Recurrente', code:'SOP',
+     p:0, m:180, d:'Infraestructura, monitorización de agentes, ajuste de guiones y mejoras continuas del sistema.'},
+    {id:'rec_optim', n:'Optimización mensual de conversión', cat:'Recurrente', code:'OPT',
+     p:0, m:120, d:'Revisión de métricas de conversación, ajustes de guion y reporte mensual de resultados al cliente.'}
+  ]}
+];
+
+/* Estado del presupuesto avanzado */
+var PRE = {
+  tab:'propuesta',
+  sel:{mod_voice:1, mod_calib:1, mod_wa_citas:1, mod_wa_api:1},
+  cliente:'', atencion:'', email:'', tel:'',
+  titulo:'', desc:0, iva:21,
+  iban:'ES73 3007 0100 1221 4290 7613',
+  hito:50,
+  num:118
+};
+
+function eur2(n){ return new Intl.NumberFormat('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:true}).format(n)+' €'; }
+function allItems(){ var r=[]; CATALOGO.forEach(function(g){ r=r.concat(g.items); }); return r; }
+function selLines(){ return allItems().filter(function(i){ return PRE.sel[i.id]; }); }
+function preTotales(){
+  var L = selLines();
+  var base = L.reduce(function(a,b){ return a+b.p; },0);
+  var mens = L.reduce(function(a,b){ return a+b.m; },0);
+  var dto = base*(PRE.desc/100);
+  var sub = base-dto;
+  var iva = sub*(PRE.iva/100);
+  return {L:L, base:base, mens:mens, dto:dto, sub:sub, iva:iva, tot:sub+iva};
+}
+function preCodigo(){
+  var cli = (PRE.cliente||'CLIENTE').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Z0-9]/g,'').slice(0,18);
+  var codes = []; selLines().forEach(function(i){ if(codes.indexOf(i.code)<0) codes.push(i.code); });
+  return 'EXP-2026-'+cli+'-'+(codes.join('')||'GEN');
+}
+function preTitulo(){
+  if(PRE.titulo) return PRE.titulo;
+  var c = selLines().map(function(i){ return i.code; });
+  var voz = c.indexOf('VOZ')>-1, wsp = c.indexOf('WSP')>-1, tri = c.indexOf('360')>-1;
+  if(voz&&wsp) return 'Propuesta de automatización de la gestión de citas · Asistente de voz IA + asistente de WhatsApp';
+  if(voz) return 'Propuesta de automatización telefónica · Asistente de voz IA';
+  if(wsp) return 'Propuesta de automatización de mensajería · Asistente de WhatsApp';
+  if(tri) return 'Propuesta de implantación · Labs Command Center 360™';
+  return 'Propuesta de automatización e inteligencia artificial aplicada';
+}
+
+/* ------------------------------ VISTA ----------------------------------- */
+function viewQuotes(v){
+  var T = preTotales();
+  var hoy = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  /* --- catalogo lateral --- */
+  var catalogo = CATALOGO.map(function(g){
+    return '<div class="nav-sec" style="padding:14px 2px 8px">'+esc(g.g)+'</div>'+
+      g.items.map(function(it){
+        var on = !!PRE.sel[it.id];
+        return '<div class="pack'+(on?' on':'')+'" data-pack="'+it.id+'" role="button" tabindex="0" aria-pressed="'+(on?'true':'false')+'" aria-label="'+(on?'Quitar':'Añadir')+' '+esc(it.n)+'">'+
+          '<div class="row" style="justify-content:space-between;margin-bottom:7px">'+
+            '<span class="chip blue tiny">'+esc(it.cat)+'</span>'+
+            (on?'<span style="color:#3B82F6">'+ic('check',16)+'</span>':'<span class="muted">'+ic('plus',16)+'</span>')+
+          '</div>'+
+          '<div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:4px">'+esc(it.n)+'</div>'+
+          '<p class="tiny muted clamp2" style="margin:0 0 10px">'+esc(it.d)+'</p>'+
+          '<div class="row" style="justify-content:space-between;padding-top:9px;border-top:1px solid var(--line)">'+
+            (it.p?'<span class="tiny muted">Setup <strong style="color:#fff">'+eur(it.p)+'</strong></span>':'<span class="tiny muted">Sin setup</span>')+
+            (it.m?'<span class="tiny muted">Mensual <strong style="color:#6EE7B7">'+eur(it.m)+'/mes</strong></span>':'')+
+          '</div></div>';
+      }).join('');
+  }).join('');
+
+  /* --- lineas del documento --- */
+  var filas = T.L.length ? T.L.map(function(it,i){
+    return '<tr><td style="width:26%"><span class="w">'+(i+1)+'. '+esc(it.n)+'</span></td>'+
+      '<td class="muted" style="font-size:12px">'+esc(it.d)+'</td>'+
+      '<td class="w" style="text-align:right;white-space:nowrap">'+(it.p?eur2(it.p):'—')+'</td>'+
+      '<td class="rec" style="text-align:right;white-space:nowrap">'+(it.m?eur2(it.m)+'/mes':'—')+'</td>'+
+      '<td class="no-print" style="text-align:right"><button class="btn btn-s btn-xs" data-del="'+it.id+'" aria-label="Eliminar '+esc(it.n)+' de la propuesta">'+ic('x',12)+'</button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="muted" style="text-align:center;padding:26px">Selecciona packs o módulos del catálogo para componer la propuesta.</td></tr>';
+
+  /* --- documento propuesta --- */
+  var propuesta =
+  '<div class="doc pdf">'+
+    '<div class="doc-top">'+
+      '<div><div class="doc-brand">LABS<span>24K</span></div>'+
+        '<div class="tiny muted">Grupo Evolvix Global SL · CIF B21779673</div></div>'+
+      '<div style="text-align:right"><div class="doc-kicker">PROPUESTA COMERCIAL</div>'+
+        '<div class="tiny muted">Ingeniería, Automatización e Inteligencia Artificial aplicada</div></div>'+
+    '</div>'+
+
+    '<h1 class="doc-title">'+esc(preTitulo())+'</h1>'+
+
+    '<div class="doc-meta">'+
+      '<div><span class="k">Preparado para</span><span class="v">'+esc(PRE.cliente||'[Nombre / empresa cliente]')+'</span></div>'+
+      '<div><span class="k">A la atención de</span><span class="v">'+esc(PRE.atencion||'[Persona de contacto]')+'</span></div>'+
+      '<div><span class="k">Fecha de emisión</span><span class="v">'+hoy+'</span></div>'+
+      '<div><span class="k">Código de documento</span><span class="v mono">'+esc(preCodigo())+'</span></div>'+
+    '</div>'+
+
+    '<div class="doc-parties">'+
+      '<div><span class="k">Emitido por (gestor comercial)</span>'+
+        '<div class="v big">'+esc(S.name)+'</div>'+
+        '<div class="tel">'+ic('phone',12)+' '+esc(S.phone)+'</div>'+
+        '<div class="tiny muted">'+esc(S.email)+' · admin@labs24k.com</div></div>'+
+      '<div><span class="k">Cliente destinatario</span>'+
+        '<div class="v big">'+esc(PRE.cliente||'[Nombre / empresa cliente]')+'</div>'+
+        '<div class="tiny muted">'+esc(PRE.email||'[correo de contacto]')+(PRE.tel?' · '+esc(PRE.tel):'')+'</div>'+
+        '<div class="tiny rec" style="margin-top:3px">Estado: propuesta comercial activa</div></div>'+
+    '</div>'+
+
+    '<div class="doc-hero">'+
+      '<div class="tiny" style="letter-spacing:.14em">★ INVERSIÓN TOTAL DEL PROYECTO ★</div>'+
+      '<div class="amount">'+eur2(T.sub)+' + IVA</div>'+
+      '<div class="tiny muted">'+(T.L.length||'0')+' módulos incluidos'+(T.mens?' · '+eur2(T.mens)+'/mes de servicio recurrente':'')+'</div>'+
+    '</div>'+
+
+    '<div class="doc-sec"><span class="n">1</span> Servicios incluidos</div>'+
+    '<div style="overflow-x:auto"><table class="tbl doc-tbl"><thead><tr>'+
+      '<th>Módulo técnico de ingeniería</th><th>Especificaciones del entregable e impacto comercial</th>'+
+      '<th style="text-align:right">Inversión neta</th><th style="text-align:right">Recurrente</th><th class="no-print"></th>'+
+    '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+
+    '<div class="doc-sec"><span class="n">2</span> Resumen de inversión y liquidación económica</div>'+
+    '<div class="doc-sum">'+
+      '<div class="l"><span>Subtotal (base imponible)</span><span>'+eur2(T.base)+'</span></div>'+
+      (PRE.desc?'<div class="l"><span>Descuento comercial ('+PRE.desc+'%)</span><span class="rec">-'+eur2(T.dto)+'</span></div>'+
+                '<div class="l"><span>Base imponible líquida</span><span>'+eur2(T.sub)+'</span></div>':'')+
+      '<div class="l"><span>I.V.A. aplicable ('+PRE.iva+'%)</span><span>'+eur2(T.iva)+'</span></div>'+
+      '<div class="l tot"><span>TOTAL A PAGAR</span><span>'+eur2(T.tot)+'</span></div>'+
+      (T.mens?'<div class="l"><span>Servicio recurrente mensual (facturación aparte)</span>'+
+        '<span class="rec">'+eur2(T.mens)+' /mes</span></div>':'')+
+    '</div>'+
+
+    '<div class="doc-box">'+
+      '<div class="bt">Hitos de pago y activación del proyecto</div>'+
+      '<div class="li">Pago inicial de activación: <strong>'+PRE.hito+'%</strong> a la aceptación del presupuesto ('+
+        eur2(T.sub*PRE.hito/100)+' + IVA = '+eur2(T.tot*PRE.hito/100)+').</div>'+
+      '<div class="li">Pago final de entrega: <strong>'+(100-PRE.hito)+'%</strong> restante a la entrega y verificación de los flujos ('+
+        eur2(T.sub*(100-PRE.hito)/100)+' + IVA = '+eur2(T.tot*(100-PRE.hito)/100)+').</div>'+
+      '<div class="li">Método de transferencia: abono directo en cuenta bancaria IBAN <span class="mono">'+esc(PRE.iban)+'</span>.</div>'+
+    '</div>'+
+
+    '<div class="doc-note">Sobre la Ley de Protección de Datos: el sistema se configura conforme al RGPD y la LOPDGDD, tratando los datos de los clientes finales con la debida diligencia. Cuando se trate de datos de salud, se formalizará un contrato de encargado de tratamiento específico junto con el contrato de servicios.</div>'+
+
+    '<div class="doc-sec"><span class="n">3</span> ¿Por qué confiar en Labs24k?</div>'+
+    '<div class="doc-why">'+[
+      ['Doble canal 24/7','Voz y WhatsApp cubriendo cada contacto, día y noche.'],
+      ['Tú mantienes el control','Los cambios y excepciones siempre pasan por ti.'],
+      ['Cumplimiento RGPD','Datos tratados con la debida diligencia desde el diseño.'],
+      ['Puesta en marcha ágil','Sistema operativo en pocos días, no en meses.']
+    ].map(function(w){ return '<div><div class="ok">'+ic('check',16)+'</div><div class="t">'+esc(w[0])+'</div>'+
+      '<div class="tiny muted">'+esc(w[1])+'</div></div>'; }).join('')+'</div>'+
+
+    '<div class="doc-sign">'+
+      '<div><span class="k">Aceptado y conforme</span><div class="line"></div>'+
+        '<div class="v">'+esc(PRE.cliente||'[Cliente]')+(PRE.atencion?' ('+esc(PRE.atencion)+')':'')+'</div>'+
+        '<div class="tiny muted">Fecha: ____ / ____ / 2026</div></div>'+
+      '<div><span class="k">Aprobado por dirección</span><div class="line"></div>'+
+        '<div class="v">Ingeniería · Labs24k</div>'+
+        '<div class="tiny muted">Fecha: '+hoy+'</div></div>'+
+    '</div>'+
+    '<div class="doc-foot">Los costes variables de uso de servidores, tokens o inversión publicitaria corren a cargo del cliente de forma independiente al desarrollo técnico. · Labs24k · Propuesta comercial confidencial</div>'+
+  '</div>';
+
+  /* --- hoja de ruta --- */
+  var codes = T.L.map(function(i){ return i.code; });
+  var hasVoz = codes.indexOf('VOZ')>-1, hasWsp = codes.indexOf('WSP')>-1;
+  var canal = hasVoz&&hasWsp ? 'los dos canales' : hasVoz ? 'el canal de voz' : hasWsp ? 'el canal de WhatsApp' : 'el sistema';
+  var semanas = [
+    {n:1, t:'Estrategia y guion', s:'Sentamos las bases de cómo hablará el sistema con cada cliente final.',
+     l:['Kick-off y toma de datos del negocio y de la cartera de contactos',
+        'Guion y tono de '+canal,
+        'Diseño del flujo de recordatorio 24 h y detección de cambios',
+        'Mapa de escalado directo al responsable para reprogramaciones'],
+     r:'Guion y flujo aprobados'},
+    {n:2, t:'Programación y conexión', s:'La parte técnica cobra vida en '+canal+' al mismo tiempo.',
+     l:(hasVoz?['Programación y entrenamiento del asistente de voz']:[])
+        .concat(hasWsp?['Entrenamiento del asistente de WhatsApp para gestión de citas','Conexión oficial WhatsApp Business API']:[])
+        .concat(['Configuración de recordatorios automáticos 24 h antes de cada cita']),
+     r:'Sistema conectado y operativo en pruebas'},
+    {n:3, t:'Pruebas, ajustes y lanzamiento', s:'Se somete todo a prueba real antes de hablar con el primer cliente de verdad.',
+     l:['Pruebas end-to-end: llamadas reales y conversaciones de prueba',
+        'Corrección de errores y ajuste de respuestas',
+        'Revisión y aprobación final con '+(PRE.atencion||'el responsable'),
+        'Lanzamiento oficial del sistema en producción'],
+     r:'Proyecto en directo'}
+  ];
+  var ruta =
+  '<div class="doc pdf">'+
+    '<div class="doc-top"><div><div class="doc-brand">LABS<span>24K</span></div>'+
+      '<div class="tiny muted">Grupo Evolvix Global SL</div></div>'+
+      '<div style="text-align:right"><div class="doc-kicker">HOJA DE RUTA · 3 SEMANAS</div>'+
+      '<div class="tiny muted">Plazos orientativos según disponibilidad de accesos</div></div></div>'+
+    '<h1 class="doc-title">De la primera llamada a la cita confirmada, en 3 semanas</h1>'+
+    '<p class="doc-lead">Un asistente de voz y un asistente de WhatsApp trabajando juntos para que ningún cliente de '+
+      esc(PRE.cliente||'[cliente]')+' se quede sin su recordatorio de cita — y para que '+
+      esc(PRE.atencion||'el responsable')+' siga teniendo la última palabra en cada cambio.</p>'+
+    '<div class="doc-meta"><div><span class="k">Preparado para</span><span class="v">'+esc(PRE.cliente||'[cliente]')+'</span></div>'+
+      '<div><span class="k">A la atención de</span><span class="v">'+esc(PRE.atencion||'[contacto]')+'</span></div>'+
+      '<div><span class="k">Gestor</span><span class="v">'+esc(S.name)+'</span></div>'+
+      '<div><span class="k">Teléfono</span><span class="v">'+esc(S.phone)+'</span></div></div>'+
+    '<div class="grid g-3" style="margin:20px 0">'+semanas.map(function(w){
+      return '<div class="week"><div class="wh"><span class="wn">'+w.n+'</span><div>'+
+        '<div class="tiny muted">SEMANA '+w.n+'</div><div class="wt">'+esc(w.t)+'</div></div></div>'+
+        '<p class="tiny muted">'+esc(w.s)+'</p>'+
+        w.l.map(function(x){ return '<div class="wl">'+ic('check',13)+'<span>'+esc(x)+'</span></div>'; }).join('')+
+        '<div class="wr">→ '+esc(w.r)+'</div></div>'; }).join('')+'</div>'+
+    '<div class="grid g-2">'+
+      '<div class="doc-box"><div class="bt">Prueba, error y ajuste: un hilo continuo, no un paso final</div>'+
+        '<div class="li">Desde la semana 2 cada pieza se revisa según se construye: llamadas de prueba y envíos de test. Los errores se corrigen antes de la semana 3, reservada al pulido final y al lanzamiento.</div></div>'+
+      '<div class="doc-box"><div class="bt">Cumplimiento RGPD desde el diseño</div>'+
+        '<div class="li">Los datos se tratan con la debida diligencia desde el primer día. Se formaliza un contrato de encargado de tratamiento junto con el contrato de servicios.</div>'+
+        '<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">'+
+        ['RGPD','LOPDGDD','WhatsApp Business API','Voz IA'].map(function(b){ return '<span class="chip">'+b+'</span>'; }).join('')+
+        '</div></div>'+
+    '</div>'+
+    '<div class="doc-foot">Labs24k · Grupo Evolvix Global SL — Hoja de ruta orientativa; los plazos pueden ajustarse según la disponibilidad de accesos y contenidos del cliente.</div>'+
+  '</div>';
+
+  /* --- montaje --- */
+  v.innerHTML =
+  '<div class="grid g-sideL" style="align-items:start">'+
+    '<div class="stack no-print">'+
+      '<div class="card">'+
+        '<div class="card-h" style="margin:0"><div><h3>'+ic('dashboard',16)+'Catálogo de packs y servicios</h3>'+
+          '<p>Pulsa para añadir o quitar líneas de la propuesta.</p></div></div>'+
+        '<div class="row" style="gap:8px;margin-top:12px">'+
+          '<span class="chip blue">'+T.L.length+' líneas</span>'+
+          '<span class="chip green">'+eur(T.base)+'</span>'+
+          '<button class="btn btn-s btn-xs" id="p-clear" style="margin-left:auto">Vaciar</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:14px"><div class="pack-list">'+catalogo+'</div></div>'+
+      '<div class="card flat" style="padding:14px">'+
+        '<div class="tiny muted">Comisión estimada del gestor (8% sobre base)</div>'+
+        '<div style="font-size:20px;font-weight:700;color:#6EE7B7">'+eur(T.sub*0.08)+'</div></div>'+
+    '</div>'+
+
+    '<div class="stack">'+
+      '<div class="card no-print">'+
+        '<div class="card-h"><div><h3>Datos de la propuesta</h3>'+
+          '<p>Se imprimen en la cabecera del documento</p></div>'+
+          '<div class="row"><button class="btn btn-s btn-xs'+(PRE.tab==='propuesta'?' on-tab':'')+'" data-tab="propuesta">Propuesta</button>'+
+          '<button class="btn btn-s btn-xs'+(PRE.tab==='ruta'?' on-tab':'')+'" data-tab="ruta">Hoja de ruta</button></div></div>'+
+        '<div class="grid g-2">'+
+          '<div class="field"><label class="f">Nombre / empresa cliente</label>'+
+            '<input class="inp" id="p-cli" value="'+esc(PRE.cliente)+'" placeholder="Ej. Fisio En Mis Manos"></div>'+
+          '<div class="field"><label class="f">A la atención de</label>'+
+            '<input class="inp" id="p-at" value="'+esc(PRE.atencion)+'" placeholder="Ej. Juan Pablo (Gerente)"></div>'+
+          '<div class="field"><label class="f">Correo de contacto</label>'+
+            '<input class="inp" id="p-mail" value="'+esc(PRE.email)+'" placeholder="contacto@cliente.es"></div>'+
+          '<div class="field"><label class="f">Teléfono del cliente</label>'+
+            '<input class="inp" id="p-tel" value="'+esc(PRE.tel)+'" placeholder="+34 ..."></div>'+
+        '</div>'+
+        '<div class="field"><label class="f">Título del documento (vacío = automático)</label>'+
+          '<input class="inp" id="p-tit" value="'+esc(PRE.titulo)+'" placeholder="'+esc(preTitulo())+'"></div>'+
+        '<div class="grid g-4">'+
+          '<div class="field"><label class="f">Descuento (%)</label>'+
+            '<input class="inp" type="number" id="p-desc" value="'+PRE.desc+'"></div>'+
+          '<div class="field"><label class="f">IVA (%)</label>'+
+            '<input class="inp" type="number" id="p-iva" value="'+PRE.iva+'"></div>'+
+          '<div class="field"><label class="f">Primer hito (%)</label>'+
+            '<input class="inp" type="number" id="p-hito" value="'+PRE.hito+'"></div>'+
+          '<div class="field"><label class="f">IBAN de cobro</label>'+
+            '<input class="inp" id="p-iban" value="'+esc(PRE.iban)+'"></div>'+
+        '</div>'+
+        '<div class="row" style="justify-content:flex-end;gap:10px">'+
+          '<button class="btn btn-s" id="p-pdf">'+ic('download',15)+' Descargar PDF oficial</button>'+
+          '<button class="btn btn-g" id="p-send">'+ic('send',15)+' Registrar y enviar a Back Office</button></div>'+
+      '</div>'+
+      (PRE.tab==='propuesta'?propuesta:ruta)+
+      '<div class="card no-print" style="padding:0;overflow:hidden">'+
+        '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Presupuestos registrados</h3>'+
+          '<p>Histórico de la red comercial</p></div></div>'+
+        '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Referencia</th><th>Cliente</th>'+
+          '<th>Servicio</th><th>Importe</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>'+
+          DB.quotes.map(function(x){
+            var cc = {'Enviado':'blue','Aceptado':'green','En revisión':'amber','Rechazado':'red'}[x.st]||'';
+            return '<tr><td class="w">'+esc(x.id)+'</td><td>'+esc(x.cli)+'</td><td class="muted">'+esc(x.srv)+'</td>'+
+              '<td class="w">'+eur(x.v)+'</td><td class="muted">'+esc(x.d)+'</td>'+
+              '<td><span class="chip '+cc+'">'+esc(x.st)+'</span></td></tr>'; }).join('')+
+        '</tbody></table></div></div>'+
+    '</div>'+
+  '</div>';
+
+  /* --- eventos --- */
+  function redraw(){ setTimeout(renderApp, 0); }
+  qa('[data-pack]').forEach(function(b){ b.onclick=function(){
+    var id=b.dataset.pack; if(PRE.sel[id]) delete PRE.sel[id]; else PRE.sel[id]=1; renderApp(); }; });
+  qa('[data-del]').forEach(function(b){ b.onclick=function(){ delete PRE.sel[b.dataset.del]; renderApp(); }; });
+  qa('[data-tab]').forEach(function(b){ b.onclick=function(){ PRE.tab=b.dataset.tab; renderApp(); }; });
+  q('#p-clear').onclick=function(){ PRE.sel={}; renderApp(); };
+  q('#p-cli').onchange=function(){ PRE.cliente=this.value; redraw(); };
+  q('#p-at').onchange=function(){ PRE.atencion=this.value; redraw(); };
+  q('#p-mail').onchange=function(){ PRE.email=this.value; redraw(); };
+  q('#p-tel').onchange=function(){ PRE.tel=this.value; redraw(); };
+  q('#p-tit').onchange=function(){ PRE.titulo=this.value; redraw(); };
+  q('#p-desc').onchange=function(){ PRE.desc=Math.min(100,Math.max(0,Number(this.value)||0)); redraw(); };
+  q('#p-iva').onchange=function(){ PRE.iva=Math.max(0,Number(this.value)||0); redraw(); };
+  q('#p-hito').onchange=function(){ PRE.hito=Math.min(100,Math.max(0,Number(this.value)||0)); redraw(); };
+  q('#p-iban').onchange=function(){ PRE.iban=this.value; redraw(); };
+  q('#p-pdf').onclick=function(){
+    if(!T.L.length){ toast('Añade al menos un servicio del catálogo.'); return; }
+    window.print();
+  };
+  q('#p-send').onclick=function(){
+    if(!PRE.cliente){ toast('Indica el nombre del cliente antes de registrar.'); return; }
+    if(!T.L.length){ toast('Añade al menos un servicio del catálogo.'); return; }
+    PRE.num++;
+    DB.quotes.unshift({id:'P-2026-'+PRE.num, cli:PRE.cliente,
+      srv:T.L.length+' módulos · '+(T.L[0].code==='VOZ'?'Voz IA':'Automatización'),
+      v:T.tot, st:'Enviado', d:new Date().toLocaleDateString('es-ES')});
+    toast('Presupuesto '+preCodigo()+' registrado y enviado a Back Office.');
+    renderApp();
+  };
+}
+
+</script>
+</body>
+</html>
