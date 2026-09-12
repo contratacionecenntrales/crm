@@ -1,0 +1,107 @@
+==============================================================
+  LABS COMMAND CENTER 360 - INSTALACION EN HOSTALIA
+==============================================================
+
+QUE PASO CON EL ERROR 500
+-------------------------
+El error NO estaba en la aplicacion, sino en el archivo .htaccess
+anterior. Llevaba directivas de seguridad (RequestReadTimeout,
+Options, ServerSignature, LimitRequestBody) que Hostalia no permite
+usar dentro de un .htaccess en alojamiento compartido. Apache las
+rechaza y devuelve error 500 antes incluso de leer el index.html.
+
+Este paquete lleva un .htaccess reescrito con solo directivas
+permitidas en cualquier alojamiento.
+
+
+QUE SUBIR
+---------
+Abre la carpeta  SUBIR-A-HOSTALIA/  y sube SU CONTENIDO
+(los cuatro archivos, no la carpeta) a la carpeta publica
+del dominio:
+
+   index.html     <- OBLIGATORIO. El panel completo.
+   firmar.html    <- OBLIGATORIO. La pagina que abre el
+                     CLIENTE para firmar su contrato.
+   .htaccess      <- Recomendado. Cabeceras de seguridad.
+   test.html      <- Opcional. Solo para diagnosticar.
+
+Los dos HTML tienen que quedar JUNTOS en la misma carpeta:
+el enlace de firma que genera el panel apunta a firmar.html
+en su misma ruta.
+
+LAS DEMAS CARPETAS NO SE SUBEN
+------------------------------
+   NO-SUBIR-supabase/   -> se pega en el editor SQL de Supabase
+   NO-SUBIR-backend/    -> se despliega como Edge Function
+   documentacion/       -> para leer, no para el servidor
+
+Se llaman asi por un motivo: dentro de NO-SUBIR-supabase esta
+el fichero 02-cuenta-raiz.sql con la contrasena inicial del
+administrador en texto legible. Si esa carpeta acaba en la
+carpeta publica, cualquiera puede descargarla y entrar como
+administrador. Lo explica AVISO-NO-SUBIR.txt.
+
+
+SI VUELVE A DAR ERROR 500
+-------------------------
+Es del .htaccess, siempre. Solucion en 10 segundos:
+
+  Borra o renombra el .htaccess del servidor
+  (por ejemplo a  htaccess-desactivado.txt )
+
+La aplicacion funciona perfectamente sin el. Solo se pierden las
+cabeceras de seguridad, no ninguna funcion del panel.
+
+Despues abre  tudominio.com/test.html  para confirmar que el
+servidor entrega bien los archivos.
+
+
+PANTALLA EN BLANCO EN VEZ DE ERROR
+----------------------------------
+Si la pagina carga en blanco, el .htaccess no coincide con los
+HTML: la cabecera Content-Security-Policy lleva la huella digital
+(hash) de index.html Y de firmar.html de ESTE paquete. Sube SIEMPRE
+los TRES archivos juntos del mismo ZIP. Si editas un HTML a mano,
+borra el .htaccess o pideme uno nuevo.
+
+
+SEGURIDAD EXTRA (opcional, mas adelante)
+----------------------------------------
+Cuando el .htaccess compatible lleve unos dias funcionando, puedes
+probar el blindado:
+
+  1. Renombra htaccess-blindado.txt  ->  .htaccess
+  2. Subelo sustituyendo al anterior
+  3. Abre la web
+
+Anade HTTPS forzado, HSTS y bloqueo de ficheros sensibles.
+Si diera error 500, vuelve al compatible: es normal, significa que
+tu plan no permite esas directivas.
+
+
+DONDE SUBIRLO
+-------------
+Carpeta publica del dominio en Hostalia:
+   /httpdocs/        (planes Windows / Plesk)
+   /public_html/     (planes Linux / cPanel)
+
+En FileZilla, para ver el .htaccess:
+   Servidor -> Forzar mostrar archivos ocultos
+
+ANTES DE USAR LOS CONTRATOS CON CLIENTES
+----------------------------------------
+En Supabase hay que ejecutar los guiones 01 a 05 de la carpeta
+supabase/, en ese orden. Sin el 05, el boton del enlace de firma
+avisa de que falta y no genera nada.
+
+La firma que hace el cliente en firmar.html es una FIRMA
+ELECTRONICA SIMPLE: vale como prueba, pero si el cliente la niega,
+sois vosotros quienes teneis que demostrar que firmo. Para
+contratos de importe alto, usad un prestador cualificado
+(Signaturit, Firmafy, Uanataca). Esta explicado en detalle en
+LEEME-INSTALACION.md, apartado 5.
+
+==============================================================
+  Labs24k - Grupo Evolvix Global SL
+==============================================================

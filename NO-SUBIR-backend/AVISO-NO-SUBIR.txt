@@ -1,0 +1,47 @@
+==============================================================
+  NO SUBAS ESTA CARPETA AL HOSTING
+==============================================================
+
+Todo lo que hay aqui dentro va a SUPABASE o a tu ordenador,
+NUNCA a la carpeta publica de Hostalia.
+
+POR QUE IMPORTA
+---------------
+El fichero  supabase/02-cuenta-raiz.sql  contiene la contrasena
+inicial de la cuenta de administrador en texto legible. Si acaba
+en la carpeta publica del dominio, cualquiera que escriba
+
+   https://crm.labs24k.com/supabase/02-cuenta-raiz.sql
+
+se la descarga y entra en el panel como administrador.
+
+El .htaccess "blindado" bloquea los ficheros .sql, pero el
+"compatible" que estas usando NO lo hace, y ahora mismo lo
+tienes desactivado en el servidor. Asi que la unica proteccion
+de verdad es no subir esta carpeta.
+
+QUE HACER CON CADA COSA
+-----------------------
+supabase/*.sql
+   Se abren con un editor de texto, se copia el contenido y se
+   PEGA en el editor SQL de Supabase. Se ejecutan en orden:
+   01, 02, 03, 04, 05.
+
+supabase/functions/
+   Se despliega con la CLI de Supabase (supabase functions deploy).
+
+backend/
+   La Edge Function de administracion de usuarios. Tambien se
+   despliega en Supabase, no en Hostalia. Es la unica pieza que
+   usa la clave de servicio (sb_secret_...).
+
+DESPUES DE EJECUTAR EL 02
+-------------------------
+Entra al panel con jalvarez@labs24k.com y CAMBIA LA CONTRASENA.
+Mientras no lo hagas, la contrasena inicial sigue estando en ese
+fichero, en tu ordenador y en el historial del editor SQL de
+Supabase.
+
+==============================================================
+  Labs24k - Grupo Evolvix Global SL
+==============================================================
