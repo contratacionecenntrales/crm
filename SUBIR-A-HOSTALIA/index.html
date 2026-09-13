@@ -4217,7 +4217,7 @@ function viewAutomationPacks(v){
         (p.star?'<span class="chip green">★ El más elegido</span>':'')+'</div>'+
       '<h4 style="margin:0 0 4px;font-size:15px;color:#fff">'+esc(p.n)+'</h4>'+
       '<p class="tiny muted" style="margin:0 0 12px">'+esc(p.d)+'</p>'+
-      '<div class="p3price">'+eur(p.p).replace(' €','')+' €<span> + IVA · pago único</span></div>'+
+      '<div class="p3price">'+eur(p.p)+'<span> + IVA · pago único</span></div>'+
       '<ul class="p3list">'+p.f.map(function(x){
         return '<li><span>'+ic('check',13)+'</span>'+esc(x)+'</li>'; }).join('')+'</ul>'+
       '<div class="p3foot">'+(on?ic('check',13)+' Pack seleccionado':'Pulsa para elegir este ecosistema')+'</div>'+
@@ -4271,7 +4271,7 @@ function viewAutomationPacks(v){
 
     '<div class="doc-hero">'+
       '<div class="tiny" style="letter-spacing:.14em">★ INVERSIÓN ÚNICA ★</div>'+
-      '<div class="amount">'+eur(T.base).replace(' €','')+' €<span style="font-size:16px;font-weight:600"> + IVA</span></div>'+
+      '<div class="amount">'+eur(T.base)+'<span style="font-size:16px;font-weight:600"> + IVA</span></div>'+
       '<div class="tiny muted">Pago único · total con IVA '+eur(T.tot)+'</div>'+
     '</div>'+
 
