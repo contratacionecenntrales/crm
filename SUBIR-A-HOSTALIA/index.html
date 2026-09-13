@@ -1710,6 +1710,7 @@ var MENU = [
   {id:'academy',     label:'Academia y Cursos',          icon:'book',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'mission',     label:'Mission Control',            icon:'spark',     sec:'General',   roles:['admin','manager']},
   {id:'contactos',   label:'Contactos',                  icon:'user',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
+  {id:'resources',   label:'Centro de Recursos',         icon:'file',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'quotes',      label:'Presupuestos',               icon:'calc',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'automation',  label:'Automation Packs',           icon:'bolt',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'packs',       label:'Packs Web 3D',               icon:'building',  sec:'Comercial', roles:['admin','manager','commercial']},
@@ -1948,7 +1949,7 @@ function renderApp(){
     funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
     backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations,
     interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos,
-    rolesadmin:viewRolesAdmin};
+    rolesadmin:viewRolesAdmin, resources:viewResources};
   (VIEWS[S.view]||viewDashboard)(v);
   reponerToasts();
 }
@@ -4148,6 +4149,232 @@ function ctNuevoModal(){
 }
 
 /* ==========================================================================
+   CENTRO DE DESCARGA DE DOSIERES · Repositorio documental corporativo
+   Reutiliza el almacén "documentos" ya existente, bajo su propio prefijo de
+   ruta (recursos/...) y sus propias políticas — no toca el módulo de
+   Contactos ni el resto de expedientes que comparten el mismo bucket.
+   ========================================================================== */
+var DS = {
+  cargado:false, cargando:false, error:null, lista:[],
+  filtro:'', catF:'', subiendo:false,
+  nuevo:null,           // {categoria, nombre, descripcion, tipo}
+  panelDesc:null,       // id del recurso cuyo panel de descargas está abierto
+  descargas:[], descargasCargando:false
+};
+
+function dsPuedeGestionar(){ return S.role==='admin' || S.role==='manager'; }
+
+function dsCarga(){
+  DS.cargando = true; DS.error = null;
+  sbSelect('recursos', 'select=*&order=categoria.asc,creado.desc').then(function(r){
+    DS.cargando = false; DS.cargado = true;
+    if(r && r.ok){ DS.lista = r.datos || []; }
+    else { DS.error = sbMensaje(r); DS.lista = []; }
+    renderApp();
+  });
+}
+function dsCategorias(){
+  var s = [];
+  DS.lista.forEach(function(r){ if(s.indexOf(r.categoria) < 0) s.push(r.categoria); });
+  return s;
+}
+function dsNuevo(){ DS.nuevo = {categoria:'General', nombre:'', descripcion:'', tipo:'pdf'}; renderApp(); }
+
+function dsGuardaNuevo(file){
+  var n = DS.nuevo;
+  if(!n || !n.nombre.trim()){ toast('Ponle un nombre al dosier antes de subirlo.'); return; }
+  if(!file){ toast('Selecciona el archivo PDF o PPTX del dosier.'); return; }
+  if(file.size > 25*1024*1024){ toast('El archivo supera los 25 MB permitidos.'); return; }
+
+  DS.subiendo = true; renderApp();
+  var limpio = String(file.name || 'archivo').replace(/[^A-Za-z0-9.\-_]/g, '_');
+  var ruta = 'recursos/' + Date.now() + '-' + limpio;
+  sbConSesion(function(){
+    return fetch(SB.url + '/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
+      method:'POST',
+      headers:{'apikey':SB.clave, 'Authorization':'Bearer '+((SB.sesion||{}).access_token||SB.clave),
+        'Content-Type': file.type || 'application/octet-stream'},
+      body:file
+    }).then(function(r){ return {ok:r.ok, estado:r.status}; },
+            function(){ return {ok:false, estado:0}; });
+  }).then(function(r){
+    if(!r.ok){
+      DS.subiendo = false; renderApp();
+      toast(r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
+                            : 'No se ha podido subir el archivo (código '+r.estado+').');
+      return;
+    }
+    return sbInsert('recursos', {
+      categoria: n.categoria.trim() || 'General', nombre:n.nombre.trim(),
+      descripcion:n.descripcion.trim(), tipo:n.tipo, ruta:ruta, tamano_bytes:file.size,
+      subido_por:(SB.sesion && SB.sesion.uid) || null
+    }).then(function(ri){
+      DS.subiendo = false;
+      if(ri && ri.ok){ DS.nuevo = null; toast('Dosier subido al centro de recursos.'); dsCarga(); }
+      else { toast('El archivo se subió, pero no se pudo registrar: ' + sbMensaje(ri)); renderApp(); }
+    });
+  });
+}
+function dsBorra(id){
+  sbDelete('recursos', 'id=eq.'+id).then(function(r){
+    if(r && r.ok){ toast('Dosier retirado.'); dsCarga(); }
+    else toast('No se ha podido eliminar: ' + sbMensaje(r));
+  });
+}
+
+/* Descarga + registro de analítica: la descarga en sí nunca depende de que
+   el registro se guarde — si el histórico falla, el archivo igualmente baja. */
+function dsDescarga(r){
+  var nombreArchivo = r.nombre.replace(/\.(pdf|pptx)$/i, '') + '.' + r.tipo;
+  descargaDocumento(nombreArchivo, r.ruta);
+  sbInsert('recursos_descargas', {recurso_id:r.id, usuario_id:(SB.sesion && SB.sesion.uid) || null});
+}
+
+function dsAbrePanelDescargas(id){
+  DS.panelDesc = id; DS.descargas = []; DS.descargasCargando = true; renderApp();
+  sbSelect('recursos_descargas', 'recurso_id=eq.'+id+'&order=ts.desc&limit=50').then(function(r){
+    DS.descargasCargando = false;
+    DS.descargas = (r && r.ok) ? (r.datos || []) : [];
+    renderApp();
+  });
+}
+function dsCierraPanelDescargas(){ DS.panelDesc = null; DS.descargas = []; renderApp(); }
+
+function dsNuevoModal(){
+  var n = DS.nuevo;
+  return '<div class="ov" data-ov="ds-nuevo"><div class="modal" style="max-width:480px">'+
+    '<h3 style="margin:0 0 4px">Subir dosier</h3>'+
+    '<p class="tiny muted" style="margin:0 0 16px">Se guarda en Supabase Storage y queda visible para toda la red según su categoría.</p>'+
+    '<div class="grid g-2">'+
+      '<div class="field"><label class="f">Categoría</label><input class="inp" id="dsn-cat" value="'+esc(n.categoria)+'" placeholder="Ej. Servicios, Catálogos, Legal"></div>'+
+      '<div class="field"><label class="f">Tipo</label><select class="inp" id="dsn-tipo">'+
+        '<option value="pdf"'+(n.tipo==='pdf'?' selected':'')+'>PDF</option>'+
+        '<option value="pptx"'+(n.tipo==='pptx'?' selected':'')+'>PPTX</option></select></div>'+
+    '</div>'+
+    '<div class="field"><label class="f">Nombre del dosier *</label><input class="inp" id="dsn-nombre" value="'+esc(n.nombre)+'" placeholder="Ej. Dosier Command Center 360"></div>'+
+    '<div class="field"><label class="f">Descripción</label><input class="inp" id="dsn-desc" value="'+esc(n.descripcion)+'" placeholder="Breve resumen del contenido"></div>'+
+    '<div class="field"><label class="f">Archivo (PDF o PPTX, máx. 25 MB) *</label>'+
+      '<input type="file" class="inp" id="dsn-file" accept=".pdf,.pptx"'+(DS.subiendo?' disabled':'')+'></div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:16px">'+
+      '<button class="btn btn-s" id="dsn-cancela"'+(DS.subiendo?' disabled':'')+'>Cancelar</button>'+
+      '<button class="btn btn-p" id="dsn-guarda"'+(DS.subiendo?' disabled':'')+'>'+
+        (DS.subiendo ? 'Subiendo…' : (ic('upload',15)+' Subir dosier'))+'</button></div>'+
+  '</div></div>';
+}
+
+function dsPanelDescargasHTML(){
+  var r = DS.lista.filter(function(x){ return x.id === DS.panelDesc; })[0];
+  var filas = DS.descargas.map(function(d){
+    var u = usuarioPorId(d.usuario_id);
+    return '<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)">'+
+      '<span class="tiny" style="color:#fff">'+esc(u ? u.n : 'Miembro del equipo')+'</span>'+
+      '<span class="tiny muted">'+esc(haceRel(new Date(d.ts).getTime()))+'</span>'+
+    '</div>';
+  }).join('') || '<p class="tiny muted" style="padding:10px 0">'+
+    (DS.descargasCargando ? 'Cargando...' : 'Todavía no se ha descargado ninguna vez.')+'</p>';
+
+  return '<div class="ov" data-ov="ds-log"><div class="modal" style="max-width:420px">'+
+    '<div class="row" style="justify-content:space-between;align-items:flex-start">'+
+      '<div><h3 style="margin:0 0 4px">Descargas</h3>'+
+      '<p class="tiny muted" style="margin:0">'+esc(r ? r.nombre : '')+' · '+String(DS.descargas.length)+' registradas</p></div>'+
+      '<button class="icon-btn" id="ds-log-x">'+ic('x',16)+'</button>'+
+    '</div>'+
+    '<div style="margin-top:14px;max-height:320px;overflow-y:auto">'+filas+'</div>'+
+  '</div></div>';
+}
+
+function viewResources(v){
+  if(!DS.cargado && !DS.cargando) dsCarga();
+  var puedeGestionar = dsPuedeGestionar();
+
+  var lista = DS.lista.filter(function(r){
+    var t = (r.nombre+' '+r.descripcion+' '+r.categoria).toLowerCase();
+    if(DS.filtro && t.indexOf(DS.filtro.toLowerCase().trim()) < 0) return false;
+    if(DS.catF && r.categoria !== DS.catF) return false;
+    return true;
+  });
+
+  var porCategoria = {}, orden = [];
+  lista.forEach(function(r){
+    if(!porCategoria[r.categoria]){ porCategoria[r.categoria] = []; orden.push(r.categoria); }
+    porCategoria[r.categoria].push(r);
+  });
+
+  var bloques = orden.map(function(cat){
+    var tarjetas = porCategoria[cat].map(function(r){
+      return '<div class="card" style="padding:16px">'+
+        '<div class="row" style="gap:11px;align-items:flex-start">'+
+          '<div class="ico-box '+(r.tipo==='pptx'?'amber':'blue')+'" style="width:38px;height:38px;flex:0 0 38px">'+ic('file',17)+'</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div class="w trunc">'+esc(r.nombre)+'</div>'+
+            '<div class="tiny muted">'+esc(r.tipo.toUpperCase())+
+              (r.tamano_bytes ? ' · '+(r.tamano_bytes/1024).toFixed(0)+' KB' : '')+'</div>'+
+          '</div>'+
+        '</div>'+
+        (r.descripcion ? '<p class="tiny muted" style="margin:10px 0 0">'+esc(r.descripcion)+'</p>' : '')+
+        '<div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">'+
+          '<button class="btn btn-p btn-xs" data-ds-desc="'+r.id+'">'+ic('download',13)+' Descargar</button>'+
+          (puedeGestionar ? '<button class="btn btn-s btn-xs" data-ds-log="'+r.id+'" title="Ver descargas">'+ic('eye',13)+'</button>' : '')+
+          (puedeGestionar ? '<button class="btn btn-s btn-xs" data-ds-del="'+r.id+'" title="Eliminar">'+ic('x',13)+'</button>' : '')+
+        '</div>'+
+      '</div>';
+    }).join('');
+    return '<div style="margin-bottom:22px">'+
+      '<h4 class="ft-t" style="margin-bottom:12px">'+esc(cat)+'</h4>'+
+      '<div class="grid g-3">'+tarjetas+'</div>'+
+    '</div>';
+  }).join('') || '<p class="tiny muted" style="padding:26px;text-align:center">'+
+    (DS.cargando ? 'Cargando el centro de recursos...' :
+     DS.error ? 'No se ha podido cargar: '+esc(DS.error) :
+     'No hay dosieres que coincidan con la búsqueda.')+'</p>';
+
+  v.innerHTML =
+  '<div class="card">'+
+    '<div class="card-h" style="margin:0 0 14px;flex-wrap:wrap">'+
+      '<div><h3 style="font-size:18px">Centro de Descarga de Dosieres</h3>'+
+        '<p>Documentación corporativa de Labs24k: dosieres de servicios, catálogos y material de apoyo para la red comercial.</p></div>'+
+      (puedeGestionar ? '<button class="btn btn-p" id="ds-nuevo">'+ic('plus',16)+' Subir dosier</button>' : '')+
+    '</div>'+
+    '<div class="row u-filtros">'+
+      '<div class="search" style="flex:1;min-width:220px">'+ic('search',15)+
+        '<input id="ds-find" placeholder="Buscar por nombre, categoría o descripción..." value="'+esc(DS.filtro)+'"></div>'+
+      '<select class="inp u-sel" id="ds-fcat"><option value="">Todas las categorías</option>'+
+        dsCategorias().map(function(c){ return '<option'+(DS.catF===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+
+        '</select></div>'+
+  '</div>'+
+  '<div style="margin-top:18px">'+bloques+'</div>'+
+  (DS.nuevo ? dsNuevoModal() : '') +
+  (DS.panelDesc ? dsPanelDescargasHTML() : '');
+
+  q('#ds-find').oninput = function(){ DS.filtro = this.value; renderApp(); };
+  q('#ds-fcat').onchange = function(){ DS.catF = this.value; renderApp(); };
+  qa('[data-ds-desc]').forEach(function(b){ b.onclick = function(){
+    var r = DS.lista.filter(function(x){ return String(x.id)===b.dataset.dsDesc; })[0];
+    if(r) dsDescarga(r);
+  }; });
+  if(puedeGestionar){
+    if(q('#ds-nuevo')) q('#ds-nuevo').onclick = dsNuevo;
+    qa('[data-ds-del]').forEach(function(b){ b.onclick = function(){
+      if(confirm('¿Retirar este dosier del centro de recursos?')) dsBorra(Number(b.dataset.dsDel));
+    }; });
+    qa('[data-ds-log]').forEach(function(b){ b.onclick = function(){ dsAbrePanelDescargas(Number(b.dataset.dsLog)); }; });
+  }
+
+  if(DS.nuevo){
+    q('#dsn-cat').onchange = function(){ DS.nuevo.categoria = this.value; };
+    q('#dsn-nombre').onchange = function(){ DS.nuevo.nombre = this.value; };
+    q('#dsn-desc').onchange = function(){ DS.nuevo.descripcion = this.value; };
+    q('#dsn-tipo').onchange = function(){ DS.nuevo.tipo = this.value; };
+    q('#dsn-cancela').onclick = function(){ DS.nuevo = null; renderApp(); };
+    q('#dsn-guarda').onclick = function(){
+      var f = q('#dsn-file').files && q('#dsn-file').files[0];
+      dsGuardaNuevo(f);
+    };
+  }
+  if(DS.panelDesc) q('#ds-log-x').onclick = dsCierraPanelDescargas;
+}
+
+/* ==========================================================================
    AUTOMATION PACKS · Ecosistemas comerciales inteligentes · Labs24k
    Tres niveles de automatización comercial en pago único. Mismo patrón
    visual e interactivo que los Packs Web 3D (tarjetas, matriz comparativa,
@@ -6262,6 +6489,11 @@ var PERMISOS = [
     {k:'contactos.docs',     n:'Subir documentación',      d:'Adjuntar contratos, briefings y anexos'},
     {k:'contactos.borrar',   n:'Eliminar contactos',       d:'Borrado de fichas y documentos'}
   ]},
+  {g:'Recursos', ic:'file', items:[
+    {k:'recursos.ver',    n:'Ver el centro de recursos', d:'Consultar y descargar dosieres corporativos'},
+    {k:'recursos.subir',  n:'Subir dosieres',            d:'Añadir documentos al repositorio'},
+    {k:'recursos.borrar', n:'Eliminar dosieres',         d:'Retirar documentos del repositorio'}
+  ]},
   {g:'Sistema', ic:'cog', items:[
     {k:'sys.config',  n:'Configuración global',    d:'Marca, precios, enlaces y claves'},
     {k:'sys.usuarios',n:'Gestión de usuarios',     d:'Altas, bajas y permisos'},
@@ -6270,16 +6502,19 @@ var PERMISOS = [
   ]}
 ];
 /* Permisos que trae cada rol de fábrica. Debe reflejar exactamente
-   permisos_de_rol() en NO-SUBIR-supabase/08-roles-personalizados.sql. */
+   permisos_de_rol() en NO-SUBIR-supabase/09-recursos.sql. */
 var PERM_ROL = {
   admin:      '*',
   manager:    ['presu.ver','presu.crear','presu.dto','funnel.ver','exp.ver','exp.estado','exp.hitos',
                'exp.docs','hr.ver','hr.mover','hr.contratar','com.llamadas','com.wsp','com.plant','sys.audit',
-               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar'],
+               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar',
+               'recursos.ver','recursos.subir','recursos.borrar'],
   commercial: ['presu.ver','presu.crear','funnel.ver','exp.ver','exp.docs','com.llamadas','com.wsp',
-               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs'],
+               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs',
+               'recursos.ver'],
   backoffice: ['exp.ver','exp.estado','exp.hitos','exp.docs','exp.borrar','presu.ver','com.llamadas',
-               'contactos.ver','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar']
+               'contactos.ver','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar',
+               'recursos.ver']
 };
 function todasLasClaves(){
   var r = []; PERMISOS.forEach(function(g){ g.items.forEach(function(i){ r.push(i.k); }); }); return r;
@@ -8965,6 +9200,7 @@ var VOZ = null;
 var ORDENES = [
   {p:['panel','inicio','principal','dashboard'],       v:'dashboard', t:'Panel Principal'},
   {p:['contactos','contacto','leads','nuevo lead'],     v:'contactos', t:'Contactos'},
+  {p:['recursos','dosieres','dosier','centro de recursos','descargas'], v:'resources', t:'Centro de Recursos'},
   {p:['calendario','citas','agenda'],                   v:'calendar',  t:'Calendario y Citas'},
   {p:['academia','cursos','formación'],                 v:'academy',   t:'Academia'},
   {p:['presupuesto','presupuestos','propuesta'],        v:'quotes',    t:'Presupuestos'},

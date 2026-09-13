@@ -60,6 +60,7 @@ Proyecto: `ezwhkpfqnzyfulivlows`. En el editor SQL, **en este orden**:
 | `06-endurecimiento.sql` | Cierra huecos de seguridad encontrados en auditoría (obligatorio) |
 | `07-contactos.sql` | Módulo de Contactos: fichas de leads y clientes |
 | `08-roles-personalizados.sql` | Plantillas de rol y permisos, y control de qué pestañas ve cada usuario |
+| `09-recursos.sql` | Centro de Descarga de Dosieres: repositorio documental por categorías, con analítica de descargas |
 
 Después:
 
