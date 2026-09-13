@@ -1712,6 +1712,7 @@ var MENU = [
   {id:'contactos',   label:'Contactos',                  icon:'user',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'resources',   label:'Centro de Recursos',         icon:'file',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'support',     label:'Soporte y Tickets',          icon:'help',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
+  {id:'adminsupport',label:'Mesa de Incidencias',        icon:'alert',     sec:'Sistema',   roles:['admin','manager']},
   {id:'quotes',      label:'Presupuestos',               icon:'calc',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'automation',  label:'Automation Packs',           icon:'bolt',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'packs',       label:'Packs Web 3D',               icon:'building',  sec:'Comercial', roles:['admin','manager','commercial']},
@@ -1950,7 +1951,8 @@ function renderApp(){
     funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
     backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations,
     interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos,
-    rolesadmin:viewRolesAdmin, resources:viewResources, support:viewSupport};
+    rolesadmin:viewRolesAdmin, resources:viewResources, support:viewSupport,
+    adminsupport:viewAdminSupportDesk};
   (VIEWS[S.view]||viewDashboard)(v);
   reponerToasts();
 }
@@ -4451,17 +4453,27 @@ function spAbre(id){
   });
 }
 function spCierra(){ SP.det = null; SP.eventos = []; renderApp(); }
-function spTicketPorId(id){ return SP.lista.filter(function(t){ return t.id === id; })[0] || null; }
+function spTicketPorId(id){
+  return SP.lista.filter(function(t){ return t.id === id; })[0] ||
+    (typeof SD !== 'undefined' ? SD.lista.filter(function(t){ return t.id === id; })[0] : null) || null;
+}
+/* Refresca ambas listas (la del panel personal y la mesa global) cuando
+   una de las dos existe cargada, para que un cambio hecho desde una se
+   vea al instante en la otra sin recargar la página. */
+function spRefrescaListas(){
+  if(SP.cargado) spCarga();
+  if(typeof SD !== 'undefined' && SD.cargado) sdCarga();
+}
 
 function spCambiaEstado(id, estado){
   sbUpdate('tickets', 'id=eq.'+id, {estado:estado}).then(function(r){
-    if(r && r.ok){ toast('Estado actualizado.'); spCarga(); spAbre(id); }
+    if(r && r.ok){ toast('Estado actualizado.'); spRefrescaListas(); spAbre(id); }
     else toast('No se ha podido cambiar el estado: ' + sbMensaje(r));
   });
 }
 function spEscala(id){
   sbRpc('escala_ticket', {p_id:id}).then(function(){
-    toast('Incidencia escalada a Nivel 2.'); spCarga(); spAbre(id);
+    toast('Incidencia escalada a Nivel 2.'); spRefrescaListas(); spAbre(id);
   }).catch(function(e){
     toast('No se ha podido escalar: ' + ((e && e.message) || 'error'));
   });
@@ -4619,6 +4631,117 @@ function viewSupport(v){
     q('#spn-cancela').onclick = function(){ SP.nuevo = null; renderApp(); };
     q('#spn-guarda').onclick = spGuardaNuevo;
   }
+
+  if(SP.det){
+    q('#sp-x').onclick = spCierra;
+    q('#sp-cerrar').onclick = spCierra;
+    if(q('#sp-est')) q('#sp-est').onchange = function(){ spCambiaEstado(SP.det, this.value); };
+    if(q('#sp-escala')) q('#sp-escala').onclick = function(){
+      if(confirm('¿Escalar esta incidencia al Responsable del Responsable (Nivel 2)?')) spEscala(SP.det);
+    };
+    q('#sp-com-txt').oninput = function(){ SP.nuevoComentario = this.value; };
+    q('#sp-com-add').onclick = spAnadeComentario;
+  }
+}
+
+/* ==========================================================================
+   SOPORTE GLOBAL DE INCIDENCIAS · Mesa centralizada (/admin-support-desk)
+   Reutiliza por completo la infraestructura de tickets de 10-soporte.sql
+   (mismas tablas, mismas políticas, mismo escalado): no crea nada nuevo en
+   la base salvo la vista de solo lectura tickets_panel (11-soporte-global.sql),
+   que calcula el vencimiento de SLA a partir de la prioridad y la fecha de
+   apertura reales. Reutiliza también la misma ficha de incidencia que la
+   vista personal (spFichaHTML/spAbre/spCierra) para no duplicar ese código.
+   Solo visible para quien gestiona soporte (admin y manager, Nivel 1 y 2):
+   el resto de roles ya tiene su propia vista personal en /support.
+   ========================================================================== */
+var SD = {
+  cargado:false, cargando:false, error:null, lista:[],
+  filtro:'', filtroEstado:'', filtroPrio:'', soloVencidas:false
+};
+
+function sdCarga(){
+  SD.cargando = true; SD.error = null;
+  sbSelect('tickets_panel', 'select=*&order=creado.desc').then(function(r){
+    SD.cargando = false; SD.cargado = true;
+    if(r && r.ok){ SD.lista = r.datos || []; }
+    else { SD.error = sbMensaje(r); SD.lista = []; }
+    renderApp();
+  });
+}
+
+function viewAdminSupportDesk(v){
+  if(!SD.cargado && !SD.cargando) sdCarga();
+
+  var lista = SD.lista.filter(function(t){
+    var txt = (t.titulo+' '+t.descripcion+' '+t.categoria).toLowerCase();
+    if(SD.filtro && txt.indexOf(SD.filtro.toLowerCase().trim()) < 0) return false;
+    if(SD.filtroEstado && t.estado !== SD.filtroEstado) return false;
+    if(SD.filtroPrio && t.prioridad !== SD.filtroPrio) return false;
+    if(SD.soloVencidas && !t.sla_vencida) return false;
+    return true;
+  });
+
+  var vencidas = SD.lista.filter(function(t){ return t.sla_vencida; }).length;
+  var kpis = [
+    ['Total incidencias', String(SD.lista.length), 'file', 'blue'],
+    ['Fuera de plazo (SLA)', String(vencidas), 'alert', 'red'],
+    ['Escaladas a Nivel 2', String(SD.lista.filter(function(t){ return t.nivel_escalado===2; }).length), 'arrowUp', 'amber'],
+    ['Resueltas', String(SD.lista.filter(function(t){ return t.estado==='resuelto' || t.estado==='cerrado'; }).length), 'check', 'green']
+  ];
+
+  var filas = lista.map(function(t){
+    return '<tr'+(t.sla_vencida?' style="background:rgba(248,113,113,.06)"':'')+'>'+
+      '<td><div class="w trunc">'+esc(t.titulo)+'</div>'+
+        '<div class="tiny muted trunc">'+esc(t.categoria)+' · abierta por '+esc(spNombreUsuario(t.creado_por))+'</div></td>'+
+      '<td>'+spChipPrio(t.prioridad)+'</td>'+
+      '<td>'+spChipEstado(t.estado)+(t.nivel_escalado>0?' <span class="chip">N'+t.nivel_escalado+'</span>':'')+'</td>'+
+      '<td class="tiny muted nowrap">'+esc(spNombreUsuario(t.asignado_a))+'</td>'+
+      '<td class="tiny nowrap">'+(t.sla_vencida ?
+        '<span class="chip red">'+ic('alert',11)+' '+t.horas_abierta+'h / '+t.sla_horas+'h</span>' :
+        '<span class="tiny muted">'+t.horas_abierta+'h / '+t.sla_horas+'h</span>')+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-s btn-xs" data-sd-ver="'+t.id+'">'+ic('eye',12)+' Abrir</button></td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:26px">'+
+    (SD.cargando ? 'Cargando la mesa de incidencias...' :
+     SD.error ? 'No se ha podido cargar: '+esc(SD.error) :
+     'Ninguna incidencia coincide con la búsqueda.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    kpis.map(function(k){ return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+      '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+      '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-h" style="margin:0 0 14px;flex-wrap:wrap">'+
+      '<div><h3 style="font-size:18px">Soporte Global de Incidencias</h3>'+
+        '<p>Todas las incidencias de todos los roles, con el plazo de SLA calculado por prioridad. '+
+        'Crítica 4h · Alta 24h · Media 72h · Baja 7 días.</p></div>'+
+    '</div>'+
+    '<div class="row u-filtros">'+
+      '<div class="search" style="flex:1;min-width:220px">'+ic('search',15)+
+        '<input id="sd-find" placeholder="Buscar por título, categoría o descripción..." value="'+esc(SD.filtro)+'"></div>'+
+      '<select class="inp u-sel" id="sd-fest"><option value="">Todos los estados</option>'+
+        SP_ESTADOS.map(function(e){ return '<option value="'+e[0]+'"'+(SD.filtroEstado===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join('')+
+        '</select>'+
+      '<select class="inp u-sel" id="sd-fprio"><option value="">Todas las prioridades</option>'+
+        SP_PRIORIDADES.map(function(p){ return '<option value="'+p[0]+'"'+(SD.filtroPrio===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+
+        '</select>'+
+      '<label class="row" style="gap:7px;align-items:center;cursor:pointer;white-space:nowrap">'+
+        '<input type="checkbox" id="sd-fsla"'+(SD.soloVencidas?' checked':'')+'> <span class="tiny muted">Solo fuera de plazo</span></label>'+
+    '</div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Incidencia</th><th>Prioridad</th><th>Estado</th><th>Asignado</th><th>SLA</th><th></th>'+
+      '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  spFichaHTML();
+
+  q('#sd-find').oninput = function(){ SD.filtro = this.value; renderApp(); };
+  q('#sd-fest').onchange = function(){ SD.filtroEstado = this.value; renderApp(); };
+  q('#sd-fprio').onchange = function(){ SD.filtroPrio = this.value; renderApp(); };
+  q('#sd-fsla').onchange = function(){ SD.soloVencidas = this.checked; renderApp(); };
+  qa('[data-sd-ver]').forEach(function(b){ b.onclick = function(){ spAbre(Number(b.dataset.sdVer)); }; });
 
   if(SP.det){
     q('#sp-x').onclick = spCierra;
@@ -9468,6 +9591,7 @@ var ORDENES = [
   {p:['contactos','contacto','leads','nuevo lead'],     v:'contactos', t:'Contactos'},
   {p:['recursos','dosieres','dosier','centro de recursos','descargas'], v:'resources', t:'Centro de Recursos'},
   {p:['soporte','ticket','tickets','incidencia','incidencias','escalar'], v:'support', t:'Soporte y Tickets'},
+  {p:['mesa de incidencias','soporte global','sla','todas las incidencias'], v:'adminsupport', t:'Mesa de Incidencias'},
   {p:['calendario','citas','agenda'],                   v:'calendar',  t:'Calendario y Citas'},
   {p:['academia','cursos','formación'],                 v:'academy',   t:'Academia'},
   {p:['presupuesto','presupuestos','propuesta'],        v:'quotes',    t:'Presupuestos'},

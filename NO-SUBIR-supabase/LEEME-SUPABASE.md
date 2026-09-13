@@ -20,6 +20,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 8 | `08-roles-personalizados.sql` | Plantillas de rol reutilizables (permisos + pestañas visibles) aplicables a cualquier usuario |
 | 9 | `09-recursos.sql` | Centro de Descarga de Dosieres: repositorio documental por categorías, con analítica de descargas |
 | 10 | `10-soporte.sql` | Soporte y Tickets: escalado a dos niveles (Responsable de Soporte / Responsable del Responsable) con asignación automática por reglas |
+| 11 | `11-soporte-global.sql` | Mesa de Incidencias: vista de solo lectura con cálculo de SLA por prioridad, para el panel centralizado de admin/manager |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.
