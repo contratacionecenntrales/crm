@@ -1711,6 +1711,7 @@ var MENU = [
   {id:'mission',     label:'Mission Control',            icon:'spark',     sec:'General',   roles:['admin','manager']},
   {id:'contactos',   label:'Contactos',                  icon:'user',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'resources',   label:'Centro de Recursos',         icon:'file',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
+  {id:'support',     label:'Soporte y Tickets',          icon:'help',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'quotes',      label:'Presupuestos',               icon:'calc',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'automation',  label:'Automation Packs',           icon:'bolt',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'packs',       label:'Packs Web 3D',               icon:'building',  sec:'Comercial', roles:['admin','manager','commercial']},
@@ -1949,7 +1950,7 @@ function renderApp(){
     funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
     backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations,
     interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos,
-    rolesadmin:viewRolesAdmin, resources:viewResources};
+    rolesadmin:viewRolesAdmin, resources:viewResources, support:viewSupport};
   (VIEWS[S.view]||viewDashboard)(v);
   reponerToasts();
 }
@@ -4375,6 +4376,263 @@ function viewResources(v){
 }
 
 /* ==========================================================================
+   SISTEMA DE SOPORTE Y TICKETS · Escalado a dos niveles
+   Nivel 1 (Responsable de Soporte) = rol manager. Nivel 2 (Responsable del
+   Responsable) = rol admin. No se crea ningún rol nuevo: la jerarquía se
+   apoya en los cuatro roles de fábrica que ya existen. La asignación
+   automática y el escalado los decide la base de datos (10-soporte.sql),
+   no el navegador — esta vista solo muestra y dispara lo que ya es real.
+   No toca el widget de incidencias del panel de ayuda flotante (SOPORTE /
+   TICKETS): ese sigue siendo una demo local, independiente de este módulo.
+   ========================================================================== */
+var SP = {
+  cargado:false, cargando:false, error:null, lista:[],
+  filtro:'', filtroEstado:'', filtroPrio:'',
+  nuevo:null,          // {titulo, descripcion, categoria, prioridad}
+  det:null,            // id de la incidencia abierta en la ficha
+  eventos:[], eventosCargando:false,
+  nuevoComentario:'', enviando:false
+};
+var SP_CATEGORIAS = ['Plataforma','Agentes IA','Facturación','Expedientes','Academia','Acceso y permisos','Otros'];
+var SP_PRIORIDADES = [['baja','Baja'],['media','Media'],['alta','Alta'],['critica','Crítica']];
+var SP_ESTADOS = [['abierto','Abierto'],['en_progreso','En progreso'],['escalado','Escalado'],['resuelto','Resuelto'],['cerrado','Cerrado']];
+
+function spPuedeGestionar(){ return S.role==='admin' || S.role==='manager'; }
+function spNombrePrio(p){ var f=SP_PRIORIDADES.filter(function(x){return x[0]===p;})[0]; return f?f[1]:p; }
+function spNombreEstado(e){ var f=SP_ESTADOS.filter(function(x){return x[0]===e;})[0]; return f?f[1]:e; }
+function spChipPrio(p){
+  var cls = p==='critica'?'red':p==='alta'?'amber':p==='media'?'blue':'';
+  return '<span class="chip'+(cls?' '+cls:'')+'">'+esc(spNombrePrio(p))+'</span>';
+}
+function spChipEstado(e){
+  var cls = e==='escalado'?'red':e==='en_progreso'?'amber':e==='resuelto'?'green':e==='abierto'?'blue':'';
+  return '<span class="chip'+(cls?' '+cls:'')+'">'+esc(spNombreEstado(e))+'</span>';
+}
+function spNombreUsuario(id){
+  if(!id) return '—';
+  var u = usuarioPorId(id);
+  return u ? u.n : 'Miembro del equipo';
+}
+
+function spCarga(){
+  SP.cargando = true; SP.error = null;
+  sbSelect('tickets', 'select=*&order=creado.desc').then(function(r){
+    SP.cargando = false; SP.cargado = true;
+    if(r && r.ok){ SP.lista = r.datos || []; }
+    else { SP.error = sbMensaje(r); SP.lista = []; }
+    renderApp();
+  });
+}
+function spNuevo(){
+  SP.nuevo = {titulo:'', descripcion:'', categoria:SP_CATEGORIAS[0], prioridad:'media'};
+  renderApp();
+}
+function spGuardaNuevo(){
+  var n = SP.nuevo;
+  if(!n.titulo.trim() || n.titulo.trim().length < 4){ toast('Ponle un título de al menos 4 caracteres.'); return; }
+  if(!n.descripcion.trim() || n.descripcion.trim().length < 10){ toast('Describe la incidencia con algo más de detalle.'); return; }
+  SP.enviando = true; renderApp();
+  sbInsert('tickets', {
+    titulo:n.titulo.trim(), descripcion:n.descripcion.trim(),
+    categoria:n.categoria, prioridad:n.prioridad,
+    creado_por:(SB.sesion && SB.sesion.uid) || null
+  }).then(function(r){
+    SP.enviando = false;
+    if(r && r.ok){ SP.nuevo = null; toast('Incidencia registrada.'); spCarga(); }
+    else { toast('No se ha podido registrar: ' + sbMensaje(r)); renderApp(); }
+  });
+}
+function spAbre(id){
+  SP.det = id; SP.eventos = []; SP.eventosCargando = true; SP.nuevoComentario = ''; renderApp();
+  sbSelect('ticket_eventos', 'ticket_id=eq.'+id+'&order=creado.asc').then(function(r){
+    SP.eventosCargando = false;
+    SP.eventos = (r && r.ok) ? (r.datos || []) : [];
+    renderApp();
+  });
+}
+function spCierra(){ SP.det = null; SP.eventos = []; renderApp(); }
+function spTicketPorId(id){ return SP.lista.filter(function(t){ return t.id === id; })[0] || null; }
+
+function spCambiaEstado(id, estado){
+  sbUpdate('tickets', 'id=eq.'+id, {estado:estado}).then(function(r){
+    if(r && r.ok){ toast('Estado actualizado.'); spCarga(); spAbre(id); }
+    else toast('No se ha podido cambiar el estado: ' + sbMensaje(r));
+  });
+}
+function spEscala(id){
+  sbRpc('escala_ticket', {p_id:id}).then(function(){
+    toast('Incidencia escalada a Nivel 2.'); spCarga(); spAbre(id);
+  }).catch(function(e){
+    toast('No se ha podido escalar: ' + ((e && e.message) || 'error'));
+  });
+}
+function spAnadeComentario(){
+  var id = SP.det, txt = String(SP.nuevoComentario || '').trim();
+  if(!txt){ toast('Escribe un comentario antes de enviarlo.'); return; }
+  sbInsert('ticket_eventos', {ticket_id:id, autor_id:(SB.sesion && SB.sesion.uid) || null,
+    tipo:'comentario', texto:txt}).then(function(r){
+    if(r && r.ok){ SP.nuevoComentario = ''; spAbre(id); }
+    else toast('No se ha podido enviar: ' + sbMensaje(r));
+  });
+}
+
+function spNuevoModal(){
+  var n = SP.nuevo;
+  return '<div class="ov" data-ov="sp-nuevo"><div class="modal" style="max-width:480px">'+
+    '<h3 style="margin:0 0 4px">Abrir incidencia</h3>'+
+    '<p class="tiny muted" style="margin:0 0 16px">Las incidencias de prioridad alta o crítica se asignan solas al Responsable de Soporte con menos carga.</p>'+
+    '<div class="field"><label class="f">Título *</label><input class="inp" id="spn-titulo" value="'+esc(n.titulo)+'" placeholder="Resume el problema en una línea"></div>'+
+    '<div class="grid g-2">'+
+      '<div class="field"><label class="f">Categoría</label><select class="inp" id="spn-cat">'+
+        SP_CATEGORIAS.map(function(c){ return '<option'+(n.categoria===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select></div>'+
+      '<div class="field"><label class="f">Prioridad</label><select class="inp" id="spn-prio">'+
+        SP_PRIORIDADES.map(function(p){ return '<option value="'+p[0]+'"'+(n.prioridad===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+'</select></div>'+
+    '</div>'+
+    '<div class="field"><label class="f">Descripción *</label>'+
+      '<textarea class="inp" id="spn-desc" rows="5" placeholder="Qué ocurre, en qué módulo y qué esperabas que pasara.">'+esc(n.descripcion)+'</textarea></div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:16px">'+
+      '<button class="btn btn-s" id="spn-cancela"'+(SP.enviando?' disabled':'')+'>Cancelar</button>'+
+      '<button class="btn btn-p" id="spn-guarda"'+(SP.enviando?' disabled':'')+'>'+
+        (SP.enviando ? 'Enviando…' : (ic('send',15)+' Registrar incidencia'))+'</button></div>'+
+  '</div></div>';
+}
+
+function spFichaHTML(){
+  if(!SP.det) return '';
+  var t = spTicketPorId(SP.det);
+  if(!t){ return ''; }
+  var puedeGestionar = spPuedeGestionar();
+
+  var timeline = SP.eventos.map(function(e){
+    var etq = e.tipo==='escalado' ? 'Escalado' : e.tipo==='cambio_estado' ? 'Cambio de estado' : 'Comentario';
+    var col = e.tipo==='escalado' ? 'red' : e.tipo==='cambio_estado' ? 'amber' : 'blue';
+    return '<div class="row" style="gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)">'+
+      '<span class="chip '+col+'" style="flex:0 0 auto">'+etq+'</span>'+
+      '<div style="flex:1;min-width:0"><div class="small" style="color:#E2E8F0">'+esc(e.texto)+'</div>'+
+      '<div class="tiny muted">'+esc(spNombreUsuario(e.autor_id))+' · '+esc(haceRel(new Date(e.creado).getTime()))+'</div></div>'+
+    '</div>';
+  }).join('') || '<p class="tiny muted" style="padding:10px 0">'+
+    (SP.eventosCargando ? 'Cargando historial...' : 'Todavía no hay comentarios ni cambios registrados.')+'</p>';
+
+  return '<div class="ov" data-ov="sp-detalle"><div class="modal ficha">'+
+    '<div class="ft-head">'+
+      '<div style="min-width:0"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'+
+        '<h3 style="margin:0;font-size:16px;color:#fff" class="trunc">'+esc(t.titulo)+'</h3>'+
+        spChipPrio(t.prioridad)+spChipEstado(t.estado)+
+        (t.nivel_escalado > 0 ? '<span class="chip">Nivel '+t.nivel_escalado+'</span>' : '')+
+      '</div>'+
+      '<div class="tiny muted trunc" style="margin-top:4px">'+esc(t.categoria)+' · Abierta por '+esc(spNombreUsuario(t.creado_por))+
+        ' · '+esc(haceRel(new Date(t.creado).getTime()))+'</div></div>'+
+      '<button class="icon-btn" id="sp-x">'+ic('x',16)+'</button></div>'+
+    '<div class="ft-body" style="display:block">'+
+      '<p class="tiny" style="color:#CBD5E1;margin:0 0 16px;white-space:pre-wrap">'+esc(t.descripcion)+'</p>'+
+      '<div class="tiny muted" style="margin-bottom:16px">Asignado a: <strong style="color:#E2E8F0">'+esc(spNombreUsuario(t.asignado_a))+'</strong></div>'+
+      (puedeGestionar ? (
+        '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:18px">'+
+          '<select class="inp" id="sp-est" style="max-width:200px">'+
+            SP_ESTADOS.map(function(e){ return '<option value="'+e[0]+'"'+(t.estado===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join('')+
+          '</select>'+
+          (t.nivel_escalado < 2 ? '<button class="btn btn-s btn-xs" id="sp-escala">'+ic('arrowUp',13)+' Escalar a Nivel 2</button>' : '')+
+        '</div>'
+      ) : '')+
+      '<div class="ay-sec" style="margin-top:0">Historial</div>'+timeline+
+      '<div class="field" style="margin-top:14px"><label class="f">Añadir comentario</label>'+
+        '<textarea class="inp" id="sp-com-txt" rows="3" placeholder="Escribe una actualización...">'+esc(SP.nuevoComentario)+'</textarea></div>'+
+      '<button class="btn btn-p btn-xs" id="sp-com-add">'+ic('send',13)+' Enviar comentario</button>'+
+    '</div>'+
+    '<div class="ft-foot"><button class="btn btn-s" id="sp-cerrar">Cerrar</button></div>'+
+  '</div></div>';
+}
+
+function viewSupport(v){
+  if(!SP.cargado && !SP.cargando) spCarga();
+  var puedeGestionar = spPuedeGestionar();
+
+  var lista = SP.lista.filter(function(t){
+    var txt = (t.titulo+' '+t.descripcion+' '+t.categoria).toLowerCase();
+    if(SP.filtro && txt.indexOf(SP.filtro.toLowerCase().trim()) < 0) return false;
+    if(SP.filtroEstado && t.estado !== SP.filtroEstado) return false;
+    if(SP.filtroPrio && t.prioridad !== SP.filtroPrio) return false;
+    return true;
+  });
+
+  var kpis = [
+    ['Abiertas', String(SP.lista.filter(function(t){ return t.estado==='abierto'; }).length), 'file', 'blue'],
+    ['En progreso', String(SP.lista.filter(function(t){ return t.estado==='en_progreso'; }).length), 'clock', 'amber'],
+    ['Escaladas a Nivel 2', String(SP.lista.filter(function(t){ return t.nivel_escalado===2; }).length), 'arrowUp', 'red'],
+    ['Resueltas', String(SP.lista.filter(function(t){ return t.estado==='resuelto' || t.estado==='cerrado'; }).length), 'check', 'green']
+  ];
+
+  var filas = lista.map(function(t){
+    return '<tr>'+
+      '<td><div class="w trunc">'+esc(t.titulo)+'</div>'+
+        '<div class="tiny muted trunc">'+esc(t.categoria)+'</div></td>'+
+      '<td>'+spChipPrio(t.prioridad)+'</td>'+
+      '<td>'+spChipEstado(t.estado)+(t.nivel_escalado>0?' <span class="chip">N'+t.nivel_escalado+'</span>':'')+'</td>'+
+      '<td class="tiny muted nowrap">'+esc(spNombreUsuario(t.asignado_a))+'</td>'+
+      '<td class="tiny muted nowrap">'+esc(haceRel(new Date(t.creado).getTime()))+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-s btn-xs" data-sp-ver="'+t.id+'">'+ic('eye',12)+' Abrir</button></td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:26px">'+
+    (SP.cargando ? 'Cargando incidencias...' :
+     SP.error ? 'No se ha podido cargar: '+esc(SP.error) :
+     'Ninguna incidencia coincide con la búsqueda.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    kpis.map(function(k){ return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+      '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+      '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-h" style="margin:0 0 14px;flex-wrap:wrap">'+
+      '<div><h3 style="font-size:18px">Soporte y Tickets</h3>'+
+        '<p>Nivel 1 · Responsable de Soporte (Jefe de Equipo). Nivel 2 · Responsable del Responsable (Administrador).</p></div>'+
+      '<button class="btn btn-p" id="sp-nuevo">'+ic('plus',16)+' Abrir incidencia</button></div>'+
+    '<div class="row u-filtros">'+
+      '<div class="search" style="flex:1;min-width:220px">'+ic('search',15)+
+        '<input id="sp-find" placeholder="Buscar por título, categoría o descripción..." value="'+esc(SP.filtro)+'"></div>'+
+      '<select class="inp u-sel" id="sp-fest"><option value="">Todos los estados</option>'+
+        SP_ESTADOS.map(function(e){ return '<option value="'+e[0]+'"'+(SP.filtroEstado===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join('')+
+        '</select>'+
+      '<select class="inp u-sel" id="sp-fprio"><option value="">Todas las prioridades</option>'+
+        SP_PRIORIDADES.map(function(p){ return '<option value="'+p[0]+'"'+(SP.filtroPrio===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+
+        '</select></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Incidencia</th><th>Prioridad</th><th>Estado</th><th>Asignado</th><th>Abierta</th><th></th>'+
+      '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  (SP.nuevo ? spNuevoModal() : '') +
+  spFichaHTML();
+
+  q('#sp-find').oninput = function(){ SP.filtro = this.value; renderApp(); };
+  q('#sp-fest').onchange = function(){ SP.filtroEstado = this.value; renderApp(); };
+  q('#sp-fprio').onchange = function(){ SP.filtroPrio = this.value; renderApp(); };
+  q('#sp-nuevo').onclick = spNuevo;
+  qa('[data-sp-ver]').forEach(function(b){ b.onclick = function(){ spAbre(Number(b.dataset.spVer)); }; });
+
+  if(SP.nuevo){
+    q('#spn-titulo').onchange = function(){ SP.nuevo.titulo = this.value; };
+    q('#spn-cat').onchange = function(){ SP.nuevo.categoria = this.value; };
+    q('#spn-prio').onchange = function(){ SP.nuevo.prioridad = this.value; };
+    q('#spn-desc').onchange = function(){ SP.nuevo.descripcion = this.value; };
+    q('#spn-cancela').onclick = function(){ SP.nuevo = null; renderApp(); };
+    q('#spn-guarda').onclick = spGuardaNuevo;
+  }
+
+  if(SP.det){
+    q('#sp-x').onclick = spCierra;
+    q('#sp-cerrar').onclick = spCierra;
+    if(q('#sp-est')) q('#sp-est').onchange = function(){ spCambiaEstado(SP.det, this.value); };
+    if(q('#sp-escala')) q('#sp-escala').onclick = function(){
+      if(confirm('¿Escalar esta incidencia al Responsable del Responsable (Nivel 2)?')) spEscala(SP.det);
+    };
+    q('#sp-com-txt').oninput = function(){ SP.nuevoComentario = this.value; };
+    q('#sp-com-add').onclick = spAnadeComentario;
+  }
+}
+
+/* ==========================================================================
    AUTOMATION PACKS · Ecosistemas comerciales inteligentes · Labs24k
    Tres niveles de automatización comercial en pago único. Mismo patrón
    visual e interactivo que los Packs Web 3D (tarjetas, matriz comparativa,
@@ -6494,6 +6752,11 @@ var PERMISOS = [
     {k:'recursos.subir',  n:'Subir dosieres',            d:'Añadir documentos al repositorio'},
     {k:'recursos.borrar', n:'Eliminar dosieres',         d:'Retirar documentos del repositorio'}
   ]},
+  {g:'Soporte', ic:'help', items:[
+    {k:'soporte.ver',       n:'Abrir y ver incidencias', d:'Registrar incidencias propias y ver su estado'},
+    {k:'soporte.gestionar', n:'Gestionar incidencias',   d:'Ver todas las incidencias, asignarlas y cambiar su estado'},
+    {k:'soporte.escalar',   n:'Escalar a Nivel 2',       d:'Derivar una incidencia al Responsable del Responsable'}
+  ]},
   {g:'Sistema', ic:'cog', items:[
     {k:'sys.config',  n:'Configuración global',    d:'Marca, precios, enlaces y claves'},
     {k:'sys.usuarios',n:'Gestión de usuarios',     d:'Altas, bajas y permisos'},
@@ -6502,19 +6765,22 @@ var PERMISOS = [
   ]}
 ];
 /* Permisos que trae cada rol de fábrica. Debe reflejar exactamente
-   permisos_de_rol() en NO-SUBIR-supabase/09-recursos.sql. */
+   permisos_de_rol() en NO-SUBIR-supabase/10-soporte.sql. */
 var PERM_ROL = {
   admin:      '*',
   manager:    ['presu.ver','presu.crear','presu.dto','funnel.ver','exp.ver','exp.estado','exp.hitos',
                'exp.docs','hr.ver','hr.mover','hr.contratar','com.llamadas','com.wsp','com.plant','sys.audit',
                'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar',
-               'recursos.ver','recursos.subir','recursos.borrar'],
+               'recursos.ver','recursos.subir','recursos.borrar',
+               'soporte.ver','soporte.gestionar','soporte.escalar'],
   commercial: ['presu.ver','presu.crear','funnel.ver','exp.ver','exp.docs','com.llamadas','com.wsp',
                'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs',
-               'recursos.ver'],
+               'recursos.ver',
+               'soporte.ver'],
   backoffice: ['exp.ver','exp.estado','exp.hitos','exp.docs','exp.borrar','presu.ver','com.llamadas',
                'contactos.ver','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar',
-               'recursos.ver']
+               'recursos.ver',
+               'soporte.ver']
 };
 function todasLasClaves(){
   var r = []; PERMISOS.forEach(function(g){ g.items.forEach(function(i){ r.push(i.k); }); }); return r;
@@ -9201,6 +9467,7 @@ var ORDENES = [
   {p:['panel','inicio','principal','dashboard'],       v:'dashboard', t:'Panel Principal'},
   {p:['contactos','contacto','leads','nuevo lead'],     v:'contactos', t:'Contactos'},
   {p:['recursos','dosieres','dosier','centro de recursos','descargas'], v:'resources', t:'Centro de Recursos'},
+  {p:['soporte','ticket','tickets','incidencia','incidencias','escalar'], v:'support', t:'Soporte y Tickets'},
   {p:['calendario','citas','agenda'],                   v:'calendar',  t:'Calendario y Citas'},
   {p:['academia','cursos','formación'],                 v:'academy',   t:'Academia'},
   {p:['presupuesto','presupuestos','propuesta'],        v:'quotes',    t:'Presupuestos'},

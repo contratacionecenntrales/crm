@@ -61,6 +61,7 @@ Proyecto: `ezwhkpfqnzyfulivlows`. En el editor SQL, **en este orden**:
 | `07-contactos.sql` | Módulo de Contactos: fichas de leads y clientes |
 | `08-roles-personalizados.sql` | Plantillas de rol y permisos, y control de qué pestañas ve cada usuario |
 | `09-recursos.sql` | Centro de Descarga de Dosieres: repositorio documental por categorías, con analítica de descargas |
+| `10-soporte.sql` | Soporte y Tickets: escalado a dos niveles (Responsable de Soporte / Responsable del Responsable) con asignación automática por reglas |
 
 Después:
 
