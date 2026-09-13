@@ -17,6 +17,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 5 | `05-firma-contratos.sql` | La firma del contrato por el cliente |
 | 6 | `06-endurecimiento.sql` | Cierra huecos de RLS de una auditoría de seguridad. **Obligatorio** |
 | 7 | `07-contactos.sql` | Módulo de Contactos: ficha de leads y clientes con documentos, notas y comentarios |
+| 8 | `08-roles-personalizados.sql` | Plantillas de rol reutilizables (permisos + pestañas visibles) aplicables a cualquier usuario |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

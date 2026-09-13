@@ -1340,6 +1340,16 @@ a.btn.btn-g:hover{color:#fff}
   font-size:12px;font-weight:700;color:var(--txt-2)}
 .rk-pos.top{background:rgba(23,200,192,.15);border-color:rgba(23,200,192,.4);color:#99F6E4}
 
+/* Sala de Ranking Gamificada: medallas de verdad en vez de un dígito en un
+   círculo de color, indicador de tendencia, y un flash breve cuando una
+   fila se mueve en directo. */
+.pod-medalla-emoji{background:none!important;border:none!important;font-size:22px;top:-20px}
+.rk-trend{font-size:12px}
+.rk-ticker{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.rk-mueve{animation:rkFlash 700ms ease}
+@keyframes rkFlash{0%{background:rgba(23,200,192,.16)}100%{background:transparent}}
+@media (prefers-reduced-motion: reduce){ .rk-mueve{animation:none} }
+
 /* ------------------------ MISSION CONTROL ---------------------------- */
 .ag-rejilla{gap:14px}
 .ag{display:flex;flex-direction:column}
@@ -1713,6 +1723,7 @@ var MENU = [
   {id:'interviews',  label:'Entrevistas y Talento',      icon:'userPlus',  sec:'Operaciones', roles:['admin','manager'], n:2},
   {id:'integrations',label:'Webmail y MetaTok',          icon:'plug',      sec:'Sistema',   roles:['admin','manager']},
   {id:'users',       label:'Usuarios y Accesos',         icon:'userPlus',  sec:'Sistema',   roles:['admin']},
+  {id:'rolesadmin',  label:'Roles y Permisos',           icon:'shield',    sec:'Sistema',   roles:['admin']},
   {id:'settings',    label:'Configuración del Sistema',  icon:'cog',       sec:'Sistema',   roles:['admin','manager','commercial','backoffice']}
 ];
 
@@ -1861,6 +1872,7 @@ var S = {
   phone:'+34 600 112 233',
   email:'juan.alvarez@labs24k.com',
   sidebar:false,
+  modulosVisibles:null,   // null = filtro por defecto del rol; array = solo esas pestañas
   quote:{cli:'', srv:'command_center', setup:3000, monthly:600, months:12, disc:0}
 };
 
@@ -1869,7 +1881,15 @@ function boot(){ cfgCarga(); S.logged ? renderApp() : renderLogin(); }
 
 function renderApp(){
   paraTimers();          // se destruyen los bucles de la vista anterior
-  var items = MENU.filter(function(m){ return m.roles.indexOf(S.role)>-1; });
+  /* Rol dinámico: si el usuario tiene una lista de módulos visibles asignada
+     (plantilla aplicada desde /admin/roles), esa lista manda por completo —
+     no se combina con el filtro por rol. Sin ella, se comporta como siempre. */
+  var items = MENU.filter(function(m){
+    if(Array.isArray(S.modulosVisibles) && S.modulosVisibles.length){
+      return S.modulosVisibles.indexOf(m.id) > -1;
+    }
+    return m.roles.indexOf(S.role)>-1;
+  });
   if(!items.some(function(m){ return m.id===S.view; })) S.view = 'dashboard';
   var secs = [], html='';
   items.forEach(function(m){ if(secs.indexOf(m.sec)<0) secs.push(m.sec); });
@@ -1927,7 +1947,8 @@ function renderApp(){
     automation:viewAutomationPacks, packs:viewPacks, ranking:viewRanking, mission:viewMission,
     funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
     backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations,
-    interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos};
+    interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos,
+    rolesadmin:viewRolesAdmin};
   (VIEWS[S.view]||viewDashboard)(v);
   reponerToasts();
 }
@@ -6232,19 +6253,33 @@ var PERMISOS = [
     {k:'com.wsp',     n:'WhatsApp y voz IA',       d:'Agentes automáticos de conversación'},
     {k:'com.plant',   n:'Editar plantillas',       d:'Mensajes tipo de la red comercial'}
   ]},
+  {g:'Contactos', ic:'user', items:[
+    {k:'contactos.ver',      n:'Ver contactos',            d:'Consultar leads y clientes de la cartera'},
+    {k:'contactos.crea',     n:'Crear contactos',          d:'Dar de alta un nuevo lead o cliente'},
+    {k:'contactos.editar',   n:'Editar ficha de contacto', d:'Datos, estado y especificaciones técnicas'},
+    {k:'contactos.notas',    n:'Añadir seguimiento',       d:'Anotar actualizaciones en el historial'},
+    {k:'contactos.comentar', n:'Comentar',                 d:'Notas internas rápidas del equipo'},
+    {k:'contactos.docs',     n:'Subir documentación',      d:'Adjuntar contratos, briefings y anexos'},
+    {k:'contactos.borrar',   n:'Eliminar contactos',       d:'Borrado de fichas y documentos'}
+  ]},
   {g:'Sistema', ic:'cog', items:[
     {k:'sys.config',  n:'Configuración global',    d:'Marca, precios, enlaces y claves'},
     {k:'sys.usuarios',n:'Gestión de usuarios',     d:'Altas, bajas y permisos'},
-    {k:'sys.audit',   n:'Bitácora de auditoría',   d:'Ver quién ha cambiado qué'}
+    {k:'sys.audit',   n:'Bitácora de auditoría',   d:'Ver quién ha cambiado qué'},
+    {k:'roles.gestionar', n:'Gestionar roles personalizados', d:'Crear, editar y aplicar plantillas de permisos'}
   ]}
 ];
-/* Permisos que trae cada rol de fábrica. */
+/* Permisos que trae cada rol de fábrica. Debe reflejar exactamente
+   permisos_de_rol() en NO-SUBIR-supabase/08-roles-personalizados.sql. */
 var PERM_ROL = {
   admin:      '*',
   manager:    ['presu.ver','presu.crear','presu.dto','funnel.ver','exp.ver','exp.estado','exp.hitos',
-               'exp.docs','hr.ver','hr.mover','hr.contratar','com.llamadas','com.wsp','com.plant','sys.audit'],
-  commercial: ['presu.ver','presu.crear','funnel.ver','exp.ver','exp.docs','com.llamadas','com.wsp'],
-  backoffice: ['exp.ver','exp.estado','exp.hitos','exp.docs','exp.borrar','presu.ver','com.llamadas']
+               'exp.docs','hr.ver','hr.mover','hr.contratar','com.llamadas','com.wsp','com.plant','sys.audit',
+               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar'],
+  commercial: ['presu.ver','presu.crear','funnel.ver','exp.ver','exp.docs','com.llamadas','com.wsp',
+               'contactos.ver','contactos.crea','contactos.editar','contactos.notas','contactos.comentar','contactos.docs'],
+  backoffice: ['exp.ver','exp.estado','exp.hitos','exp.docs','exp.borrar','presu.ver','com.llamadas',
+               'contactos.ver','contactos.editar','contactos.notas','contactos.comentar','contactos.docs','contactos.borrar']
 };
 function todasLasClaves(){
   var r = []; PERMISOS.forEach(function(g){ g.items.forEach(function(i){ r.push(i.k); }); }); return r;
@@ -6261,6 +6296,219 @@ function permisosDeRol(rol){
      PATCH /api/v1/admin/usuarios/:id  {permisos: permisosParaAPI(u)} */
 function permisosParaAPI(u){
   return todasLasClaves().filter(function(k){ return !!u.perms[k]; });
+}
+
+/* ==========================================================================
+   ROLES Y PERMISOS DINÁMICOS · /admin/roles
+   Una plantilla no crea un quinto nivel de acceso: sigue apoyada en uno de
+   los cuatro roles base (basado_en), que es lo que las políticas RLS usan
+   para decidir "veo lo mío" o "lo veo todo". Lo que aporta la plantilla es
+   una variación de permisos granulares y de módulos visibles sobre ese
+   nivel base. Aplicarla a un usuario escribe rol, permisos y
+   modulos_visibles en su ficha — un guardado puntual, igual que ya hace
+   permisos_de_rol() al crear una cuenta, no una relación en vivo.
+   Ver NO-SUBIR-supabase/08-roles-personalizados.sql para el esquema y RLS.
+   ========================================================================== */
+var RA = {lista:[], cargando:false, cargado:false, error:'', editando:null, aplicarA:''};
+
+function raCarga(){
+  if(RA.cargando) return;
+  RA.cargando = true; RA.error = '';
+  sbSelect('roles_personalizados', 'select=*&order=nombre.asc').then(function(r){
+    RA.cargando = false; RA.cargado = true;
+    if(r && r.ok) RA.lista = r.datos || []; else RA.error = sbMensaje(r);
+    renderApp();
+  }, function(){ RA.cargando = false; RA.error = 'Sin conexión con Supabase.'; renderApp(); });
+}
+
+function raNuevo(){
+  RA.editando = {id:null, nombre:'', descripcion:'', basado_en:'commercial', permisos:{}, modulos_visibles:[]};
+  renderApp();
+}
+function raEditar(id){
+  var r = RA.lista.filter(function(x){ return x.id===id; })[0]; if(!r) return;
+  RA.editando = {id:r.id, nombre:r.nombre, descripcion:r.descripcion||'',
+    basado_en:r.basado_en, permisos:Object.assign({}, r.permisos||{}),
+    modulos_visibles:(r.modulos_visibles||[]).slice()};
+  renderApp();
+}
+function raClonar(id){
+  var r = RA.lista.filter(function(x){ return x.id===id; })[0]; if(!r) return;
+  RA.editando = {id:null, nombre:r.nombre+' (copia)', descripcion:r.descripcion||'',
+    basado_en:r.basado_en, permisos:Object.assign({}, r.permisos||{}),
+    modulos_visibles:(r.modulos_visibles||[]).slice()};
+  renderApp();
+}
+function raCierraEditor(){ RA.editando = null; renderApp(); }
+
+function raGuarda(){
+  var d = RA.editando;
+  if(!d.nombre || d.nombre.trim().length < 2){ toast('Ponle un nombre a la plantilla.'); return; }
+  var fila = {nombre:d.nombre.trim(), descripcion:d.descripcion||'', basado_en:d.basado_en,
+    permisos:d.permisos, modulos_visibles:d.modulos_visibles};
+  var accion = d.id
+    ? sbUpdate('roles_personalizados', 'id=eq.'+d.id, fila)
+    : sbInsert('roles_personalizados', Object.assign({creado_por:(SB.sesion&&SB.sesion.uid)||null}, fila));
+  accion.then(function(r){
+    if(r && r.ok){ toast('Plantilla guardada.'); RA.editando = null; RA.cargado = false; raCarga(); }
+    else toast('No se ha podido guardar: ' + sbMensaje(r));
+  }, function(){ toast('Sin conexión con Supabase.'); });
+}
+function raBorra(id){
+  sbDelete('roles_personalizados', 'id=eq.'+id).then(function(r){
+    if(r && r.ok){ toast('Plantilla eliminada.'); raCarga(); }
+    else toast('No se ha podido eliminar: ' + sbMensaje(r));
+  });
+}
+
+/* Aplicar = fijar el rol base, fusionar permisos_de_rol(basado_en) con las
+   excepciones de la plantilla, y copiar los módulos visibles. Todo en un
+   único guardado sobre la ficha del usuario. */
+function raAplica(rolId, userId){
+  if(!rolId || !userId){ toast('Elige una plantilla y un usuario.'); return; }
+  var r = RA.lista.filter(function(x){ return x.id===rolId; })[0]; if(!r) return;
+  var permisosBase = permisosDeRol(r.basado_en);
+  var permisosFinal = Object.assign({}, permisosBase, r.permisos||{});
+  sbUpdate('perfiles', 'id=eq.'+userId, {
+    rol: r.basado_en, permisos: permisosFinal,
+    modulos_visibles: (r.modulos_visibles&&r.modulos_visibles.length) ? r.modulos_visibles : null,
+    rol_personalizado_id: r.id
+  }).then(function(res){
+    if(res && res.ok){ toast('Plantilla «'+r.nombre+'» aplicada.'); RA.aplicarA=''; }
+    else toast('No se ha podido aplicar: ' + sbMensaje(res));
+  }, function(){ toast('Sin conexión con Supabase.'); });
+}
+
+function raEditorHTML(){
+  var d = RA.editando; if(!d) return '';
+  var permBloques = PERMISOS.map(function(g){
+    return '<div class="pm-g"><div class="pm-gh">'+ic(g.ic,14)+'<span>'+esc(g.g)+'</span></div>'+
+      g.items.map(function(it){
+        var on = !!d.permisos[it.k];
+        return '<div class="pm-i" data-raperm="'+it.k+'">'+
+          '<span class="sw'+(on?' on':'')+'"><i></i></span>'+
+          '<div style="flex:1;min-width:0"><div class="small" style="color:#fff">'+esc(it.n)+'</div>'+
+          '<div class="tiny muted">'+esc(it.d)+'</div></div>'+
+          '<span class="tiny mono" style="color:var(--txt-3);flex:0 0 auto">'+esc(it.k)+'</span></div>';
+      }).join('')+'</div>';
+  }).join('');
+
+  var secciones = [], html2 = '';
+  MENU.forEach(function(m){ if(secciones.indexOf(m.sec)<0) secciones.push(m.sec); });
+  var moduloBloques = secciones.map(function(sec){
+    return '<div class="pm-g"><div class="pm-gh"><span>'+esc(sec)+'</span></div>'+
+      MENU.filter(function(m){ return m.sec===sec; }).map(function(m){
+        var on = d.modulos_visibles.indexOf(m.id) > -1;
+        return '<div class="pm-i" data-ramod="'+m.id+'">'+
+          '<span class="sw'+(on?' on':'')+'"><i></i></span>'+
+          '<div style="flex:1;min-width:0">'+ic(m.icon,14)+' <span class="small" style="color:#fff">'+esc(m.label)+'</span></div></div>';
+      }).join('')+'</div>';
+  }).join('');
+
+  return '<div class="ov" data-ov="ra-editor"><div class="modal" style="max-width:720px">'+
+    '<h3 style="margin:0 0 4px">'+(d.id?'Editar plantilla':'Nueva plantilla de rol')+'</h3>'+
+    '<p class="tiny muted" style="margin:0 0 16px">Se guarda en Supabase y queda disponible para aplicarla a cualquier usuario.</p>'+
+    '<div class="grid g-2" style="margin-bottom:14px">'+
+      '<div class="field"><label class="f">Nombre de la plantilla</label>'+
+        '<input class="inp" id="ra-nombre" value="'+esc(d.nombre)+'" placeholder="Ej. Comercial Junior"></div>'+
+      '<div class="field"><label class="f">Basado en</label><select class="inp" id="ra-base">'+
+        Object.keys(ROLES).map(function(k){ return '<option value="'+k+'"'+(d.basado_en===k?' selected':'')+'>'+ROLES[k].label+'</option>'; }).join('')+
+        '</select></div>'+
+    '</div>'+
+    '<div class="field"><label class="f">Descripción</label>'+
+      '<input class="inp" id="ra-desc" value="'+esc(d.descripcion)+'" placeholder="Para qué sirve este perfil"></div>'+
+    '<div class="grid g-2" style="margin-top:14px;max-height:360px;overflow-y:auto;gap:16px">'+
+      '<div><h4 class="ft-t" style="margin-top:0">Permisos concedidos</h4>'+permBloques+'</div>'+
+      '<div><h4 class="ft-t" style="margin-top:0">Pestañas visibles en el menú</h4>'+
+        '<p class="tiny muted" style="margin:0 0 10px">Ninguna marcada = usa el filtro por defecto de «'+esc(ROLES[d.basado_en].label)+'».</p>'+
+        moduloBloques+'</div>'+
+    '</div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:16px">'+
+      '<button class="btn btn-s" id="ra-cancela">Cancelar</button>'+
+      '<button class="btn btn-p" id="ra-guarda">'+ic('save',15)+' Guardar plantilla</button></div>'+
+  '</div></div>';
+}
+
+function viewRolesAdmin(v){
+  if(S.role !== 'admin'){
+    v.innerHTML = '<div class="card" style="text-align:center;padding:44px">'+
+      '<div class="ico-box red" style="width:52px;height:52px;margin:0 auto 14px">'+ic('shield',24)+'</div>'+
+      '<h3 style="margin:0 0 6px;color:#fff">Sección restringida</h3>'+
+      '<p class="small muted" style="margin:0">Gestionar roles es exclusivo del Administrador.</p></div>';
+    return;
+  }
+  if(!RA.cargado && !RA.cargando) raCarga();
+
+  var filas = RA.lista.map(function(r){
+    var nPerm = todasLasClaves().filter(function(k){ return !!(r.permisos&&r.permisos[k]); }).length;
+    var nMod = (r.modulos_visibles||[]).length;
+    return '<tr>'+
+      '<td><div class="w">'+esc(r.nombre)+'</div><div class="tiny muted">'+esc(r.descripcion||'—')+'</div></td>'+
+      '<td><span class="chip">'+esc(ROLES[r.basado_en] ? ROLES[r.basado_en].label : r.basado_en)+'</span></td>'+
+      '<td class="tiny muted">'+nPerm+' permiso(s) marcado(s)</td>'+
+      '<td class="tiny muted">'+(nMod ? nMod+' pestaña(s)' : 'por defecto del rol')+'</td>'+
+      '<td style="text-align:right"><div class="row" style="gap:5px;justify-content:flex-end">'+
+        '<button class="btn btn-s btn-xs" data-ra-edit="'+r.id+'" title="Editar">'+ic('cog',12)+'</button>'+
+        '<button class="btn btn-s btn-xs" data-ra-clone="'+r.id+'" title="Clonar">'+ic('file',12)+'</button>'+
+        '<button class="btn btn-s btn-xs" data-ra-del="'+r.id+'" title="Eliminar">'+ic('x',12)+'</button>'+
+      '</div></td></tr>';
+  }).join('') || '<tr><td colspan="5" class="muted" style="text-align:center;padding:26px">'+
+    (RA.cargando ? 'Cargando plantillas...' : RA.error ? 'No se ha podido cargar: '+esc(RA.error) :
+     'Todavía no hay ninguna plantilla. Crea la primera.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="card" style="margin-bottom:16px">'+
+    '<div class="card-h" style="margin:0;flex-wrap:wrap">'+
+      '<div><h3 style="font-size:18px">Roles y permisos dinámicos</h3>'+
+        '<p>Crea plantillas de permisos y pestañas visibles, y aplícalas a cualquier usuario. '+
+        'Cada plantilla se apoya en uno de los cuatro roles base.</p></div>'+
+      '<button class="btn btn-p" id="ra-nuevo">'+ic('plus',16)+' Nueva plantilla</button></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Plantilla</th><th>Basado en</th><th>Permisos</th><th>Menú</th><th></th>'+
+      '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+
+  '<div class="card">'+
+    '<div class="card-h"><div><h3 style="font-size:16px">Aplicar una plantilla a un usuario</h3>'+
+      '<p>Sustituye el rol, los permisos y las pestañas visibles de esa cuenta por los de la plantilla.</p></div></div>'+
+    '<div class="grid g-3">'+
+      '<div class="field"><label class="f">Plantilla</label><select class="inp" id="ra-sel-rol">'+
+        '<option value="">Elige una plantilla</option>'+
+        RA.lista.map(function(r){ return '<option value="'+r.id+'">'+esc(r.nombre)+'</option>'; }).join('')+
+        '</select></div>'+
+      '<div class="field"><label class="f">Usuario</label><select class="inp" id="ra-sel-user">'+
+        '<option value="">Elige un usuario</option>'+
+        USUARIOS.filter(function(u){ return !esRaiz(u); }).map(function(u){
+          return '<option value="'+u.id+'">'+esc(u.n)+' · '+esc(u.mail)+'</option>'; }).join('')+
+        '</select></div>'+
+      '<div class="field" style="display:flex;align-items:flex-end">'+
+        '<button class="btn btn-p" id="ra-aplica" style="width:100%">'+ic('check',15)+' Aplicar</button></div>'+
+    '</div>'+
+  '</div>'+
+  raEditorHTML();
+
+  q('#ra-nuevo').onclick = raNuevo;
+  qa('[data-ra-edit]').forEach(function(b){ b.onclick = function(){ raEditar(b.dataset.raEdit); }; });
+  qa('[data-ra-clone]').forEach(function(b){ b.onclick = function(){ raClonar(b.dataset.raClone); }; });
+  qa('[data-ra-del]').forEach(function(b){ b.onclick = function(){
+    if(confirm('¿Eliminar esta plantilla? No afecta a quien ya la tenga aplicada.')) raBorra(b.dataset.raDel);
+  }; });
+  if(q('#ra-aplica')) q('#ra-aplica').onclick = function(){
+    raAplica(q('#ra-sel-rol').value, q('#ra-sel-user').value);
+  };
+
+  if(RA.editando){
+    q('#ra-cancela').onclick = raCierraEditor;
+    q('#ra-nombre').onchange = function(){ RA.editando.nombre = this.value; };
+    q('#ra-desc').onchange = function(){ RA.editando.descripcion = this.value; };
+    q('#ra-base').onchange = function(){ RA.editando.basado_en = this.value; renderApp(); };
+    qa('[data-raperm]').forEach(function(b){ b.onclick = function(){
+      var k = b.dataset.raperm; RA.editando.permisos[k] = !RA.editando.permisos[k]; renderApp(); }; });
+    qa('[data-ramod]').forEach(function(b){ b.onclick = function(){
+      var id = b.dataset.ramod, arr = RA.editando.modulos_visibles;
+      var i = arr.indexOf(id); if(i>-1) arr.splice(i,1); else arr.push(id); renderApp(); }; });
+    q('#ra-guarda').onclick = raGuarda;
+  }
 }
 
 /* ------------------------------ AVATARES --------------------------------- */
@@ -7561,6 +7809,8 @@ function deFila(f, i){
     rol: f.rol, rel: f.rel, est: f.estado,
     google: !!f.google, dobleF: !!f.doble_factor, cambiar: !!f.debe_cambiar,
     avatar: f.avatar_url || null, tok: f.api_token || '',
+    modvis: Array.isArray(f.modulos_visibles) ? f.modulos_visibles : null,
+    rolPersId: f.rol_personalizado_id || null,
     alta: f.alta ? new Date(f.alta).toLocaleDateString('es-ES') : '',
     ultMs: f.ultimo_acceso ? new Date(f.ultimo_acceso).getTime() : null,
     perms: {}, pref: null, ses: [], pass: '(en Supabase)'
@@ -7690,6 +7940,7 @@ function sbAbrePanel(){
       var enLista = USUARIOS.filter(function(x){ return x.id === u.id; })[0];
       S.logged = true; S.name = u.n; S.phone = u.tel || (u.pre+' '+u.num).trim();
       S.email = u.mail; S.role = u.rol; S.raiz = u.raiz; S.view = 'dashboard';
+      S.modulosVisibles = u.modvis;
       CUENTAS.forEach(function(c){ c.activa = false; });
       if(!CUENTAS.filter(function(c){ return c.mail === u.mail; })[0]){
         CUENTAS.unshift({id:'cu-'+u.id, n:u.n, mail:u.mail, rel:u.rel, rol:u.rol, activa:true});
@@ -8395,20 +8646,87 @@ function descargaRecurso(nombre, ruta){
    ========================================================================== */
 
 /* ======================= RANKING DE DISTRIBUIDORES ====================== */
+/* Sala de Ranking Gamificada: 50 perfiles ficticios (nombres y apellidos
+   españoles reales, combinados; ninguno corresponde a una persona real) con
+   cifras de ejemplo. Se generan una vez al cargar el panel y luego se
+   mueven poco a poco con deriva() — el mismo generador de "vida" que ya usa
+   el Panel Principal — para dar sensación de tablero en directo. */
+var RANK_NOMBRES = ['Alejandro','Sofía','Pablo','Lucía','Daniel','María','Álvaro','Carmen','Adrián','Paula',
+  'Diego','Elena','Javier','Marta','Sergio','Laura','Iván','Cristina','Rubén','Ana',
+  'Hugo','Sara','Mario','Nerea','Raúl','Irene','Óscar','Claudia','Víctor','Alba',
+  'Guillermo','Andrea','Jorge','Beatriz','Gonzalo','Patricia','Fernando','Rocío','Ignacio','Silvia',
+  'Rodrigo','Natalia','Alberto','Marina','Enrique','Julia','Manuel','Isabel','Francisco','Noelia'];
+var RANK_APELLIDOS = ['García','Fernández','González','Rodríguez','López','Martínez','Sánchez','Pérez',
+  'Gómez','Martín','Jiménez','Ruiz','Hernández','Díaz','Moreno','Álvarez','Muñoz','Romero','Alonso','Gutiérrez',
+  'Navarro','Torres','Domínguez','Vázquez','Ramos','Gil','Ramírez','Serrano','Blanco','Molina'];
+var RANK_ZONAS = ['Gijón','Oviedo','Avilés','Siero','Langreo','Mieres','Madrid','Barcelona','Valencia',
+  'Sevilla','Bilbao','Zaragoza','Málaga','Murcia','A Coruña'];
+
+function generaAgentesRanking(n){
+  var out = [];
+  for(var i=0; i<n; i++){
+    var nombre = RANK_NOMBRES[i % RANK_NOMBRES.length];
+    var ap1 = RANK_APELLIDOS[(i*7) % RANK_APELLIDOS.length];
+    var ap2 = RANK_APELLIDOS[(i*13 + 5) % RANK_APELLIDOS.length];
+    var vol = 32000 + Math.round(Math.random()*178000);
+    out.push({
+      id:'rk-'+i, n: nombre+' '+ap1+' '+ap2, zona: RANK_ZONAS[i % RANK_ZONAS.length],
+      vol: vol, cierres: 6 + Math.floor(Math.random()*38),
+      com: Math.round(vol*0.1), var: Math.round((Math.random()*44 - 12)*10)/10, activo:true
+    });
+  }
+  return out;
+}
+
 var RANK_PER = 'trimestre';
-var RANKING = [
-  {id:'d1', n:'Juan Álvarez',      zona:'Asturias',   vol:186400, cierres:34, com:18640, var:12.4, activo:true},
-  {id:'d2', n:'Marta Rodríguez',   zona:'Madrid',     vol:154200, cierres:28, com:15420, var:8.1,  activo:true},
-  {id:'d3', n:'David Fernández',   zona:'Cataluña',   vol:132900, cierres:25, com:13290, var:-3.2, activo:true},
-  {id:'d4', n:'Carlos Ruiz',       zona:'Asturias',   vol:98750,  cierres:19, com:9875,  var:5.6,  activo:true},
-  {id:'d5', n:'Arantxa Beloki',    zona:'País Vasco', vol:87300,  cierres:17, com:8730,  var:14.9, activo:true},
-  {id:'d6', n:'María Arévalo',     zona:'Andalucía',  vol:71600,  cierres:14, com:7160,  var:2.3,  activo:true},
-  {id:'d7', n:'Asunción Prieto',   zona:'Asturias',   vol:54900,  cierres:11, com:5490,  var:-1.8, activo:true}
-];
+var RANKING = generaAgentesRanking(50);
 
 function rankOrdenado(){
   return RANKING.slice().sort(function(a,b){ return b.vol - a.vol; })
     .map(function(d, i){ d.pos = i + 1; return d; });
+}
+/* 🚀 en plena racha, 📈 subiendo, 🔥 buen ritmo, sin emoji si va plano o a la baja. */
+function rankTendenciaEmoji(v){
+  if(v >= 20) return '🚀'; if(v >= 8) return '📈'; if(v >= 0) return '🔥'; return '';
+}
+/* Frases del ticker de ventas recientes simuladas. */
+function rankFraseVenta(){
+  var a = RANKING[Math.floor(Math.random()*RANKING.length)];
+  var cli = CLIENTES_LIVE[Math.floor(Math.random()*CLIENTES_LIVE.length)];
+  var pack = PACKS_LIVE[Math.floor(Math.random()*PACKS_LIVE.length)];
+  var importe = 900 + Math.floor(Math.random()*8) * 300;
+  return esc(a.n.split(' ').slice(0,2).join(' ')) + ' acaba de cerrar <strong>' + esc(pack) +
+    '</strong> con ' + esc(cli) + ' · <span class="w">' + eur(importe) + '</span> ' + rankTendenciaEmoji(25);
+}
+function pintaTickerVenta(){
+  var cont = q('#rk-ticker'); if(!cont) return;
+  var div = document.createElement('div');
+  div.className = 'ml'; div.innerHTML = rankFraseVenta();
+  cont.insertBefore(div, cont.firstChild);
+  while(cont.children.length > 4) cont.removeChild(cont.lastChild);
+}
+/* Mueve 2-3 agentes al azar cada tick y repinta solo sus celdas: nada de
+   reconstruir la tabla entera cada pocos segundos. */
+function rankArrancaVivo(){
+  cadaTanto(pintaTickerVenta, 3800);
+  cadaTanto(function(){
+    var lista = rankOrdenado(), n = 2 + Math.floor(Math.random()*2);
+    for(var i=0; i<n; i++){
+      var d = lista[Math.floor(Math.random()*Math.min(lista.length, 20))];
+      var antes = d.vol;
+      d.vol = Math.round(deriva(d.vol, 15000, 260000, 6000));
+      d.com = Math.round(d.vol*0.1);
+      d.var = Math.round(((d.vol-antes)/Math.max(antes,1))*300*10)/10;
+      var elVol = q('#rk-vol-'+d.id);
+      if(elVol) animaCifra(elVol, antes, d.vol, eur, 900);
+      var elCom = q('#rk-com-'+d.id); if(elCom) elCom.textContent = eur(d.com);
+      var elPVol = q('#rk-pvol-'+d.id);
+      if(elPVol) animaCifra(elPVol, antes, d.vol, eur, 900);
+      var elPCom = q('#rk-pcom-'+d.id); if(elPCom) elPCom.textContent = eur(d.com);
+      var fila = q('#rk-fila-'+d.id);
+      if(fila){ fila.classList.add('rk-mueve'); setTimeout(function(f){ return function(){ f.classList.remove('rk-mueve'); }; }(fila), 700); }
+    }
+  }, 2500);
 }
 
 function viewRanking(v){
@@ -8418,22 +8736,23 @@ function viewRanking(v){
   var comision = lista.reduce(function(a,b){ return a + b.com; }, 0);
   var medio = cierres ? Math.round(total / cierres) : 0;
 
+  var MEDALLAS = ['🥇','🥈','🥉'];
   var podio = lista.slice(0, 3).map(function(d, i){
     var orden = [2, 1, 3][i];                      // el primero, en el centro
     return '<div class="pod pod-'+(i+1)+'" style="order:'+orden+'">'+
-      '<div class="pod-medalla">'+(i === 0 ? '1' : i === 1 ? '2' : '3')+'</div>'+
+      '<div class="pod-medalla pod-medalla-emoji">'+MEDALLAS[i]+'</div>'+
       '<div class="pod-av" style="background:'+AV_COL[i % AV_COL.length]+'">'+
         esc(iniciales(d.n))+'</div>'+
-      '<div class="pod-n">'+esc(d.n)+'</div>'+
+      '<div class="pod-n">'+esc(d.n)+' <span class="rk-trend">'+rankTendenciaEmoji(d.var)+'</span></div>'+
       '<div class="tiny muted">'+esc(d.zona)+'</div>'+
-      '<div class="pod-vol">'+eur(d.vol)+'</div>'+
-      '<div class="tiny muted">'+d.cierres+' cierres · '+eur(d.com)+' de comisión</div>'+
+      '<div class="pod-vol" id="rk-pvol-'+d.id+'">'+eur(d.vol)+'</div>'+
+      '<div class="tiny muted">'+d.cierres+' cierres · <span id="rk-pcom-'+d.id+'">'+eur(d.com)+'</span> de comisión</div>'+
       '<div class="pod-barra"></div></div>';
   }).join('');
 
   var maximo = lista[0] ? lista[0].vol : 1;
   var filas = lista.map(function(d){
-    return '<tr>'+
+    return '<tr id="rk-fila-'+d.id+'">'+
       '<td><span class="rk-pos'+(d.pos <= 3 ? ' top' : '')+'">'+d.pos+'</span></td>'+
       '<td><div class="row" style="gap:10px;align-items:center">'+
         '<span class="av av-txt" style="width:32px;height:32px;font-size:12px;background:'+
@@ -8442,11 +8761,12 @@ function viewRanking(v){
         '<div class="tiny muted">'+esc(d.zona)+'</div></div></div></td>'+
       '<td style="min-width:170px"><div class="bar"><i style="width:'+
         Math.round(d.vol / maximo * 100)+'%;background:var(--blue)"></i></div></td>'+
-      '<td class="w nowrap">'+eur(d.vol)+'</td>'+
+      '<td class="w nowrap" id="rk-vol-'+d.id+'">'+eur(d.vol)+'</td>'+
       '<td class="nowrap">'+d.cierres+'</td>'+
-      '<td class="nowrap">'+eur(d.com)+'</td>'+
+      '<td class="nowrap" id="rk-com-'+d.id+'">'+eur(d.com)+'</td>'+
       '<td class="nowrap"><span class="chip '+(d.var >= 0 ? 'green' : 'red')+'">'+
-        (d.var >= 0 ? '+' : '')+d.var.toFixed(1).replace('.', ',')+'%</span></td>'+
+        (d.var >= 0 ? '+' : '')+d.var.toFixed(1).replace('.', ',')+'%</span> '+
+        '<span class="rk-trend">'+rankTendenciaEmoji(d.var)+'</span></td>'+
     '</tr>';
   }).join('');
 
@@ -8460,6 +8780,8 @@ function viewRanking(v){
       '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
       '<div class="val">'+k[1]+'</div></div>'; }).join('')+
   '</div>'+
+
+  '<div class="rk-ticker" id="rk-ticker"></div>'+
 
   '<div class="card card-podio" style="margin-bottom:16px">'+
     '<div class="card-h" style="flex-wrap:wrap"><div>'+
@@ -8494,6 +8816,9 @@ function viewRanking(v){
       ['Posición','Distribuidor','Zona','Volumen (€)','Cierres','Comisión (€)','Variación (%)'],
       rankOrdenado().map(function(d){
         return [d.pos, d.n, d.zona, d.vol, d.cierres, d.com, d.var]; })); };
+
+  for(var i=0; i<3; i++) pintaTickerVenta();   // arranca con algo ya en el ticker
+  rankArrancaVivo();
 }
 
 /* ========================= MISSION CONTROL ============================== */
