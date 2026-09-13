@@ -15,8 +15,11 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 3 | `03-almacen.sql` | El depósito privado de documentos |
 | 4 | `04-mission-contratos.sql` | Agentes, contratos y ranking de la red |
 | 5 | `05-firma-contratos.sql` | La firma del contrato por el cliente |
+| 6 | `06-endurecimiento.sql` | Cierra huecos de RLS de una auditoría de seguridad. **Obligatorio** |
+| 7 | `07-contactos.sql` | Módulo de Contactos: ficha de leads y clientes con documentos, notas y comentarios |
 
-Con el **1** y el **2** ya entras. Los otros tres son para los módulos.
+Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
+Los demás son para los módulos correspondientes.
 
 Si el 01 da error, **párate ahí**: los demás dependen de las tablas que crea, y
 seguir solo acumula errores encima del primero.

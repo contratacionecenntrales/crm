@@ -21,7 +21,7 @@ directamente por `fetch`.
 | `backend/` | La Edge Function de administración de usuarios | **No** (se despliega aparte) |
 | `LEEME-*.md`, `ejemplo-*.pdf` | Documentación y muestras | No |
 
-`index.html` pesa unos **520 KB** y `firmar.html` unos **105 KB**. Cargan de una vez
+`index.html` pesa unos **570 KB** y `firmar.html` unos **105 KB**. Cargan de una vez
 y luego no piden nada más al servidor.
 
 > **Aviso sobre el `.htaccess`.** Ahora mismo lo tienes desactivado en el servidor.
@@ -57,6 +57,8 @@ Proyecto: `ezwhkpfqnzyfulivlows`. En el editor SQL, **en este orden**:
 | `03-almacen.sql` | El depósito privado `documentos` |
 | `04-mission-contratos.sql` | Agentes, contratos y el ranking de la red |
 | `05-firma-contratos.sql` | La firma del contrato por el cliente |
+| `06-endurecimiento.sql` | Cierra huecos de seguridad encontrados en auditoría (obligatorio) |
+| `07-contactos.sql` | Módulo de Contactos: fichas de leads y clientes |
 
 Después:
 

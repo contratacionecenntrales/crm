@@ -96,9 +96,7 @@ svg{display:block}
   border-right:1px solid var(--line);display:flex;flex-direction:column;
   position:sticky;top:0;height:100vh}
 .brand{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;
-  justify-content:space-between;gap:8px}
-.brand h1{font-size:17px;font-weight:800;letter-spacing:.16em;margin:0;color:var(--blue)}
-.brand h1 span{color:#fff}
+  justify-content:center}
 .badge-role{font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:6px;
   background:rgba(23,200,192,.14);color:#99F6E4;border:1px solid rgba(23,200,192,.3);white-space:nowrap}
 .nav{flex:1;overflow-y:auto;padding:14px 12px}
@@ -585,11 +583,6 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xm
   --brand-deep:#0E4B5A;      /* turquesa oscuro del degradado */
 }
 .logo-mark{width:38px;height:38px;flex:0 0 38px;object-fit:contain;display:block}
-.brand{gap:11px}
-.brand .bw{display:flex;flex-direction:column;min-width:0}
-.brand h1{font-size:17px;letter-spacing:.11em;line-height:1.1}
-.brand .tag{font-size:8.5px;letter-spacing:.055em;color:var(--txt-3);text-transform:uppercase;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .login-logo{width:96px;height:96px;object-fit:contain;margin:0 auto 14px;display:block;
   filter:drop-shadow(0 14px 34px rgba(34,184,207,.32))}
 .login-tag{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center;
@@ -737,11 +730,6 @@ a.btn.btn-g:hover{color:#fff}
    MARCA VECTORIAL Y ACENTO CIAN
    ========================================================================== */
 .iso{display:block;flex:0 0 auto;filter:drop-shadow(0 0 10px rgba(23,200,192,.28))}
-.brand{gap:11px;align-items:center}
-.brand h1{font-size:17px;letter-spacing:.13em;font-weight:800;color:var(--blue)}
-.brand h1 span{color:var(--txt)}
-.brand .tag{font-size:8.5px;letter-spacing:.09em;color:var(--txt-3);text-transform:uppercase;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .login-logo{display:flex;justify-content:center;margin-bottom:14px}
 .login-logo .iso{filter:drop-shadow(0 14px 34px rgba(23,200,192,.42))}
 .doc-logo{display:inline-flex}
@@ -1711,7 +1699,9 @@ var MENU = [
   {id:'calendar',    label:'Calendario y Citas',         icon:'calendar',  sec:'General',   roles:['admin','manager','commercial'], n:3},
   {id:'academy',     label:'Academia y Cursos',          icon:'book',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'mission',     label:'Mission Control',            icon:'spark',     sec:'General',   roles:['admin','manager']},
+  {id:'contactos',   label:'Contactos',                  icon:'user',      sec:'General',   roles:['admin','manager','commercial','backoffice']},
   {id:'quotes',      label:'Presupuestos',               icon:'calc',      sec:'Comercial', roles:['admin','manager','commercial']},
+  {id:'automation',  label:'Automation Packs',           icon:'bolt',      sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'packs',       label:'Packs Web 3D',               icon:'building',  sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'ranking',     label:'Ranking de la Red',          icon:'trend',     sec:'Comercial', roles:['admin','manager','commercial']},
   {id:'funnels',     label:'Embudos de Venta',           icon:'filter',    sec:'Comercial', roles:['admin','manager','commercial']},
@@ -1896,9 +1886,7 @@ function renderApp(){
   '<div class="app">'+
     (S.sidebar?'<div class="scrim" id="scrim"></div>':'')+
     '<aside class="sidebar'+(S.sidebar?' open':'')+'">'+
-      '<div class="brand">'+logo(34)+
-        '<div class="bw">'+marcaTexto(19)+
-        '<div class="tag">Command Center 360°</div></div></div>'+
+      '<div class="brand">'+logo(40)+'</div>'+
       '<nav class="nav">'+html+'</nav>'+
       '<div class="user-card">'+
         '<div class="avatar">'+esc(S.name.charAt(0).toUpperCase())+'</div>'+
@@ -1936,10 +1924,10 @@ function renderApp(){
 
   var v = q('#view');
   var VIEWS = {dashboard:viewDashboard, calendar:viewCalendar, academy:viewAcademy, quotes:viewQuotes,
-    packs:viewPacks, ranking:viewRanking, mission:viewMission,
+    automation:viewAutomationPacks, packs:viewPacks, ranking:viewRanking, mission:viewMission,
     funnels:viewFunnels, audits:viewAudits, clients:viewClients, contracts:viewContracts,
     backoffice:viewBackoffice, voice_wa:viewVoice, integrations:viewIntegrations,
-    interviews:viewInterviews, users:viewUsers, settings:viewSettings};
+    interviews:viewInterviews, users:viewUsers, settings:viewSettings, contactos:viewContactos};
   (VIEWS[S.view]||viewDashboard)(v);
   reponerToasts();
 }
@@ -3778,6 +3766,618 @@ function hrEventos(){
     if(!c.punt){ toast('Completa la evaluación antes de dar de alta.'); return; }
     HR.modal=null; mover(c.id,'contratado');
   };
+}
+
+/* ==========================================================================
+   CONTACTOS · leads y clientes con ficha individual · Labs Command Center 360
+   Persistencia real en Supabase: contactos, contacto_eventos (actualizaciones
+   y notas de seguimiento), contacto_comentarios (comentarios interactivos) y
+   contacto_documentos (documentación, archivo en el bucket "documentos").
+   Ver NO-SUBIR-supabase/07-contactos.sql para el esquema y las políticas RLS.
+   ========================================================================== */
+var ESTADOS_CT = ['Nuevo','Contactado','Cualificado','Propuesta enviada','Cliente','Perdido'];
+var TABS_CT = [
+  {k:'docs',    n:'Documentación',            i:'file'},
+  {k:'spec',    n:'Especificaciones técnicas', i:'cog'},
+  {k:'hist',    n:'Actualizaciones',          i:'clock'},
+  {k:'coment',  n:'Comentarios',              i:'chat'}
+];
+var CT = {
+  lista:[], cargando:false, cargado:false, error:'',
+  filtro:'', tipoF:'', estadoF:'',
+  det:null, tab:'docs', eventos:[], comentarios:[], documentos:[], subiendo:false,
+  nuevoTexto:'', nuevoComentario:'', nuevo:null
+};
+
+function ctContactoPorId(id){ return CT.lista.filter(function(c){ return c.id===id; })[0] || null; }
+
+function ctCarga(){
+  if(CT.cargando) return;
+  CT.cargando = true; CT.error = '';
+  sbSelect('contactos', 'select=*&order=actualizado.desc').then(function(r){
+    CT.cargando = false; CT.cargado = true;
+    if(r && r.ok) CT.lista = r.datos || []; else CT.error = sbMensaje(r);
+    renderApp();
+  }, function(){ CT.cargando = false; CT.error = 'Sin conexión con Supabase.'; renderApp(); });
+}
+
+function ctCargaDetalle(id){
+  Promise.all([
+    sbSelect('contacto_eventos', 'contacto_id=eq.'+id+'&order=ts.desc'),
+    sbSelect('contacto_comentarios', 'contacto_id=eq.'+id+'&order=ts.desc'),
+    sbSelect('contacto_documentos', 'contacto_id=eq.'+id+'&order=ts.desc')
+  ]).then(function(rs){
+    if(rs[0] && rs[0].ok) CT.eventos = rs[0].datos || [];
+    if(rs[1] && rs[1].ok) CT.comentarios = rs[1].datos || [];
+    if(rs[2] && rs[2].ok) CT.documentos = rs[2].datos || [];
+    renderApp();
+  });
+}
+
+function ctAbre(id){
+  CT.det = id; CT.tab = 'docs'; CT.eventos = []; CT.comentarios = []; CT.documentos = [];
+  renderApp();
+  ctCargaDetalle(id);
+}
+function ctCierra(){ CT.det = null; renderApp(); }
+
+function ctNuevo(){
+  CT.nuevo = {nombre:'', empresa:'', email:'', prefijo:'+34', telefono:'', origen:'', tipo:'lead'};
+  renderApp();
+}
+function ctGuardaNuevo(){
+  var n = CT.nuevo;
+  if(!n || !n.nombre || n.nombre.trim().length < 2){
+    toast('Escribe al menos el nombre del contacto.'); return; }
+  var fila = {nombre:n.nombre.trim(), empresa:n.empresa||'', email:n.email||'',
+    prefijo:n.prefijo||'+34', telefono:n.telefono||'', origen:n.origen||'', tipo:n.tipo||'lead',
+    gestor_id:(SB.sesion && SB.sesion.uid) || null};
+  sbInsert('contactos', fila).then(function(r){
+    if(r && r.ok){ toast('Contacto creado.'); CT.nuevo = null; CT.cargado = false; ctCarga(); }
+    else toast('No se ha podido crear el contacto: ' + sbMensaje(r));
+  }, function(){ toast('Sin conexión con Supabase.'); });
+}
+
+/* Guarda un campo suelto de la ficha (estado, especificaciones...) sin tener
+   que reenviar el resto del contacto. */
+function ctGuardaCampo(id, campo, valor){
+  var cambios = {}; cambios[campo] = valor;
+  sbUpdate('contactos', 'id=eq.'+id, cambios).then(function(r){
+    if(r && r.ok){
+      var c = ctContactoPorId(id); if(c) c[campo] = valor;
+      toast('Guardado.'); renderApp();
+    } else toast('No se ha podido guardar: ' + sbMensaje(r));
+  });
+}
+
+function ctAnadeEvento(){
+  var id = CT.det, txt = String(CT.nuevoTexto || '').trim();
+  if(!txt){ toast('Escribe una actualización antes de guardarla.'); return; }
+  sbInsert('contacto_eventos', {contacto_id:id, autor_id:(SB.sesion && SB.sesion.uid) || null,
+    tipo:'nota', texto:txt}).then(function(r){
+    if(r && r.ok){ CT.nuevoTexto = ''; toast('Actualización registrada.'); ctCargaDetalle(id); }
+    else toast('No se ha podido guardar: ' + sbMensaje(r));
+  });
+}
+function ctAnadeComentario(){
+  var id = CT.det, txt = String(CT.nuevoComentario || '').trim();
+  if(!txt){ toast('Escribe un comentario antes de enviarlo.'); return; }
+  sbInsert('contacto_comentarios', {contacto_id:id, autor_id:(SB.sesion && SB.sesion.uid) || null,
+    texto:txt}).then(function(r){
+    if(r && r.ok){ CT.nuevoComentario = ''; toast('Comentario añadido.'); ctCargaDetalle(id); }
+    else toast('No se ha podido guardar: ' + sbMensaje(r));
+  });
+}
+
+/* -------------------- DOCUMENTACIÓN · Supabase Storage ------------------- */
+function ctSubeArchivo(file){
+  var id = CT.det;
+  if(!id || !file) return;
+  if(file.size > 25*1024*1024){ toast('El archivo supera los 25 MB permitidos.'); return; }
+  CT.subiendo = true; renderApp();
+  var limpio = String(file.name || 'archivo').replace(/[^A-Za-z0-9.\-_]/g, '_');
+  var ruta = 'contactos/' + id + '/' + Date.now() + '-' + limpio;
+  sbConSesion(function(){
+    return fetch(SB.url + '/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
+      method:'POST',
+      headers:{'apikey':SB.clave, 'Authorization':'Bearer '+((SB.sesion||{}).access_token||SB.clave),
+        'Content-Type': file.type || 'application/octet-stream'},
+      body:file
+    }).then(function(r){ return {ok:r.ok, estado:r.status}; },
+            function(){ return {ok:false, estado:0}; });
+  }).then(function(r){
+    if(!r.ok){
+      CT.subiendo = false; renderApp();
+      toast(r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
+                            : 'No se ha podido subir el archivo (código '+r.estado+').');
+      return;
+    }
+    return sbInsert('contacto_documentos', {contacto_id:id, nombre:file.name, tipo:file.type||'',
+      ruta:ruta, tamano_bytes:file.size, subido_por:(SB.sesion && SB.sesion.uid) || null})
+      .then(function(ri){
+        CT.subiendo = false;
+        if(ri && ri.ok){ toast('Documento subido.'); ctCargaDetalle(id); }
+        else { toast('El archivo se subió, pero no se pudo registrar: ' + sbMensaje(ri)); renderApp(); }
+      });
+  });
+}
+function ctBorraArchivo(docId){
+  var id = CT.det;
+  sbDelete('contacto_documentos', 'id=eq.'+docId).then(function(r){
+    if(r && r.ok){ toast('Documento eliminado.'); ctCargaDetalle(id); }
+    else toast('No se ha podido eliminar: ' + sbMensaje(r));
+  });
+}
+
+/* ------------------------------ FICHA · PESTAÑAS -------------------------- */
+function ctTabDocs(c){
+  var filas = CT.documentos.map(function(d){
+    return '<div class="row" style="gap:11px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)">'+
+      '<div class="ico-box blue" style="width:34px;height:34px;flex:0 0 34px">'+ic('file',15)+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="small trunc" style="color:#fff">'+esc(d.nombre)+'</div>'+
+      '<div class="tiny muted">'+esc(haceRel(new Date(d.ts).getTime()))+
+        (d.tamano_bytes ? ' · '+(d.tamano_bytes/1024).toFixed(0)+' KB' : '')+'</div></div>'+
+      '<button class="btn btn-s btn-xs" data-ct-desc="'+d.id+'" title="Descargar">'+ic('download',13)+'</button>'+
+      '<button class="btn btn-s btn-xs" data-ct-deldoc="'+d.id+'" title="Eliminar">'+ic('x',13)+'</button>'+
+    '</div>';
+  }).join('') || '<p class="tiny muted" style="padding:10px 0">Todavía no hay ningún documento adjunto.</p>';
+
+  return '<h4 class="ft-t">Documentación</h4>'+
+    '<p class="tiny muted" style="margin:0 0 12px">Contratos, briefings y documentos legales del contacto.</p>'+
+    '<label class="btn btn-p" style="width:fit-content;cursor:pointer">'+
+      (CT.subiendo ? 'Subiendo…' : (ic('upload',15)+' Adjuntar documento'))+
+      '<input type="file" id="ct-file" hidden'+(CT.subiendo?' disabled':'')+'></label>'+
+    '<div style="margin-top:14px">'+filas+'</div>';
+}
+
+function ctTabSpec(c){
+  return '<h4 class="ft-t">Especificaciones técnicas</h4>'+
+    '<p class="tiny muted" style="margin:0 0 12px">Requerimientos personalizados, integraciones activas o '+
+    'configuraciones específicas de este proyecto.</p>'+
+    '<textarea class="inp" id="ct-spec" rows="10" style="resize:vertical;font-family:inherit" '+
+    'placeholder="Ej. Integración con su CRM actual, dominio propio, número de agentes contratados...">'+
+    esc(c.especificaciones||'')+'</textarea>'+
+    '<button class="btn btn-p" id="ct-spec-save" style="margin-top:10px">'+ic('save',14)+' Guardar especificaciones</button>';
+}
+
+function ctTabHist(c){
+  var filas = CT.eventos.map(function(e){
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--line)">'+
+      '<div class="small" style="color:#E2E8F0">'+esc(e.texto)+'</div>'+
+      '<div class="tiny muted" style="margin-top:3px">'+esc(haceRel(new Date(e.ts).getTime()))+'</div></div>';
+  }).join('') || '<p class="tiny muted" style="padding:10px 0">Todavía no hay actualizaciones registradas.</p>';
+
+  return '<h4 class="ft-t">Actualizaciones y notas de seguimiento</h4>'+
+    '<p class="tiny muted" style="margin:0 0 12px">Historial cronológico de la evolución comercial o técnica del contacto.</p>'+
+    '<div class="row" style="gap:8px;margin-bottom:12px">'+
+      '<input class="inp" id="ct-hist-txt" style="flex:1" placeholder="Ej. Enviada propuesta, a la espera de respuesta" value="'+esc(CT.nuevoTexto)+'">'+
+      '<button class="btn btn-p" id="ct-hist-add">'+ic('plus',14)+' Añadir</button></div>'+
+    '<div>'+filas+'</div>';
+}
+
+function ctTabComentarios(c){
+  var filas = CT.comentarios.map(function(cm){
+    return '<div class="msg ia" style="max-width:100%"><div class="bur" style="max-width:100%">'+esc(cm.texto)+
+      '<div class="tiny muted" style="margin-top:4px">'+esc(haceRel(new Date(cm.ts).getTime()))+'</div></div></div>';
+  }).join('') || '<p class="tiny muted" style="padding:10px 0">Todavía no hay comentarios del equipo.</p>';
+
+  return '<h4 class="ft-t">Comentarios interactivos</h4>'+
+    '<p class="tiny muted" style="margin:0 0 12px">Notas rápidas internas del equipo sobre este contacto.</p>'+
+    '<div class="stack" style="gap:8px;margin-bottom:12px">'+filas+'</div>'+
+    '<div class="row" style="gap:8px">'+
+      '<input class="inp" id="ct-com-txt" style="flex:1" placeholder="Escribe un comentario interno..." value="'+esc(CT.nuevoComentario)+'">'+
+      '<button class="btn btn-p" id="ct-com-add">'+ic('send',14)+'</button></div>';
+}
+
+/* ------------------------------ FICHA · CONTENEDOR ------------------------ */
+function ctFichaHTML(){
+  if(!CT.det) return '';
+  var c = ctContactoPorId(CT.det);
+  if(!c){ return ''; }
+
+  var nav = TABS_CT.map(function(t){
+    return '<button class="ft-nav'+(CT.tab===t.k?' on':'')+'" data-cttab="'+t.k+'">'+
+      ic(t.i,15)+'<span>'+t.n+'</span></button>'; }).join('');
+
+  var cuerpo = CT.tab==='spec' ? ctTabSpec(c) : CT.tab==='hist' ? ctTabHist(c) :
+               CT.tab==='coment' ? ctTabComentarios(c) : ctTabDocs(c);
+
+  var chipTipo = c.tipo==='cliente' ? '<span class="chip green">Cliente</span>' : '<span class="chip blue">Lead</span>';
+
+  return '<div class="ov" data-ov="ct-detalle"><div class="modal ficha">'+
+    '<div class="ft-head">'+
+      '<div class="row" style="gap:13px;align-items:center;min-width:0">'+
+        '<div class="av-txt" style="width:46px;height:46px;flex:0 0 46px;border-radius:50%;'+
+          'display:flex;align-items:center;justify-content:center;background:var(--blue);color:#04231A;'+
+          'font-weight:700;font-size:17px">'+esc((c.nombre||'?').charAt(0).toUpperCase())+'</div>'+
+        '<div style="min-width:0"><div class="row" style="gap:8px;align-items:center">'+
+          '<h3 style="margin:0;font-size:16px;color:#fff" class="trunc">'+esc(c.nombre)+'</h3>'+chipTipo+'</div>'+
+        '<div class="tiny muted trunc">'+esc(c.empresa||'Sin empresa')+' · '+esc(c.email||'sin correo')+'</div></div></div>'+
+      '<button class="icon-btn" id="ct-x">'+ic('x',16)+'</button></div>'+
+    '<div class="ft-body"><div class="ft-side">'+nav+'</div>'+
+      '<div class="ft-main">'+cuerpo+'</div></div>'+
+    '<div class="ft-foot">'+
+      '<span class="tiny muted">Estado: <select class="sel-est" id="ct-est">'+
+        ESTADOS_CT.map(function(e){ return '<option'+(c.estado===e?' selected':'')+'>'+e+'</option>'; }).join('')+
+        '</select></span>'+
+      '<button class="btn btn-s" id="ct-cerrar">Cerrar</button>'+
+    '</div></div></div>';
+}
+
+/* ------------------------------ VISTA · LISTA ------------------------------ */
+function viewContactos(v){
+  if(!CT.cargado && !CT.cargando) ctCarga();
+
+  var lista = CT.lista.filter(function(c){
+    var t = (c.nombre+' '+c.empresa+' '+c.email+' '+c.telefono).toLowerCase();
+    if(CT.filtro && t.indexOf(CT.filtro.toLowerCase().trim()) < 0) return false;
+    if(CT.tipoF && c.tipo !== CT.tipoF) return false;
+    if(CT.estadoF && c.estado !== CT.estadoF) return false;
+    return true;
+  });
+
+  var kpis = [
+    ['Contactos totales', String(CT.lista.length), 'users', 'blue'],
+    ['Leads',    String(CT.lista.filter(function(c){ return c.tipo==='lead'; }).length), 'user', 'violet'],
+    ['Clientes', String(CT.lista.filter(function(c){ return c.tipo==='cliente'; }).length), 'check', 'green'],
+    ['Cualificados', String(CT.lista.filter(function(c){ return c.estado==='Cualificado'; }).length), 'target', 'amber']
+  ];
+
+  var filas = lista.map(function(c){
+    return '<tr>'+
+      '<td><div class="w trunc">'+esc(c.nombre)+'</div>'+
+        '<div class="tiny muted trunc">'+esc(c.empresa||'—')+'</div></td>'+
+      '<td class="tiny muted nowrap">'+esc(c.telefono||'—')+'<div class="tiny muted trunc">'+esc(c.email||'')+'</div></td>'+
+      '<td>'+(c.tipo==='cliente'?'<span class="chip green">Cliente</span>':'<span class="chip blue">Lead</span>')+'</td>'+
+      '<td><span class="chip">'+esc(c.estado)+'</span></td>'+
+      '<td class="tiny muted nowrap">'+esc(haceRel(new Date(c.actualizado||c.creado).getTime()))+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-s btn-xs" data-ct-ver="'+c.id+'">'+ic('eye',12)+' Abrir</button></td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:26px">'+
+    (CT.cargando ? 'Cargando contactos...' :
+     CT.error ? 'No se ha podido cargar: '+esc(CT.error) :
+     'Ningún contacto coincide con la búsqueda.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    kpis.map(function(k){ return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
+      '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
+      '<div class="val">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-h" style="margin:0;flex-wrap:wrap">'+
+      '<div><h3 style="font-size:18px">Contactos</h3>'+
+        '<p>Ficha individual de cada lead y cliente: documentación, especificaciones, seguimiento y comentarios del equipo.</p></div>'+
+      '<button class="btn btn-p" id="ct-nuevo">'+ic('plus',16)+' Nuevo contacto</button></div>'+
+    '<div class="row u-filtros">'+
+      '<div class="search" style="flex:1;min-width:220px">'+ic('search',15)+
+        '<input id="ct-find" placeholder="Nombre, empresa, correo o teléfono..." value="'+esc(CT.filtro)+'"></div>'+
+      '<select class="inp u-sel" id="ct-ftipo"><option value="">Leads y clientes</option>'+
+        '<option value="lead"'+(CT.tipoF==='lead'?' selected':'')+'>Solo leads</option>'+
+        '<option value="cliente"'+(CT.tipoF==='cliente'?' selected':'')+'>Solo clientes</option></select>'+
+      '<select class="inp u-sel" id="ct-fest"><option value="">Todos los estados</option>'+
+        ESTADOS_CT.map(function(e){ return '<option'+(CT.estadoF===e?' selected':'')+'>'+e+'</option>'; }).join('')+
+        '</select></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Contacto</th><th>Teléfono / correo</th><th>Tipo</th><th>Estado</th><th>Actualizado</th><th></th>'+
+      '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  (CT.nuevo ? ctNuevoModal() : '') +
+  ctFichaHTML();
+
+  q('#ct-find').oninput = function(){ CT.filtro = this.value; renderApp(); };
+  q('#ct-ftipo').onchange = function(){ CT.tipoF = this.value; renderApp(); };
+  q('#ct-fest').onchange = function(){ CT.estadoF = this.value; renderApp(); };
+  q('#ct-nuevo').onclick = ctNuevo;
+  qa('[data-ct-ver]').forEach(function(b){ b.onclick = function(){ ctAbre(Number(b.dataset.ctVer)); }; });
+
+  if(CT.nuevo){
+    q('#ctn-nombre').onchange = function(){ CT.nuevo.nombre = this.value; };
+    q('#ctn-empresa').onchange = function(){ CT.nuevo.empresa = this.value; };
+    q('#ctn-email').onchange = function(){ CT.nuevo.email = this.value; };
+    q('#ctn-tel').onchange = function(){ CT.nuevo.telefono = this.value; };
+    q('#ctn-origen').onchange = function(){ CT.nuevo.origen = this.value; };
+    q('#ctn-tipo').onchange = function(){ CT.nuevo.tipo = this.value; };
+    q('#ctn-cancela').onclick = function(){ CT.nuevo = null; renderApp(); };
+    q('#ctn-guarda').onclick = ctGuardaNuevo;
+  }
+
+  if(CT.det){
+    q('#ct-x').onclick = ctCierra;
+    q('#ct-cerrar').onclick = ctCierra;
+    q('#ct-est').onchange = function(){ ctGuardaCampo(CT.det, 'estado', this.value); };
+    qa('[data-cttab]').forEach(function(b){ b.onclick = function(){ CT.tab = b.dataset.cttab; renderApp(); }; });
+    qa('[data-ct-desc]').forEach(function(b){ b.onclick = function(){
+      var d = CT.documentos.filter(function(x){ return String(x.id)===b.dataset.ctDesc; })[0];
+      if(d) descargaDocumento(d.nombre, d.ruta);
+    }; });
+    qa('[data-ct-deldoc]').forEach(function(b){ b.onclick = function(){ ctBorraArchivo(Number(b.dataset.ctDeldoc)); }; });
+    if(q('#ct-file')) q('#ct-file').onchange = function(){
+      var f = this.files && this.files[0]; if(f) ctSubeArchivo(f);
+    };
+    if(q('#ct-spec-save')) q('#ct-spec-save').onclick = function(){
+      ctGuardaCampo(CT.det, 'especificaciones', q('#ct-spec').value);
+    };
+    if(q('#ct-hist-txt')) q('#ct-hist-txt').oninput = function(){ CT.nuevoTexto = this.value; };
+    if(q('#ct-hist-add')) q('#ct-hist-add').onclick = ctAnadeEvento;
+    if(q('#ct-com-txt')) q('#ct-com-txt').oninput = function(){ CT.nuevoComentario = this.value; };
+    if(q('#ct-com-add')) q('#ct-com-add').onclick = ctAnadeComentario;
+  }
+}
+
+function ctNuevoModal(){
+  var n = CT.nuevo;
+  return '<div class="ov" data-ov="ct-nuevo"><div class="modal" style="max-width:480px">'+
+    '<h3 style="margin:0 0 4px">Nuevo contacto</h3>'+
+    '<p class="tiny muted" style="margin:0 0 16px">Se guarda en Supabase y queda asignado a tu cartera.</p>'+
+    '<div class="grid g-2">'+
+      '<div class="field"><label class="f">Nombre *</label><input class="inp" id="ctn-nombre" value="'+esc(n.nombre)+'" placeholder="Nombre y apellidos"></div>'+
+      '<div class="field"><label class="f">Empresa</label><input class="inp" id="ctn-empresa" value="'+esc(n.empresa)+'"></div>'+
+      '<div class="field"><label class="f">Correo</label><input class="inp" id="ctn-email" value="'+esc(n.email)+'"></div>'+
+      '<div class="field"><label class="f">Teléfono</label><input class="inp" id="ctn-tel" value="'+esc(n.telefono)+'" placeholder="+34 600 000 000"></div>'+
+      '<div class="field"><label class="f">Origen</label><input class="inp" id="ctn-origen" value="'+esc(n.origen)+'" placeholder="Ej. web, referido, anuncio"></div>'+
+      '<div class="field"><label class="f">Tipo</label><select class="inp" id="ctn-tipo">'+
+        '<option value="lead"'+(n.tipo==='lead'?' selected':'')+'>Lead</option>'+
+        '<option value="cliente"'+(n.tipo==='cliente'?' selected':'')+'>Cliente</option></select></div>'+
+    '</div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:16px">'+
+      '<button class="btn btn-s" id="ctn-cancela">Cancelar</button>'+
+      '<button class="btn btn-p" id="ctn-guarda">'+ic('save',15)+' Crear contacto</button></div>'+
+  '</div></div>';
+}
+
+/* ==========================================================================
+   AUTOMATION PACKS · Ecosistemas comerciales inteligentes · Labs24k
+   Tres niveles de automatización comercial en pago único. Mismo patrón
+   visual e interactivo que los Packs Web 3D (tarjetas, matriz comparativa,
+   documento imprimible y envío por WhatsApp/correo), pero sin cuota mensual
+   ni módulos adicionales: cada pack es un proyecto llave en mano cerrado.
+   ========================================================================== */
+var AUTOMATION_PACKS = [
+  {id:'capturador', n:'El Capturador Web', niv:'Nivel 1 · Inbound web', p:1799, col:'#17C8C0', star:false,
+   d:'Para quien recibe visitas por su web y su ficha de Google, y las ve marcharse sin dejar rastro.',
+   f:['Agente IA operando en tu web las 24 horas, todos los días',
+      'Lead Magnet Funnel: landing capturadora que convierte tráfico en contactos',
+      'Hasta 3 agentes comerciales conectados al sistema',
+      'Captura de datos dentro de la propia conversación, sin formularios que nadie rellena',
+      '10 diseños gráficos profesionales de soporte visual'],
+   cierre:'Es el nivel de entrada, pero no es un producto menor: cierra la fuga más común y más silenciosa, la del visitante que ya estaba interesado y se fue sin identificarse.',
+   m:{para:'Le entran por web y Google', canal:'Agente IA en web 24/7', embudo:'Lead Magnet Funnel',
+      equipo:'Hasta 3 agentes', cualif:'Datos en conversación', frios:'—', conex:'—', resenas:'—', mat:'10 diseños'}},
+
+  {id:'setter', n:'El Súper-Setter', niv:'Nivel 2 · El más elegido', p:2800, col:'#4ADE80', star:true,
+   d:'Para quien invierte en anuncios y tiene un equipo que ya no da abasto con el volumen de WhatsApp.',
+   f:['WhatsApp Business API oficial, con la verificación y garantías de Meta',
+      'BANT Chat Funnel: lleva el contacto del anuncio al chat ya cualificado',
+      'Hasta 8 agentes con reparto rotativo automático de conversaciones',
+      '5 flujos de rescate de contactos fríos a las 2, 24 y 48 horas',
+      '10 diseños gráficos y 2 vídeos para alimentar las campañas'],
+   cierre:'Si el cliente ya paga por anuncios, este pack no es un gasto nuevo: es lo que impide que siga tirando ese presupuesto a conversaciones que nadie contesta a tiempo.',
+   m:{para:'Invierte en anuncios', canal:'WhatsApp Business API', embudo:'BANT Chat Funnel',
+      equipo:'Hasta 8 con reparto', cualif:'Filtro BANT completo', frios:'5 flujos: 2, 24 y 48 h',
+      conex:'—', resenas:'—', mat:'10 diseños + 2 vídeos'}},
+
+  {id:'cerebro', n:'El Cerebro Absoluto', niv:'Nivel 3 · Omnicanal', p:3900, col:'#818CF8', star:false,
+   d:'Para quien recibe por todos lados y ninguno de sus sistemas se habla con los demás.',
+   f:['Web, WhatsApp e Instagram funcionando coordinados como un solo sistema',
+      'Omnichannel Master Funnel 360° sobre todos los puntos de contacto',
+      'Agentes comerciales ilimitados',
+      'Sincronización en tiempo real con tu ERP, software médico o CRM',
+      'Captura automática de reseñas de Google tras cada venta o cita completada',
+      '15 diseños gráficos y 4 vídeos premium'],
+   cierre:'Este pack no se compara con una herramienta: sustituye el trabajo manual de pasar datos entre sistemas, perseguir contactos fríos y pedir reseñas una por una.',
+   m:{para:'Recibe por todos lados', canal:'Web + WhatsApp + Instagram', embudo:'Omnichannel Master 360°',
+      equipo:'Ilimitados', cualif:'Cruzada en todos los canales', frios:'Rescate cruzado entre canales',
+      conex:'ERP, software médico o CRM', resenas:'Automáticas tras cada venta', mat:'15 diseños + 4 vídeos premium'}}
+];
+
+var AP = {pack:'setter', cli:'', emp:'', tel:'', mail:''};
+
+function apPack(){ return AUTOMATION_PACKS.filter(function(p){ return p.id===AP.pack; })[0]; }
+function apTotales(){
+  var base = apPack().p, iva = base*(PRE.iva/100);
+  return {base:base, iva:iva, tot:base+iva};
+}
+function apTexto(p, T){
+  return 'Hola'+(AP.cli?' '+AP.cli:'')+',\n\n'+
+    'Te paso la propuesta del pack de automatización comercial «'+p.n+'» de Labs24k'+
+    (AP.emp?' para '+AP.emp:'')+'.\n\n'+
+    p.d+'\n\nIncluye:\n'+p.f.map(function(x){ return '• '+x; }).join('\n')+'\n\n'+
+    'Inversión: '+eur(T.base)+' + IVA, pago único. Implantación llave en mano: la ingeniería, '+
+    'la configuración y la puesta en marcha corren de nuestra cuenta.\n\n'+
+    'Cualquier duda, aquí estamos.\n\n'+
+    ((typeof S !== 'undefined' && S.name) ? S.name : 'El equipo de Labs24k')+' · Labs24k';
+}
+function enviaAPWhatsApp(){
+  var p = apPack(), T = apTotales(), tel = telLimpio(AP.tel);
+  if(tel.length < 9){
+    toast('Indica el teléfono del cliente en formato internacional (+34...).'); return; }
+  abreEnlace('https://wa.me/'+tel+'?text='+encodeURIComponent(apTexto(p,T)), true);
+  toast('WhatsApp abierto con la propuesta de '+p.n+'.');
+}
+function enviaAPCorreo(){
+  var p = apPack(), T = apTotales(), mail = String(AP.mail||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(mail)){
+    toast('Indica un correo válido del cliente.'); return; }
+  var asunto = 'Propuesta ' + p.n + ' · Labs24k';
+  abreEnlace('mailto:'+encodeURIComponent(mail)+'?subject='+encodeURIComponent(asunto)+
+    '&body='+encodeURIComponent(apTexto(p,T)), false);
+  toast('Gestor de correo abierto con la propuesta lista.');
+}
+
+/* ------------------------------ VISTA ----------------------------------- */
+function viewAutomationPacks(v){
+  var P = apPack(), T = apTotales();
+
+  var cards = AUTOMATION_PACKS.map(function(p){
+    var on = p.id===AP.pack;
+    return '<div class="p3'+(on?' on':'')+'" data-ap="'+p.id+'" style="--pc:'+p.col+'">'+
+      '<div class="row" style="justify-content:space-between;margin-bottom:10px;gap:8px">'+
+        '<span class="chip" style="border-color:'+p.col+'55;background:'+p.col+'1a;color:'+p.col+'">'+esc(p.niv)+'</span>'+
+        (p.star?'<span class="chip green">★ El más elegido</span>':'')+'</div>'+
+      '<h4 style="margin:0 0 4px;font-size:15px;color:#fff">'+esc(p.n)+'</h4>'+
+      '<p class="tiny muted" style="margin:0 0 12px">'+esc(p.d)+'</p>'+
+      '<div class="p3price">'+eur(p.p).replace(' €','')+' €<span> + IVA · pago único</span></div>'+
+      '<ul class="p3list">'+p.f.map(function(x){
+        return '<li><span>'+ic('check',13)+'</span>'+esc(x)+'</li>'; }).join('')+'</ul>'+
+      '<div class="p3foot">'+(on?ic('check',13)+' Pack seleccionado':'Pulsa para elegir este ecosistema')+'</div>'+
+    '</div>';
+  }).join('');
+
+  var filas = [['Para quién es','para'],['Canal principal','canal'],['Embudo incluido','embudo'],
+               ['Equipo comercial','equipo'],['Cualificación','cualif'],['Recuperación de fríos','frios'],
+               ['Conexión con tus programas','conex'],['Reseñas de Google','resenas'],['Material gráfico','mat']];
+  var matriz = '<table class="tbl doc-tbl"><thead><tr><th>Prestación</th>'+
+    AUTOMATION_PACKS.map(function(p){
+      return '<th style="text-align:center'+(p.id===AP.pack?';color:#99F6E4':'')+'">'+esc(p.n)+'</th>'; }).join('')+
+    '</tr></thead><tbody>'+filas.map(function(f){
+      return '<tr><td class="w">'+esc(f[0])+'</td>'+AUTOMATION_PACKS.map(function(p){
+        var val=p.m[f[1]];
+        return '<td style="text-align:center'+(p.id===AP.pack?';background:rgba(23,200,192,.07)':'')+'">'+
+          (val==='—'?'<span class="muted">—</span>':esc(val))+'</td>'; }).join('')+'</tr>';
+    }).join('')+
+    '<tr><td class="w">Inversión · pago único</td>'+AUTOMATION_PACKS.map(function(p){
+      return '<td class="w" style="text-align:center'+(p.id===AP.pack?';background:rgba(23,200,192,.07)':'')+'">'+
+        eur(p.p)+' + IVA</td>'; }).join('')+'</tr></tbody></table>';
+
+  var hoy = new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var doc =
+  '<div class="doc pdf">'+
+    '<div class="doc-top">'+
+      '<div class="doc-brand-row">'+logo(44)+
+        '<div>'+marcaTexto(21)+
+        '<div class="tiny muted">Grupo Evolvix Global SL · CIF B21779673</div></div></div>'+
+      '<div style="text-align:right"><div class="doc-kicker">Propuesta comercial</div>'+
+        '<div class="tiny muted">Ecosistemas comerciales inteligentes · Powered by Metatok.ai</div></div>'+
+    '</div>'+
+    '<h1 class="doc-title">'+esc(P.n)+' · automatización comercial llave en mano</h1>'+
+    '<p class="doc-lead">'+esc(P.d)+'</p>'+
+
+    '<div class="doc-meta">'+
+      '<div><span class="k">Preparado para</span><span class="v">'+esc(AP.emp||'[Negocio / empresa]')+'</span></div>'+
+      '<div><span class="k">A la atención de</span><span class="v">'+esc(AP.cli||'[Persona de contacto]')+'</span></div>'+
+      '<div><span class="k">Fecha de emisión</span><span class="v">'+hoy+'</span></div>'+
+    '</div>'+
+
+    '<div class="doc-parties">'+
+      '<div><span class="k">Emitido por (gestor comercial)</span>'+
+        '<div class="v big">'+esc((typeof S!=='undefined'&&S.name)?S.name:'Labs24k')+'</div>'+
+        '<div class="tel">'+ic('phone',12)+' '+esc((typeof S!=='undefined'&&S.phone)?S.phone:'')+'</div>'+
+        '<div class="tiny muted">'+esc((typeof S!=='undefined'&&S.email)?S.email:'')+' · admin@labs24k.com</div></div>'+
+      '<div><span class="k">Condiciones de la oferta</span>'+
+        '<div class="tiny muted" style="line-height:1.7">Pago único, sin permanencia<br>'+
+        'Implantación llave en mano: ingeniería, configuración y puesta en marcha incluidas</div></div>'+
+    '</div>'+
+
+    '<div class="doc-hero">'+
+      '<div class="tiny" style="letter-spacing:.14em">★ INVERSIÓN ÚNICA ★</div>'+
+      '<div class="amount">'+eur(T.base).replace(' €','')+' €<span style="font-size:16px;font-weight:600"> + IVA</span></div>'+
+      '<div class="tiny muted">Pago único · total con IVA '+eur(T.tot)+'</div>'+
+    '</div>'+
+
+    '<div class="doc-sec"><span class="n">1</span> Qué incluye el pack '+esc(P.n)+'</div>'+
+    '<div class="doc-why doc-feats">'+
+      P.f.map(function(x){ return '<div style="display:flex;gap:9px;align-items:flex-start;text-align:left">'+
+        '<span style="color:var(--green);flex:0 0 auto">'+ic('check',15)+'</span>'+
+        '<span class="small" style="color:var(--txt-2)">'+esc(x)+'</span></div>'; }).join('')+
+    '</div>'+
+
+    '<div class="doc-sec"><span class="n">2</span> Resumen económico</div>'+
+    '<div class="doc-sum">'+
+      '<div class="l"><span>Pack '+esc(P.n)+' (pago único)</span><span>'+eur(T.base)+'</span></div>'+
+      '<div class="l"><span>IVA ('+PRE.iva+'%)</span><span>'+eur(T.iva)+'</span></div>'+
+      '<div class="l tot"><span>TOTAL (IVA incluido)</span><span>'+eur(T.tot)+'</span></div>'+
+    '</div>'+
+
+    '<div class="doc-sec"><span class="n">3</span> Matriz comparativa de los tres packs</div>'+
+    '<div style="overflow-x:auto">'+matriz+'</div>'+
+
+    '<div class="doc-box" style="margin-top:18px">'+
+      '<div class="bt">Lo que cambia el día que se pone en marcha</div>'+
+      '<div class="li">Ahorro masivo de tiempo: elimina las tareas repetitivas y manuales del día a día.</div>'+
+      '<div class="li">Disponibilidad operativa 24/7: los procesos críticos nunca se detienen.</div>'+
+      '<div class="li">Decisiones basadas en datos, con métricas y reportes claros para la dirección.</div>'+
+    '</div>'+
+    '<div class="doc-note">'+esc(P.cierre)+'</div>'+
+    '<div class="doc-note">Documento de carácter comercial. No constituye oferta vinculante hasta su '+
+      'formalización mediante contrato firmado. Importe expresado sin IVA salvo el total indicado.</div>'+
+
+    '<div class="doc-sign">'+
+      '<div><span class="k">Aceptado y conforme</span><div class="line"></div>'+
+        '<div class="v">'+esc(AP.emp||'[Cliente]')+(AP.cli?' ('+esc(AP.cli)+')':'')+'</div>'+
+        '<div class="tiny muted">Fecha: ____ / ____ / 2026</div></div>'+
+      '<div><span class="k">Aprobado por dirección</span><div class="line"></div>'+
+        '<div class="v">Ingeniería · Labs24k</div>'+
+        '<div class="tiny muted">Fecha: '+hoy+'</div></div>'+
+    '</div>'+
+    '<div class="doc-foot">Grupo Evolvix Global SL · CIF B21779673<br>'+
+      '<span class="lema">Labs24k · «Donde la tecnología y el éxito se encuentran»</span></div>'+
+  '</div>';
+
+  v.innerHTML =
+  '<div class="stack">'+
+    '<div class="card no-print">'+
+      '<div class="card-h" style="margin:0;flex-wrap:wrap">'+
+        '<div><span class="tiny" style="color:#99F6E4;text-transform:uppercase;letter-spacing:.08em">Powered by Metatok.ai</span>'+
+          '<h3 style="font-size:18px;margin:4px 0 5px">Automation Packs · Ecosistemas comerciales inteligentes</h3>'+
+          '<p>Elija por dónde le entran hoy los clientes, no por tamaño. Cada nivel cierra una puerta '+
+          'distinta por la que hoy se le escapa facturación.</p></div></div>'+
+    '</div>'+
+
+    '<div class="grid g-sideR no-print" style="align-items:start">'+
+      '<div class="stack">'+
+        '<div class="card">'+
+          '<div class="card-h"><div><h3>Datos del cliente</h3>'+
+            '<p>Se imprimen en la cabecera de la propuesta y en el envío</p></div></div>'+
+          '<div class="grid g-3">'+
+            '<div class="field"><label class="f">Persona de contacto</label>'+
+              '<input class="inp" id="ap-cli" value="'+esc(AP.cli)+'" placeholder="Ej. Alberto G. Morán"></div>'+
+            '<div class="field"><label class="f">Negocio / empresa</label>'+
+              '<input class="inp" id="ap-emp" value="'+esc(AP.emp)+'" placeholder="Ej. Clínica Dental Oviedo"></div>'+
+            '<div class="field"><label class="f">Teléfono (WhatsApp)</label>'+
+              '<input class="inp" id="ap-tel" value="'+esc(AP.tel)+'" placeholder="+34 600 000 000"></div>'+
+            '<div class="field"><label class="f">Correo electrónico</label>'+
+              '<input class="inp" id="ap-mail" value="'+esc(AP.mail)+'" placeholder="cliente@empresa.com"></div>'+
+          '</div>'+
+        '</div>'+
+
+        '<div class="card">'+
+          '<div class="card-h"><div><h3>'+ic('bolt',15)+'Seleccionar nivel de automatización</h3>'+
+            '<p>Tres puertas, tres soluciones — cada pack cierra una fuga distinta</p></div></div>'+
+          '<div class="grid g-3">'+cards+'</div>'+
+        '</div>'+
+      '</div>'+
+
+      '<div class="card sticky">'+
+        '<div class="card-h"><div><span class="tiny" style="color:#86EFAC;text-transform:uppercase;letter-spacing:.08em">Resumen de inversión</span>'+
+          '<h3 style="font-size:17px;margin-top:4px">Propuesta económica</h3>'+
+          '<p>Cliente: '+esc(AP.emp||'por definir')+'</p></div></div>'+
+        '<div class="doc-sum" style="margin-bottom:14px">'+
+          '<div class="l"><span>Pack seleccionado</span><span style="color:#fff;font-weight:600">'+esc(P.n)+'</span></div>'+
+          '<div class="l"><span>Inversión (pago único)</span><span style="color:#99F6E4;font-weight:600">'+eur(T.base)+'</span></div>'+
+          '<div class="l"><span>IVA ('+PRE.iva+'%)</span><span>'+eur(T.iva)+'</span></div>'+
+          '<div class="l tot"><span>Total con IVA</span><span style="color:#fff;font-weight:700">'+eur(T.tot)+'</span></div>'+
+        '</div>'+
+        '<div class="argu">'+
+          '<span class="tiny" style="color:#99F6E4;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Argumento clave de cierre</span>'+
+          '<p>"'+esc(P.cierre)+'"</p></div>'+
+        '<div class="stack" style="gap:9px;margin-top:14px">'+
+          '<button class="btn btn-p" id="ap-wa" style="justify-content:center">'+ic('chat',15)+' Enviar por WhatsApp</button>'+
+          '<button class="btn btn-s" id="ap-mailbtn" style="justify-content:center">'+ic('mail',15)+' Enviar por correo</button>'+
+          '<button class="btn btn-s" id="ap-pdf" style="justify-content:center">'+ic('download',15)+' Descargar PDF</button></div>'+
+      '</div>'+
+    '</div>'+
+    doc+
+  '</div>';
+
+  qa('[data-ap]').forEach(function(b){ b.onclick=function(){ AP.pack=b.dataset.ap; renderApp(); }; });
+  q('#ap-cli').onchange=function(){ AP.cli=this.value; setTimeout(renderApp,0); };
+  q('#ap-emp').onchange=function(){ AP.emp=this.value; setTimeout(renderApp,0); };
+  q('#ap-tel').onchange=function(){ AP.tel=this.value; setTimeout(renderApp,0); };
+  q('#ap-mail').onchange=function(){ AP.mail=this.value; setTimeout(renderApp,0); };
+  q('#ap-pdf').onclick=function(){ window.print(); };
+  q('#ap-wa').onclick=enviaAPWhatsApp;
+  q('#ap-mailbtn').onclick=enviaAPCorreo;
 }
 
 /* ==========================================================================
@@ -8039,9 +8639,11 @@ var VOZ = null;
 
 var ORDENES = [
   {p:['panel','inicio','principal','dashboard'],       v:'dashboard', t:'Panel Principal'},
+  {p:['contactos','contacto','leads','nuevo lead'],     v:'contactos', t:'Contactos'},
   {p:['calendario','citas','agenda'],                   v:'calendar',  t:'Calendario y Citas'},
   {p:['academia','cursos','formación'],                 v:'academy',   t:'Academia'},
   {p:['presupuesto','presupuestos','propuesta'],        v:'quotes',    t:'Presupuestos'},
+  {p:['automation','automatización','packs de automatización','metatok'], v:'automation', t:'Automation Packs'},
   {p:['packs','pack web','tres de'],                    v:'packs',     t:'Packs Web 3D'},
   {p:['embudo','embudos','pipeline'],                   v:'funnels',   t:'Embudos de Venta'},
   {p:['auditoría','auditorias','auditorías'],           v:'audits',    t:'Auditorías IA'},

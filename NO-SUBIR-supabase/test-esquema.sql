@@ -76,13 +76,14 @@ select pg_temp.prueba('Sí admite cambios inocuos',
   'update public.perfiles set telefono = ''600 112 244'' where raiz', false);
 
 do $$
-declare n int;
+declare n int; total int;
 begin
+  select count(*) into total from public.permisos_catalogo;
   update public.perfiles set permisos = '{"presu.ver": true}'::jsonb where raiz;
   select count(*) into n from jsonb_each((select permisos from public.perfiles where raiz))
     where value::text = 'true';
-  raise notice '%  Los permisos recortados se reimponen (quedan % de 18)',
-    case when n = 18 then '[OK]  ' else '[FALLO]' end, n;
+  raise notice '%  Los permisos recortados se reimponen (quedan % de %)',
+    case when n = total then '[OK]  ' else '[FALLO]' end, n, total;
 end $$;
 
 \echo ''
