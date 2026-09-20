@@ -1879,9 +1879,6 @@ var S = {
   quote:{cli:'', srv:'command_center', setup:3000, monthly:600, months:12, disc:0}
 };
 
-/* ------------------------------ ARRANQUE ------------------------------- */
-function boot(){ cfgCarga(); S.logged ? renderApp() : renderLogin(); }
-
 function renderApp(){
   paraTimers();          // se destruyen los bucles de la vista anterior
   /* Rol dinámico: si el usuario tiene una lista de módulos visibles asignada
@@ -2115,52 +2112,6 @@ function viewAudits(v){
      descargable como archivo (_app15.js). */
   qa('[data-rep]').forEach(function(b){ b.onclick=function(){ abreInforme(b.dataset.rep); }; });
   if(q('#a-exp')) q('#a-exp').onclick = exportaAuditorias;
-}
-
-/* ------------------------------ 8. CONTRATOS ---------------------------- */
-function viewContracts(v){
-  var stChip={'Activo':'green','Alta':'blue','Impago':'red','Cerrado':''};
-  var fChip={'Emitida':'green','Pendiente':'amber','Vencida':'red'};
-  var mrr = DB.contracts.filter(function(c){ return c.st==='Activo'; }).reduce(function(a,b){ return a+b.m; },0);
-  v.innerHTML =
-  '<div class="grid g-4" style="margin-bottom:16px">'+
-    [['Contratos activos','34','file','blue'],['MRR facturado',eur(mrr),'euro','green'],
-     ['Facturas pendientes','2','clock','amber'],['Impagos','1','alert','red']].map(function(k){
-      return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
-        '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
-        '<div class="val">'+k[1]+'</div></div>'; }).join('')+
-  '</div>'+
-  '<div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">'+
-    '<div class="card-h" style="padding:18px 18px 14px"><div><h3>Contratos y facturación</h3>'+
-      '<p>Ciclo de facturación recurrente de la cartera</p></div>'+
-      '<div class="row"><button class="btn btn-s btn-xs" id="ct-exp">'+ic('download',14)+' Exportar</button>'+
-      '<button class="btn btn-p btn-xs" id="ct-new">'+ic('plus',14)+' Nuevo contrato</button></div></div>'+
-    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Contrato</th><th>Cliente</th><th>Servicio</th>'+
-      '<th>Implantación</th><th>Cuota</th><th>Estado</th><th>Factura</th><th>Próxima emisión</th></tr></thead><tbody>'+
-      DB.contracts.map(function(c){
-        return '<tr><td class="w">'+esc(c.id)+'</td><td>'+esc(c.cli)+'</td><td class="muted">'+esc(c.srv)+'</td>'+
-          '<td>'+eur(c.setup)+'</td><td class="w">'+(c.m?eur(c.m)+'/mes':'-')+'</td>'+
-          '<td><span class="chip '+stChip[c.st]+'">'+esc(c.st)+'</span></td>'+
-          '<td><span class="chip '+fChip[c.f]+'">'+esc(c.f)+'</span></td>'+
-          '<td class="muted">'+esc(c.next)+'</td></tr>'; }).join('')+
-    '</tbody></table></div></div>'+
-  '<div class="grid g-2">'+
-    '<div class="card"><div class="card-h"><div><h3>Facturación recurrente</h3>'+
-      '<p>Evolución del MRR consolidado</p></div><span class="chip green">+5,6%</span></div>'+
-      areaChart([9.2,10.1,11.4,12.2,13.6,14.1,15.3,16.2,17.1,18.4],{px:120,h:44,color:'#17C8C0'})+
-      '<div class="row" style="justify-content:space-between;margin-top:10px">'+
-        '<span class="tiny muted">Dic 2025</span><span class="tiny muted">Sep 2026</span></div></div>'+
-    '<div class="card"><div class="card-h"><div><h3>Estado de cobros</h3>'+
-      '<p>Sobre el total emitido este trimestre</p></div></div>'+
-      '<div class="row" style="gap:20px;align-items:center">'+donut(82,'#4ADE80',96,'82%')+
-      '<div class="rank" style="flex:1">'+
-        progressRow('Cobrado',82,100,'#4ADE80','82%')+
-        progressRow('Pendiente',13,100,'#FBBF24','13%')+
-        progressRow('Impagado',5,100,'#F87171','5%')+
-      '</div></div></div>'+
-  '</div>';
-  q('#ct-new').onclick=function(){ toast('Contrato en borrador enviado a Back Office.'); };
-  q('#ct-exp').onclick = exportaContratos;
 }
 
 /* ------------------------------ 9. BACK OFFICE -------------------------- */
@@ -3903,18 +3854,18 @@ function ctSubeArchivo(file){
   var limpio = String(file.name || 'archivo').replace(/[^A-Za-z0-9.\-_]/g, '_');
   var ruta = 'contactos/' + id + '/' + Date.now() + '-' + limpio;
   sbConSesion(function(){
-    return fetch(SB.url + '/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
+    return sbFetchArchivo('/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
       method:'POST',
       headers:{'apikey':SB.clave, 'Authorization':'Bearer '+((SB.sesion||{}).access_token||SB.clave),
         'Content-Type': file.type || 'application/octet-stream'},
       body:file
-    }).then(function(r){ return {ok:r.ok, estado:r.status}; },
-            function(){ return {ok:false, estado:0}; });
+    });
   }).then(function(r){
     if(!r.ok){
       CT.subiendo = false; renderApp();
-      toast(r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
-                            : 'No se ha podido subir el archivo (código '+r.estado+').');
+      toast(r.agotado ? 'La subida ha tardado demasiado. Comprueba tu conexión e inténtalo otra vez.'
+        : r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
+        : 'No se ha podido subir el archivo (código '+r.estado+').');
       return;
     }
     return sbInsert('contacto_documentos', {contacto_id:id, nombre:file.name, tipo:file.type||'',
@@ -4193,18 +4144,18 @@ function dsGuardaNuevo(file){
   var limpio = String(file.name || 'archivo').replace(/[^A-Za-z0-9.\-_]/g, '_');
   var ruta = 'recursos/' + Date.now() + '-' + limpio;
   sbConSesion(function(){
-    return fetch(SB.url + '/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
+    return sbFetchArchivo('/storage/v1/object/' + BUCKET_DOCS + '/' + ruta, {
       method:'POST',
       headers:{'apikey':SB.clave, 'Authorization':'Bearer '+((SB.sesion||{}).access_token||SB.clave),
         'Content-Type': file.type || 'application/octet-stream'},
       body:file
-    }).then(function(r){ return {ok:r.ok, estado:r.status}; },
-            function(){ return {ok:false, estado:0}; });
+    });
   }).then(function(r){
     if(!r.ok){
       DS.subiendo = false; renderApp();
-      toast(r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
-                            : 'No se ha podido subir el archivo (código '+r.estado+').');
+      toast(r.agotado ? 'La subida ha tardado demasiado. Comprueba tu conexión e inténtalo otra vez.'
+        : r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
+        : 'No se ha podido subir el archivo (código '+r.estado+').');
       return;
     }
     return sbInsert('recursos', {
@@ -6495,20 +6446,6 @@ var USUARIOS = [];
 var LOGIN = {mail:'', pass:'', error:'', vista:'acceso', ver:false};
 var USU = {form:null, creado:null, filtro:''};
 
-function usuarioPorMail(m){
-  m = String(m||'').trim().toLowerCase();
-  return USUARIOS.filter(function(u){ return u.mail.toLowerCase() === m; })[0] || null;
-}
-function entraComo(u){
-  S.logged = true; S.name = u.n; S.phone = u.tel; S.email = u.mail; S.role = u.rol;
-  S.view = 'dashboard';
-  u.ult = 'ahora mismo';
-  CUENTAS.forEach(function(c){ c.activa = false; });
-  var c = CUENTAS.filter(function(c){ return c.mail === u.mail; })[0];
-  if(!c){ CUENTAS.unshift({id:'cu-'+u.id, n:u.n, mail:u.mail, rel:u.rel, rol:u.rol, activa:true}); }
-  else c.activa = true;
-  renderApp();
-}
 function claveAleatoria(){
   var may='ABCDEFGHJKLMNPQRSTUVWXYZ', min='abcdefghijkmnopqrstuvwxyz', num='23456789', sig='!@#$%&*';
   function r(s){ return s.charAt(Math.floor(Math.random()*s.length)); }
@@ -6593,247 +6530,10 @@ function loginOlvido(){
   '</div>';
 }
 
-/* El portal NO valida credenciales por su cuenta: no existe ninguna
-   comprobación local ni ninguna contraseña dentro de este archivo. La
-   verificación la hace Supabase, y esta función queda sustituida por la de
-   _app14.js, que es la que habla con la base de datos. */
-function loginEventos(){
-  function intenta(){
-    LOGIN.error = 'El acceso necesita conexión con la base de datos.';
-    renderLogin();
-  }
-
-  if(q('#lg-form')) q('#lg-form').onsubmit = function(e){ e.preventDefault(); intenta(); };
-  if(q('#lg-entrar')) q('#lg-entrar').onclick = function(e){ e.preventDefault(); intenta(); };
-  if(q('#lg-ver')) q('#lg-ver').onclick = function(){
-    LOGIN.mail=q('#lg-mail').value; LOGIN.pass=q('#lg-pass').value;
-    LOGIN.ver = !LOGIN.ver; renderLogin(); };
-
-  if(q('#lg-google')) q('#lg-google').onclick = function(){
-    /* Lista blanca: solo entran los correos que el administrador ha autorizado. */
-    var m = (q('#lg-mail').value || '').trim();
-    if(!m){
-      LOGIN.error = 'Escribe primero el correo de Google con el que quieres entrar. '+
-        'En el sistema real esta selección la hace la ventana de Google.';
-      renderLogin(); return;
-    }
-    var u = usuarioPorMail(m);
-    if(!u || !u.google || u.est !== 'Activo'){
-      LOGIN.error = 'Acceso no autorizado. Contacta con tu administrador.';
-      renderLogin(); return;
-    }
-    LOGIN.error=''; entraComo(u);
-  };
-
-  if(q('#lg-olvido')) q('#lg-olvido').onclick = function(){
-    LOGIN.error=''; LOGIN.vista='olvido'; renderLogin(); };
-  if(q('#ol-volver')) q('#ol-volver').onclick = function(){
-    LOGIN.error=''; LOGIN.vista='acceso'; renderLogin(); };
-  if(q('#ol-env')) q('#ol-env').onclick = function(){
-    var m=q('#ol-mail').value.trim();
-    if(!m){ LOGIN.error='Escribe tu correo corporativo.'; renderLogin(); return; }
-    LOGIN.error=''; LOGIN.vista='acceso'; renderLogin();
-    toast('Si esa cuenta existe, el administrador ha recibido el aviso.');
-  };
-  if(q('#lg-help')) q('#lg-help').onclick = function(){
-    SOPORTE.abierto = true; SOPORTE.vista='inicio'; renderLogin(); };
-  hubEventos();
-  if(q('#lg-mail') && !LOGIN.mail) q('#lg-mail').focus();
-}
-
-/* ====================== PANEL: USUARIOS Y ACCESOS ======================== */
-function viewUsers(v){
-  if(S.role !== 'admin'){
-    v.innerHTML = '<div class="card" style="text-align:center;padding:40px">'+
-      '<div class="ico-box amber" style="width:52px;height:52px;margin:0 auto 14px">'+ic('alert',24)+'</div>'+
-      '<h3 style="margin:0 0 6px">Sección reservada</h3>'+
-      '<p class="small muted" style="margin:0">El alta y la gestión de usuarios corresponde solo al Administrador.</p></div>';
-    return;
-  }
-
-  var lista = USUARIOS.filter(function(u){
-    var f = USU.filtro.toLowerCase();
-    return !f || u.n.toLowerCase().indexOf(f)>-1 || u.mail.toLowerCase().indexOf(f)>-1 || u.rel.indexOf(f)>-1;
-  });
-
-  var filas = lista.map(function(u){
-    return '<tr>'+
-      '<td><div class="row"><div class="ava sm">'+esc(u.n.charAt(0))+'</div>'+
-        '<div style="min-width:0"><div class="w trunc">'+esc(u.n)+'</div>'+
-        '<div class="tiny muted trunc">'+esc(u.mail)+'</div></div></div></td>'+
-      '<td><span class="chip blue">'+esc(ROLES[u.rol].label)+'</span></td>'+
-      '<td class="mono tiny">'+esc(u.rel)+'</td>'+
-      '<td>'+(u.google
-        ? '<span class="row" style="gap:6px">'+googleG(14)+'<span class="tiny">Autorizado</span></span>'
-        : '<span class="tiny muted">Solo contraseña</span>')+'</td>'+
-      '<td><span class="chip '+(u.est==='Activo'?'green':'red')+'">'+esc(u.est)+'</span></td>'+
-      '<td class="tiny muted">'+esc(u.ult)+'</td>'+
-      '<td style="text-align:right"><div class="row" style="gap:6px;justify-content:flex-end">'+
-        '<button class="btn btn-s btn-xs" data-u-clave="'+u.id+'" title="Generar contraseña nueva">'+ic('refresh',12)+'</button>'+
-        '<button class="btn btn-s btn-xs" data-u-goo="'+u.id+'" title="Permitir o revocar Google">'+googleG(12)+'</button>'+
-        '<button class="btn btn-s btn-xs" data-u-est="'+u.id+'">'+(u.est==='Activo'?'Suspender':'Activar')+'</button>'+
-        (u.rol==='admin' ? '' : '<button class="btn btn-s btn-xs" data-u-del="'+u.id+'">'+ic('x',12)+'</button>')+
-      '</div></td></tr>';
-  }).join('') || '<tr><td colspan="7" class="muted" style="text-align:center;padding:26px">Sin resultados.</td></tr>';
-
-  var F = USU.form;
-  var alta = F ? '<div class="ov"><div class="modal" style="max-width:560px">'+
-    '<div class="row" style="justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:16px">'+
-      '<h3 style="margin:0;font-size:16px;color:#fff">Dar de alta a un usuario</h3>'+
-      '<button class="icon-btn" data-u-cerrar="1">'+ic('x',16)+'</button></div>'+
-    '<div class="grid g-2">'+
-      '<div class="field"><label class="f">Nombre y apellidos</label>'+
-        '<input class="inp" id="nu-n" value="'+esc(F.n)+'" placeholder="Ej. Lucía Fernández"></div>'+
-      '<div class="field"><label class="f">Teléfono</label>'+
-        '<input class="inp" id="nu-tel" value="'+esc(F.tel)+'" placeholder="+34 600 000 000"></div>'+
-    '</div>'+
-    '<div class="field"><label class="f">Correo corporativo</label>'+
-      '<input class="inp" id="nu-mail" value="'+esc(F.mail)+'" placeholder="nombre@labs24k.com"></div>'+
-    '<div class="grid g-2">'+
-      '<div class="field"><label class="f">Rol asignado</label><select class="inp" id="nu-rol">'+
-        Object.keys(ROLES).map(function(k){
-          return '<option value="'+k+'"'+(F.rol===k?' selected':'')+'>'+ROLES[k].label+'</option>'; }).join('')+
-        '</select></div>'+
-      '<div class="field"><label class="f">Número de relación</label>'+
-        '<div class="row" style="gap:8px"><input class="inp mono" id="nu-rel" value="'+esc(F.rel)+'" style="flex:1">'+
-        '<button class="btn btn-s" id="nu-rel-gen" title="Generar otro">'+ic('refresh',14)+'</button></div></div>'+
-    '</div>'+
-    '<div class="field"><label class="f">Contraseña inicial</label>'+
-      '<div class="row" style="gap:8px"><input class="inp mono" id="nu-pass" value="'+esc(F.pass)+'" style="flex:1">'+
-      '<button class="btn btn-s" id="nu-pass-gen">'+ic('refresh',14)+' Generar</button></div>'+
-      '<div class="tiny muted" style="margin-top:6px">El usuario deberá cambiarla en su primer acceso.</div></div>'+
-    '<div class="addon'+(F.google?' on':'')+'" id="nu-goo" style="cursor:pointer;margin-bottom:16px">'+
-      '<div class="ico-box">'+googleG(18)+'</div>'+
-      '<div style="flex:1;min-width:0"><div class="small" style="color:#fff;font-weight:600">Permitir acceso con Google</div>'+
-      '<div class="tiny muted">Solo podrá entrar si su cuenta de Google usa este mismo correo.</div></div>'+
-      '<span class="tick">'+(F.google?ic('check',14):'')+'</span></div>'+
-    '<div class="row" style="justify-content:flex-end;gap:10px">'+
-      '<button class="btn btn-s" data-u-cerrar="1">Cancelar</button>'+
-      '<button class="btn btn-g" id="nu-crear">'+ic('userPlus',15)+' Crear cuenta</button></div>'+
-  '</div></div>' : '';
-
-  var creado = USU.creado ? '<div class="ov"><div class="modal" style="max-width:480px">'+
-    '<div style="text-align:center;padding:6px 0 14px">'+
-      '<div class="ico-box green" style="width:50px;height:50px;margin:0 auto 12px">'+ic('check',24)+'</div>'+
-      '<h3 style="margin:0;font-size:17px;color:#fff">Cuenta creada</h3>'+
-      '<p class="tiny muted" style="margin:5px 0 0">Entrega estas credenciales en persona o por un canal seguro. '+
-        'No se envían por correo automáticamente.</p></div>'+
-    '<div class="cred">'+
-      '<div class="cr"><span>Usuario</span><strong class="mono">'+esc(USU.creado.mail)+'</strong></div>'+
-      '<div class="cr"><span>Contraseña inicial</span><strong class="mono">'+esc(USU.creado.pass)+'</strong></div>'+
-      '<div class="cr"><span>N.º de relación</span><strong class="mono">'+esc(USU.creado.rel)+'</strong></div>'+
-      '<div class="cr"><span>Rol</span><strong>'+esc(ROLES[USU.creado.rol].label)+'</strong></div>'+
-    '</div>'+
-    '<div class="row" style="gap:10px;margin-top:16px">'+
-      '<button class="btn btn-s" id="cr-copiar" style="flex:1;justify-content:center">'+ic('file',15)+' Copiar credenciales</button>'+
-      '<button class="btn btn-p" id="cr-ok" style="flex:1;justify-content:center">Entendido</button></div>'+
-  '</div></div>' : '';
-
-  v.innerHTML =
-  '<div class="grid g-4" style="margin-bottom:16px">'+
-    [['Usuarios dados de alta', String(USUARIOS.length),'users','blue'],
-     ['Cuentas activas', String(USUARIOS.filter(function(u){return u.est==='Activo';}).length),'check','green'],
-     ['Con acceso por Google', String(USUARIOS.filter(function(u){return u.google;}).length),'globe','violet'],
-     ['Suspendidas', String(USUARIOS.filter(function(u){return u.est!=='Activo';}).length),'alert','red']]
-    .map(function(k){ return '<div class="card kpi"><div class="row" style="justify-content:space-between">'+
-      '<div class="lbl">'+k[0]+'</div><div class="ico-box '+k[3]+'">'+ic(k[2],17)+'</div></div>'+
-      '<div class="val">'+k[1]+'</div></div>'; }).join('')+
-  '</div>'+
-
-  '<div class="card" style="margin-bottom:16px">'+
-    '<div class="card-h" style="margin:0;flex-wrap:wrap">'+
-      '<div><div class="row" style="gap:8px;margin-bottom:6px">'+
-        '<span class="chip blue">Acceso privado</span>'+
-        '<span class="chip red">Registro público desactivado</span></div>'+
-        '<h3 style="font-size:18px">Usuarios y accesos</h3>'+
-        '<p>Nadie puede darse de alta por su cuenta. Cada acceso lo creas tú aquí.</p></div>'+
-      '<button class="btn btn-p" id="u-nuevo">'+ic('userPlus',16)+' Dar de alta usuario</button></div>'+
-    '<div class="search" style="width:100%;max-width:340px;margin-top:14px">'+ic('search',15)+
-      '<input id="u-find" placeholder="Buscar por nombre, correo o relación..." value="'+esc(USU.filtro)+'"></div>'+
-  '</div>'+
-
-  '<div class="card" style="padding:0;overflow:hidden">'+
-    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-      '<th>Usuario</th><th>Rol</th><th>N.º relación</th><th>Google</th><th>Estado</th>'+
-      '<th>Último acceso</th><th></th></tr></thead><tbody>'+filas+'</tbody></table></div></div>'+
-
-  '<div class="card" style="margin-top:16px;border-left:3px solid var(--amber)">'+
-    '<div class="row" style="gap:11px;align-items:flex-start">'+
-      '<span style="color:#FDE68A;flex:0 0 auto">'+ic('alert',18)+'</span>'+
-      '<div><div class="small" style="color:#FDE68A;font-weight:600;margin-bottom:6px">'+
-        'Esta pantalla gestiona los accesos; no los protege por sí sola</div>'+
-      '<p class="tiny muted" style="margin:0;line-height:1.65">La aplicación es un archivo estático: quien la abra '+
-      'puede ver su código y saltarse esta comprobación. El bloqueo real del registro, la validación de contraseñas '+
-      'con bcrypt y la lista blanca de Google los ejecuta la API del paquete '+
-      '<span class="mono">labs24k-api-blindada</span>, que necesita alojamiento con Node.js. '+
-      'Hasta desplegarla, trata este portal como una recepción, no como una cerradura.</p></div></div>'+
-  '</div>'+ alta + creado;
-
-  /* eventos */
-  q('#u-find').onchange=function(){ USU.filtro=this.value; setTimeout(renderApp,0); };
-  q('#u-nuevo').onclick=function(){
-    USU.form={n:'',mail:'',tel:'',rol:'commercial',rel:nuevoRelacion(),pass:claveAleatoria(),google:true};
-    renderApp(); };
-  qa('[data-u-cerrar]').forEach(function(b){ b.onclick=function(){ USU.form=null; renderApp(); }; });
-  if(q('.ov')) q('.ov').onclick=function(e){ if(e.target===this){ USU.form=null; USU.creado=null; renderApp(); } };
-
-  if(q('#nu-rel-gen')) q('#nu-rel-gen').onclick=function(){ leeAlta(); USU.form.rel=nuevoRelacion(); renderApp(); };
-  if(q('#nu-pass-gen')) q('#nu-pass-gen').onclick=function(){ leeAlta(); USU.form.pass=claveAleatoria(); renderApp(); };
-  if(q('#nu-goo')) q('#nu-goo').onclick=function(){ leeAlta(); USU.form.google=!USU.form.google; renderApp(); };
-  function leeAlta(){
-    if(!USU.form) return;
-    USU.form.n=q('#nu-n').value; USU.form.mail=q('#nu-mail').value;
-    USU.form.tel=q('#nu-tel').value; USU.form.rol=q('#nu-rol').value;
-    USU.form.rel=q('#nu-rel').value; USU.form.pass=q('#nu-pass').value;
-  }
-  if(q('#nu-crear')) q('#nu-crear').onclick=function(){
-    leeAlta();
-    var F=USU.form;
-    if(!F.n.trim()){ toast('Indica el nombre del usuario.'); return; }
-    if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(F.mail.trim())){ toast('El correo no tiene un formato válido.'); return; }
-    if(usuarioPorMail(F.mail)){ toast('Ya existe una cuenta con ese correo.'); return; }
-    if(F.pass.length < 8){ toast('La contraseña inicial debe tener al menos 8 caracteres.'); return; }
-    var u = {id:'u'+(USUARIOS.length+1), n:F.n.trim(), mail:F.mail.trim().toLowerCase(),
-      tel:F.tel.trim()||'+34 600 000 000', rol:F.rol, rel:F.rel, pass:F.pass,
-      google:F.google, est:'Activo', alta:new Date().toLocaleDateString('es-ES'), ult:'sin accesos'};
-    USUARIOS.push(u);
-    USU.form=null; USU.creado=u;
-    renderApp();
-  };
-  if(q('#cr-ok')) q('#cr-ok').onclick=function(){
-    toast('Usuario '+USU.creado.n+' dado de alta con la relación '+USU.creado.rel+'.');
-    USU.creado=null; renderApp(); };
-  if(q('#cr-copiar')) q('#cr-copiar').onclick=function(){
-    var c=USU.creado;
-    copia('Acceso a Labs Command Center 360\nUsuario: '+c.mail+'\nContraseña: '+c.pass+
-      '\nN.º de relación: '+c.rel+'\nRol: '+ROLES[c.rol].label, 'Credenciales copiadas.'); };
-
-  qa('[data-u-est]').forEach(function(b){ b.onclick=function(){
-    var u=USUARIOS.filter(function(x){ return x.id===b.dataset.uEst; })[0];
-    if(u.rol==='admin' && u.est==='Activo'){ toast('No puedes suspender la cuenta de administración.'); return; }
-    u.est = u.est==='Activo' ? 'Suspendido' : 'Activo';
-    toast(u.n+' · cuenta '+u.est.toLowerCase()+'.'); renderApp(); }; });
-  qa('[data-u-goo]').forEach(function(b){ b.onclick=function(){
-    var u=USUARIOS.filter(function(x){ return x.id===b.dataset.uGoo; })[0];
-    u.google=!u.google;
-    toast(u.google ? 'Google autorizado para '+u.n+'.' : 'Acceso con Google revocado para '+u.n+'.');
-    renderApp(); }; });
-  qa('[data-u-clave]').forEach(function(b){ b.onclick=function(){
-    var u=USUARIOS.filter(function(x){ return x.id===b.dataset.uClave; })[0];
-    u.pass=claveAleatoria(); USU.creado=u; renderApp(); }; });
-  qa('[data-u-del]').forEach(function(b){ b.onclick=function(){
-    var i=USUARIOS.map(function(x){ return x.id; }).indexOf(b.dataset.uDel);
-    var u=USUARIOS[i];
-    if(u.rol==='admin'){ toast('La cuenta de administración no se puede eliminar.'); return; }
-    USUARIOS.splice(i,1); toast('Cuenta de '+u.n+' eliminada.'); renderApp(); }; });
-}
-
 /* ==========================================================================
-   PANEL DE USUARIOS Y ACCESOS · versión ampliada
+   PANEL DE USUARIOS Y ACCESOS
    Ciclo de vida completo de la cuenta: alta, perfil, permisos granulares,
    estado, credenciales, sesiones y bitácora de auditoría.
-   Esta capa sustituye a la tabla básica de _app11.js (misma función, más
-   arriba en el archivo: la declaración posterior es la que queda activa).
    ========================================================================== */
 
 /* ---------------------- CATÁLOGO DE PERMISOS GRANULARES ------------------ */
@@ -9218,6 +8918,34 @@ function exportaExpedientes(){
 /* ==================== DOCUMENTOS EN SUPABASE STORAGE ===================== */
 var BUCKET_DOCS = 'documentos';
 
+/* Como sbFetch, pero para el Storage: cuerpo binario (no JSON) y con más
+   margen de tiempo, porque un archivo tarda más que una consulta normal.
+   Sin este corte, una subida o descarga que se queda a medias en una
+   conexión floja se cuelga para siempre: el botón se queda deshabilitado
+   ("Subiendo…") y no hay ningún error que avise ni forma de reintentar sin
+   recargar la página entera. */
+function sbFetchArchivo(ruta, opciones){
+  opciones = opciones || {};
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var corte = ctrl ? setTimeout(function(){ ctrl.abort(); }, 60000) : null;
+
+  return fetch(SB.url + ruta, {
+    method: opciones.method || 'GET',
+    headers: opciones.headers || {},
+    body: opciones.body,
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function(r){
+    if(corte) clearTimeout(corte);
+    if(!opciones.comoBlob) return {ok:r.ok, estado:r.status};
+    if(!r.ok) return {ok:false, estado:r.status, blob:null};
+    return r.blob().then(function(b){ return {ok:true, estado:r.status, blob:b}; });
+  }, function(err){
+    if(corte) clearTimeout(corte);
+    return {ok:false, estado:0, blob:null,
+      agotado: err && err.name === 'AbortError'};
+  });
+}
+
 /* Descarga autenticada: el archivo no es público, así que se pide con el token
    de sesión y se entrega como Blob. Si aún no está subido, se dice claramente
    en lugar de fingir una descarga. */
@@ -9232,16 +8960,14 @@ function descargaDocumento(nombre, ruta){
   }
   toast('Recuperando '+nombre+'...');
   sbConSesion(function(){
-    return fetch(SB.url + '/storage/v1/object/authenticated/' + BUCKET_DOCS + '/' + ruta, {
+    return sbFetchArchivo('/storage/v1/object/authenticated/' + BUCKET_DOCS + '/' + ruta, {
+      comoBlob: true,
       headers: {'apikey': SB.clave, 'Authorization': 'Bearer ' + (SB.sesion||{}).access_token}
-    }).then(function(r){
-      if(!r.ok) return {ok:false, estado:r.status, datos:null};
-      return r.blob().then(function(b){ return {ok:true, estado:200, blob:b}; });
-    }, function(){ return {ok:false, estado:0, datos:null}; });
+    });
   }).then(function(r){
     if(!r.ok){
-      toast(r.estado === 404
-        ? 'El archivo «'+nombre+'» no está en el almacén: vuelve a subirlo desde el expediente.'
+      toast(r.agotado ? 'La descarga ha tardado demasiado. Comprueba tu conexión e inténtalo otra vez.'
+        : r.estado === 404 ? 'El archivo «'+nombre+'» no está en el almacén: vuelve a subirlo desde el expediente.'
         : r.estado === 0 ? 'No se ha podido contactar con el almacén de archivos.'
         : 'No tienes permiso para descargar este documento.');
       return;
