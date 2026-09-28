@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolvix Global · Facturación de Grupo</title>
+<style>
+:root{
+  --bg:#0B1120; --card:#121A2E; --card-2:#0F1626; --line:#1F2A44;
+  --text:#E2E8F0; --muted:#8A96AE; --teal:#17C8C0; --blue:#60A5FA;
+  --green:#4ADE80; --amber:#FBBF24; --red:#F87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:230px;flex:0 0 230px;background:var(--card-2);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.brand{padding:22px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.brand .iso{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#1A7F9C);display:flex;align-items:center;justify-content:center;font-weight:700;color:#04231A;flex:0 0 auto}
+.brand .txt{font-weight:700;font-size:14px;line-height:1.25}
+.brand .txt span{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.nav{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-sec{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:12px 10px 6px}
+.nav-item{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:none;border:none;color:var(--muted);font-size:13.5px;cursor:pointer;text-align:left}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.on{background:rgba(23,200,192,.12);color:var(--teal)}
+.user-card{padding:14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--teal);color:#04231A;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 auto}
+.user-card .nm{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-card .rl{font-size:11px;color:var(--muted)}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px}
+.icon-btn:hover{background:var(--card);color:var(--text)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}
+.topbar h2{margin:0;font-size:17px}
+.content{padding:24px;overflow-y:auto;flex:1}
+.grid{display:grid;gap:14px}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.g-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.g-4{grid-template-columns:repeat(2,1fr)}.g-2{grid-template-columns:1fr}.sidebar{width:64px;flex:0 0 64px}.brand .txt,.nav-item span,.user-card .nm,.user-card .rl{display:none}.nav-item{justify-content:center}.user-card{justify-content:center}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card.kpi .lbl{font-size:12px;color:var(--muted)}
+.card.kpi .val{font-size:24px;font-weight:700;margin-top:6px}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.card-h h3{margin:0;font-size:16px}
+.card-h p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--teal)}
+.btn-p{background:var(--teal);border-color:var(--teal);color:#04231A;font-weight:600}
+.btn-p:hover{opacity:.9}
+.btn-xs{padding:6px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:none}
+.chip{display:inline-flex;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--card-2);border:1px solid var(--line)}
+.chip.green{background:rgba(74,222,128,.12);color:var(--green);border-color:transparent}
+.chip.amber{background:rgba(251,191,36,.12);color:var(--amber);border-color:transparent}
+.chip.red{background:rgba(248,113,113,.12);color:var(--red);border-color:transparent}
+.chip.blue{background:rgba(96,165,250,.12);color:var(--blue);border-color:transparent}
+.inp,select.inp,textarea.inp{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font-size:13.5px;font-family:inherit}
+.inp:focus{outline:none;border-color:var(--teal)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.row{display:flex;align-items:center}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov{position:fixed;inset:0;background:rgba(2,6,16,.72);backdrop-filter:blur(3px);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
+.search{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card-2)}
+.search input{flex:1;background:none;border:none;color:var(--text);outline:none;font-size:13.5px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);padding:11px 18px;border-radius:10px;font-size:13px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:34px;max-width:380px;width:100%}
+.login-card h1{font-size:19px;margin:0 0 4px;text-align:center}
+.login-card p.tag{text-align:center;color:var(--muted);font-size:12.5px;margin:0 0 26px}
+.lg-err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#FCA5A5;padding:9px 12px;border-radius:9px;font-size:12.5px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<script>
+/* ==========================================================================
+   EVOLVIX GLOBAL · Facturación de Grupo
+   Panel estático (sin build), habla directamente con Supabase por fetch.
+   Todo lo que protege de verdad son las políticas RLS del lado de la base
+   de datos, no este JavaScript — igual que en el Command Center de Labs24k.
+   ========================================================================== */
+
+function q(s){ return document.querySelector(s); }
+function qa(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function eur(n){ return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0); }
+function toast(msg){
+  var t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3200);
+}
+function haceRel(ms){
+  var s = Math.floor((Date.now()-ms)/1000);
+  if(s<60) return 'hace un momento';
+  if(s<3600) return 'hace '+Math.floor(s/60)+' min';
+  if(s<86400) return 'hace '+Math.floor(s/3600)+' h';
+  return 'hace '+Math.floor(s/86400)+' d';
+}
+
+/* ------------------------------ CONEXIÓN -------------------------------- */
+var SB_DEFECTO = { url:'', clave:'', activo:true };
+var SB = { url:'', clave:'', activo:true, sesion:null, perfil:null, estado:'sin probar' };
+var SB_LS_CFG = 'evolvix.supabase', SB_LS_SES = 'evolvix.sesion';
+
+function sbGuardaLocal(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function sbLeeLocal(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function sbCfgCarga(){
+  var g = sbLeeLocal(SB_LS_CFG) || {};
+  SB.url = g.url || SB_DEFECTO.url;
+  SB.clave = g.clave || SB_DEFECTO.clave;
+  SB.activo = g.activo===undefined ? SB_DEFECTO.activo : !!g.activo;
+  SB.sesion = sbLeeLocal(SB_LS_SES);
+}
+function sbCfgGuarda(){ sbGuardaLocal(SB_LS_CFG, {url:SB.url, clave:SB.clave, activo:SB.activo}); }
+function sbConfigurado(){
+  var u = String(SB.url||'').trim();
+  var valida = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(u) ||
+               /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(u);
+  return SB.activo && valida && String(SB.clave||'').length > 20;
+}
+
+function sbCabeceras(conSesion){
+  var h = {'apikey': SB.clave, 'Content-Type': 'application/json'};
+  h['Authorization'] = (conSesion!==false && SB.sesion && SB.sesion.access_token)
+    ? 'Bearer '+SB.sesion.access_token : 'Bearer '+SB.clave;
+  return h;
+}
+function sbFetch(ruta, opciones){
+  opciones = opciones || {};
+  var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  var corte = ctrl ? setTimeout(function(){ ctrl.abort(); }, 15000) : null;
+  return fetch(SB.url+ruta, {
+    method: opciones.method||'GET',
+    headers: Object.assign(sbCabeceras(opciones.conSesion), opciones.headers||{}),
+    body: opciones.body ? JSON.stringify(opciones.body) : undefined,
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function(r){
+    if(corte) clearTimeout(corte);
+    return r.text().then(function(t){
+      var datos=null; try{ datos = t?JSON.parse(t):null; }catch(e){ datos={mensaje:t}; }
+      return {ok:r.ok, estado:r.status, datos:datos};
+    });
+  }, function(err){
+    if(corte) clearTimeout(corte);
+    return {ok:false, estado:0, datos:{message: err&&err.name==='AbortError'
+      ? 'La conexión ha tardado demasiado.' : 'No se ha podido contactar con Supabase.'}};
+  });
+}
+function sbMensaje(r){
+  var d = r&&r.datos; if(!d) return 'Error desconocido.';
+  return d.error_description||d.msg||d.message||d.error||d.hint||d.mensaje||('Error '+r.estado);
+}
+function sbConSesion(hacer){
+  return hacer().then(function(r){
+    if(r.estado!==401 || !SB.sesion || !SB.sesion.refresh_token) return r;
+    return sbRefresca().then(function(ok){ return ok?hacer():r; });
+  });
+}
+function sbGuardaSesion(d){
+  if(!d||!d.access_token) return false;
+  SB.sesion = {access_token:d.access_token, refresh_token:d.refresh_token,
+    expira: Date.now()+((d.expires_in||3600)*1000), uid: d.user&&d.user.id};
+  sbGuardaLocal(SB_LS_SES, SB.sesion); return true;
+}
+function sbBorraSesion(){ SB.sesion=null; SB.perfil=null; try{localStorage.removeItem(SB_LS_SES);}catch(e){} }
+function sbEntrar(email,password){
+  return sbFetch('/auth/v1/token?grant_type=password', {method:'POST', conSesion:false, body:{email:email,password:password}})
+    .then(function(r){
+      if(!r.ok || !sbGuardaSesion(r.datos)){
+        return {ok:false, mensaje: r.estado===400 ? 'Credenciales incorrectas.' : sbMensaje(r)};
+      }
+      return {ok:true};
+    });
+}
+function sbRefresca(){
+  if(!SB.sesion||!SB.sesion.refresh_token) return Promise.resolve(false);
+  return sbFetch('/auth/v1/token?grant_type=refresh_token', {method:'POST', conSesion:false, body:{refresh_token:SB.sesion.refresh_token}})
+    .then(function(r){ if(!r.ok||!sbGuardaSesion(r.datos)){ sbBorraSesion(); return false; } return true; });
+}
+function sbSalir(){
+  var fin = SB.sesion ? sbFetch('/auth/v1/logout',{method:'POST'}).then(function(){return true;},function(){return true;}) : Promise.resolve(true);
+  return fin.then(function(){ sbBorraSesion(); return true; });
+}
+function sbSelect(tabla, consulta){ return sbConSesion(function(){ return sbFetch('/rest/v1/'+tabla+(consulta?'?'+consulta:'')); }); }
+function sbInsert(tabla, filas){ return sbConSesion(function(){ return sbFetch('/rest/v1/'+tabla, {method:'POST', headers:{'Prefer':'return=representation'}, body:filas}); }); }
+function sbUpdate(tabla, filtro, cambios){ return sbConSesion(function(){ return sbFetch('/rest/v1/'+tabla+'?'+filtro, {method:'PATCH', headers:{'Prefer':'return=representation'}, body:cambios}); }); }
+function sbRpc(fn, args){
+  return sbConSesion(function(){ return sbFetch('/rest/v1/rpc/'+fn, {method:'POST', body:args||{}}); })
+    .then(function(r){ if(!r.ok) throw new Error(sbMensaje(r)); return Array.isArray(r.datos)?r.datos[0]:r.datos; });
+}
+
+/* -------------------------------- ESTADO -------------------------------- */
+var S = { logged:false, role:'contable', view:'dashboard', name:'', email:'', sidebar:false };
+var LOGIN = { mail:'', pass:'', error:'', ver:false, cargando:false };
+var MARCAS = { lista:[], cargado:false, nuevo:null };
+var CLIENTES = { lista:[], cargado:false, filtro:'', filtroMarca:'', nuevo:null };
+var FACTURAS = { lista:[], cargado:false, filtroEstado:'', filtroMarca:'', nueva:null, det:null };
+var RESUMEN = { lista:[], cargado:false };
+
+var MENU = [
+  {id:'dashboard', label:'Resumen del Grupo', icon:'chart'},
+  {id:'marcas',    label:'Marcas',            icon:'layers'},
+  {id:'clientes',  label:'Clientes',          icon:'users'},
+  {id:'facturas',  label:'Facturas',          icon:'file'}
+];
+
+var ICON = {
+  chart:'<path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>',
+  layers:'<path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/>',
+  shield:'<path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6z"/>'
+};
+function ic(n,s){ s=s||18; return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(ICON[n]||'')+'</svg>'; }
+
+/* ------------------------------ ARRANQUE -------------------------------- */
+function boot(){
+  sbCfgCarga();
+  if(!sbConfigurado()){ SB.estado='sin conexión'; renderLogin(); return; }
+  if(!SB.sesion){ renderLogin(); return; }
+
+  LOGIN.cargando = true; renderLogin();
+  var previo = (SB.sesion.expira && SB.sesion.expira < Date.now()+60000) ? sbRefresca() : Promise.resolve(true);
+  previo.then(function(ok){
+    if(!ok){ LOGIN.cargando=false; sbBorraSesion(); renderLogin(); return; }
+    return sbAbrePanel().then(function(r){
+      LOGIN.cargando = false;
+      if(!r.ok){ sbBorraSesion(); LOGIN.error = r.mensaje; renderLogin(); }
+    });
+  }).catch(function(){ LOGIN.cargando=false; sbBorraSesion(); renderLogin(); });
+}
+function sbAbrePanel(){
+  return sbSelect('perfiles', 'id=eq.'+SB.sesion.uid+'&select=*').then(function(r){
+    if(!r.ok || !r.datos || !r.datos[0]) return {ok:false, mensaje:'No se ha podido cargar tu ficha.'};
+    var p = r.datos[0];
+    if(p.estado !== 'Activo') return {ok:false, mensaje:'Tu cuenta está suspendida.'};
+    SB.perfil = p; SB.estado = 'conectado';
+    S.logged = true; S.role = p.rol; S.name = (p.nombre+' '+(p.apellidos||'')).trim(); S.email = p.email;
+    S.view = 'dashboard';
+    renderApp();
+    return {ok:true};
+  }, function(){ return {ok:false, mensaje:'No se ha podido contactar con Supabase.'}; });
+}
+
+/* ------------------------------ LOGIN ------------------------------------ */
+function renderLogin(){
+  var err = LOGIN.error ? '<div class="lg-err">'+esc(LOGIN.error)+'</div>' : '';
+  document.body.innerHTML =
+  '<div class="login-wrap"><div class="login-card">'+
+    '<h1>Evolvix Global</h1>'+
+    '<p class="tag">Facturación de Grupo</p>'+
+    err+
+    '<div class="field"><label>Correo</label>'+
+      '<input class="inp" id="lg-mail" type="email" value="'+esc(LOGIN.mail)+'" placeholder="tu@evolvixglobal.com" autocomplete="username"></div>'+
+    '<div class="field"><label>Contraseña</label>'+
+      '<input class="inp" id="lg-pass" type="'+(LOGIN.ver?'text':'password')+'" value="'+esc(LOGIN.pass)+'" autocomplete="current-password"></div>'+
+    '<button class="btn btn-p" id="lg-entrar" style="width:100%;justify-content:center;margin-top:6px" '+(LOGIN.cargando?'disabled':'')+'>'+
+      (LOGIN.cargando ? 'Comprobando...' : (ic('logout',15)+' Entrar'))+'</button>'+
+  '</div></div>';
+
+  if(q('#lg-mail')) q('#lg-mail').oninput = function(){ LOGIN.mail = this.value; };
+  if(q('#lg-pass')) q('#lg-pass').oninput = function(){ LOGIN.pass = this.value; };
+  if(q('#lg-entrar')) q('#lg-entrar').onclick = function(){
+    if(!LOGIN.mail || !LOGIN.pass){ LOGIN.error = 'Escribe tu correo y tu contraseña.'; renderLogin(); return; }
+    LOGIN.error=''; LOGIN.cargando = true; renderLogin();
+    sbEntrar(LOGIN.mail, LOGIN.pass).then(function(r){
+      if(!r.ok){ LOGIN.cargando=false; LOGIN.error = r.mensaje; renderLogin(); return; }
+      sbAbrePanel().then(function(r2){
+        LOGIN.cargando = false;
+        if(!r2.ok){ sbBorraSesion(); LOGIN.error = r2.mensaje; renderLogin(); }
+      });
+    });
+  };
+}
+
+/* ------------------------------- PANEL ----------------------------------- */
+function renderApp(){
+  var items = MENU;
+  if(!items.some(function(m){ return m.id===S.view; })) S.view = 'dashboard';
+  var cur = items.filter(function(m){ return m.id===S.view; })[0];
+
+  document.body.innerHTML =
+  '<div class="app">'+
+    '<aside class="sidebar">'+
+      '<div class="brand"><div class="iso">EG</div><div class="txt">Evolvix Global<span>Facturación de Grupo</span></div></div>'+
+      '<nav class="nav">'+
+        items.map(function(m){
+          return '<button class="nav-item'+(S.view===m.id?' on':'')+'" data-go="'+m.id+'">'+ic(m.icon,17)+'<span>'+esc(m.label)+'</span></button>';
+        }).join('')+
+      '</nav>'+
+      '<div class="user-card">'+
+        '<div class="avatar">'+esc((S.name||'?').charAt(0).toUpperCase())+'</div>'+
+        '<div style="flex:1;min-width:0"><div class="nm trunc">'+esc(S.name)+'</div>'+
+        '<div class="rl">'+(S.role==='admin'?'Administración':'Contabilidad')+'</div></div>'+
+        '<button class="icon-btn" id="logout" title="Salir">'+ic('logout',16)+'</button>'+
+      '</div>'+
+    '</aside>'+
+    '<div class="main">'+
+      '<header class="topbar"><h2>'+esc(cur.label)+'</h2></header>'+
+      '<div class="content" id="view"></div>'+
+    '</div>'+
+  '</div>';
+
+  qa('[data-go]').forEach(function(b){ b.onclick=function(){ S.view=b.dataset.go; renderApp(); }; });
+  q('#logout').onclick = function(){ sbSalir().then(function(){ S.logged=false; renderLogin(); }); };
+
+  var v = q('#view');
+  var VIEWS = {dashboard:viewDashboard, marcas:viewMarcas, clientes:viewClientes, facturas:viewFacturas};
+  (VIEWS[S.view]||viewDashboard)(v);
+}
+function esAdmin(){ return S.role === 'admin'; }
+
+/* ---------------------------- DASHBOARD ----------------------------------- */
+function rsCarga(){
+  RESUMEN.cargando = true;
+  sbSelect('resumen_marcas', 'select=*&order=facturado.desc').then(function(r){
+    RESUMEN.cargando = false; RESUMEN.cargado = true;
+    RESUMEN.lista = (r&&r.ok) ? (r.datos||[]) : [];
+    if(!r.ok) RESUMEN.error = sbMensaje(r);
+    renderApp();
+  });
+}
+function viewDashboard(v){
+  if(!RESUMEN.cargado && !RESUMEN.cargando) rsCarga();
+
+  var totalFacturado = RESUMEN.lista.reduce(function(a,m){ return a+Number(m.facturado||0); }, 0);
+  var totalCobrado    = RESUMEN.lista.reduce(function(a,m){ return a+Number(m.cobrado||0); }, 0);
+  var totalPendiente  = RESUMEN.lista.reduce(function(a,m){ return a+Number(m.pendiente||0); }, 0);
+  var totalImpagado   = RESUMEN.lista.reduce(function(a,m){ return a+Number(m.impagado||0); }, 0);
+
+  var kpis = [
+    ['Facturado (grupo)', eur(totalFacturado), 'blue'],
+    ['Cobrado', eur(totalCobrado), 'green'],
+    ['Pendiente de cobro', eur(totalPendiente), 'amber'],
+    ['Impagado', eur(totalImpagado), 'red']
+  ];
+
+  var filas = RESUMEN.lista.map(function(m){
+    return '<tr>'+
+      '<td><div class="row" style="gap:9px"><span style="width:10px;height:10px;border-radius:50%;background:'+esc(m.color||'#17C8C0')+';flex:0 0 auto"></span>'+
+        '<span class="w">'+esc(m.marca)+'</span></div></td>'+
+      '<td>'+m.facturas_totales+'</td>'+
+      '<td>'+m.clientes_facturados+'</td>'+
+      '<td>'+eur(m.facturado)+'</td>'+
+      '<td><span class="chip green">'+eur(m.cobrado)+'</span></td>'+
+      '<td><span class="chip amber">'+eur(m.pendiente)+'</span></td>'+
+      '<td><span class="chip red">'+eur(m.impagado)+'</span></td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="7" class="muted" style="text-align:center;padding:26px">'+
+    (RESUMEN.cargando ? 'Cargando...' : (RESUMEN.error ? 'No se ha podido cargar: '+esc(RESUMEN.error) : 'Todavía no hay marcas.'))+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="grid g-4" style="margin-bottom:16px">'+
+    kpis.map(function(k){ return '<div class="card kpi"><div class="lbl">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>'; }).join('')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Facturación por marca</h3><p>Consolidado en tiempo real a partir de las facturas reales.</p></div></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Marca</th><th>Facturas</th><th>Clientes</th><th>Facturado</th><th>Cobrado</th><th>Pendiente</th><th>Impagado</th>'+
+      '</tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>';
+}
+
+/* ------------------------------- MARCAS ----------------------------------- */
+function mkCarga(){
+  MARCAS.cargando = true;
+  sbSelect('marcas', 'select=*&order=nombre.asc').then(function(r){
+    MARCAS.cargando = false; MARCAS.cargado = true;
+    MARCAS.lista = (r&&r.ok) ? (r.datos||[]) : [];
+    renderApp();
+  });
+}
+function mkNuevo(){ MARCAS.nuevo = {nombre:'', cif:'', email:'', color:'#17C8C0'}; renderApp(); }
+function mkGuarda(){
+  var n = MARCAS.nuevo;
+  if(!n.nombre.trim()){ toast('Ponle un nombre a la marca.'); return; }
+  sbInsert('marcas', {nombre:n.nombre.trim(), cif:n.cif.trim(), email:n.email.trim(), color:n.color}).then(function(r){
+    if(r&&r.ok){ MARCAS.nuevo=null; toast('Marca creada.'); mkCarga(); }
+    else toast('No se ha podido crear: '+sbMensaje(r));
+  });
+}
+function mkActiva(id, activa){
+  sbUpdate('marcas', 'id=eq.'+id, {activa:activa}).then(function(r){
+    if(r&&r.ok){ toast(activa?'Marca activada.':'Marca desactivada.'); mkCarga(); }
+    else toast('No se ha podido actualizar: '+sbMensaje(r));
+  });
+}
+function viewMarcas(v){
+  if(!MARCAS.cargado && !MARCAS.cargando) mkCarga();
+  var filas = MARCAS.lista.map(function(m){
+    return '<tr>'+
+      '<td><div class="row" style="gap:9px"><span style="width:10px;height:10px;border-radius:50%;background:'+esc(m.color)+'"></span>'+esc(m.nombre)+'</div></td>'+
+      '<td class="muted">'+esc(m.cif||'—')+'</td>'+
+      '<td class="muted">'+esc(m.email||'—')+'</td>'+
+      '<td>'+(m.activa?'<span class="chip green">Activa</span>':'<span class="chip">Inactiva</span>')+'</td>'+
+      (esAdmin() ? '<td style="text-align:right"><button class="btn btn-xs" data-mk-toggle="'+m.id+'" data-activa="'+m.activa+'">'+(m.activa?'Desactivar':'Activar')+'</button></td>' : '<td></td>')+
+    '</tr>';
+  }).join('') || '<tr><td colspan="5" class="muted" style="text-align:center;padding:26px">'+(MARCAS.cargando?'Cargando...':'Sin marcas.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Marcas del grupo</h3><p>Cada cliente y cada factura cuelgan de una de estas marcas.</p></div>'+
+      (esAdmin() ? '<button class="btn btn-p" id="mk-nuevo">'+ic('plus',16)+' Nueva marca</button>' : '')+
+    '</div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Marca</th><th>CIF</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  (MARCAS.nuevo ? mkModal() : '');
+
+  if(esAdmin() && q('#mk-nuevo')) q('#mk-nuevo').onclick = mkNuevo;
+  qa('[data-mk-toggle]').forEach(function(b){ b.onclick=function(){ mkActiva(Number(b.dataset.mkToggle), b.dataset.activa!=='true'); }; });
+
+  if(MARCAS.nuevo){
+    q('#mkn-nombre').onchange=function(){ MARCAS.nuevo.nombre=this.value; };
+    q('#mkn-cif').onchange=function(){ MARCAS.nuevo.cif=this.value; };
+    q('#mkn-email').onchange=function(){ MARCAS.nuevo.email=this.value; };
+    q('#mkn-color').onchange=function(){ MARCAS.nuevo.color=this.value; };
+    q('#mkn-cancela').onclick=function(){ MARCAS.nuevo=null; renderApp(); };
+    q('#mkn-guarda').onclick=mkGuarda;
+  }
+}
+function mkModal(){
+  var n = MARCAS.nuevo;
+  return '<div class="ov"><div class="modal">'+
+    '<h3 style="margin:0 0 16px">Nueva marca</h3>'+
+    '<div class="field"><label>Nombre *</label><input class="inp" id="mkn-nombre" value="'+esc(n.nombre)+'"></div>'+
+    '<div class="field"><label>CIF</label><input class="inp" id="mkn-cif" value="'+esc(n.cif)+'"></div>'+
+    '<div class="field"><label>Correo</label><input class="inp" id="mkn-email" value="'+esc(n.email)+'"></div>'+
+    '<div class="field"><label>Color</label><input class="inp" type="color" id="mkn-color" value="'+esc(n.color)+'" style="height:40px;padding:4px"></div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:8px">'+
+      '<button class="btn" id="mkn-cancela">Cancelar</button>'+
+      '<button class="btn btn-p" id="mkn-guarda">Crear</button></div>'+
+  '</div></div>';
+}
+
+/* ------------------------------ CLIENTES ---------------------------------- */
+function clCarga(){
+  Promise.all([sbSelect('clientes','select=*&order=nombre.asc'), sbSelect('marcas','select=id,nombre&order=nombre.asc')])
+    .then(function(rs){
+      CLIENTES.cargado = true;
+      CLIENTES.lista = (rs[0]&&rs[0].ok) ? (rs[0].datos||[]) : [];
+      MARCAS.lista = (rs[1]&&rs[1].ok) ? (rs[1].datos||[]) : MARCAS.lista;
+      renderApp();
+    });
+}
+function clNuevo(){ CLIENTES.nuevo = {marca_id: (MARCAS.lista[0]&&MARCAS.lista[0].id)||'', nombre:'', cif:'', email:'', telefono:'', contacto:''}; renderApp(); }
+function clGuarda(){
+  var n = CLIENTES.nuevo;
+  if(!n.nombre.trim()){ toast('Ponle un nombre al cliente.'); return; }
+  if(!n.marca_id){ toast('Elige una marca.'); return; }
+  sbInsert('clientes', {marca_id:n.marca_id, nombre:n.nombre.trim(), cif:n.cif.trim(), email:n.email.trim(),
+    telefono:n.telefono.trim(), contacto:n.contacto.trim(), creado_por:(SB.sesion&&SB.sesion.uid)||null}).then(function(r){
+    if(r&&r.ok){ CLIENTES.nuevo=null; toast('Cliente creado.'); clCarga(); }
+    else toast('No se ha podido crear: '+sbMensaje(r));
+  });
+}
+function nombreMarca(id){ var m = MARCAS.lista.filter(function(x){ return x.id===id; })[0]; return m?m.nombre:'—'; }
+function viewClientes(v){
+  if(!CLIENTES.cargado && !CLIENTES.cargando){ CLIENTES.cargando=true; clCarga(); }
+
+  var lista = CLIENTES.lista.filter(function(c){
+    var t = (c.nombre+' '+c.email+' '+c.cif).toLowerCase();
+    if(CLIENTES.filtro && t.indexOf(CLIENTES.filtro.toLowerCase().trim())<0) return false;
+    if(CLIENTES.filtroMarca && String(c.marca_id)!==CLIENTES.filtroMarca) return false;
+    return true;
+  });
+
+  var filas = lista.map(function(c){
+    return '<tr><td class="w">'+esc(c.nombre)+'<div class="tiny muted">'+esc(c.cif||'')+'</div></td>'+
+      '<td>'+esc(nombreMarca(c.marca_id))+'</td>'+
+      '<td class="muted">'+esc(c.email||'—')+'</td>'+
+      '<td class="muted">'+esc(c.telefono||'—')+'</td></tr>';
+  }).join('') || '<tr><td colspan="4" class="muted" style="text-align:center;padding:26px">'+(CLIENTES.cargando?'Cargando...':'Sin clientes.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Clientes</h3><p>Cada cliente pertenece a una sola marca.</p></div>'+
+      '<button class="btn btn-p" id="cl-nuevo">'+ic('plus',16)+' Nuevo cliente</button></div>'+
+    '<div class="row" style="gap:10px;margin-bottom:16px;flex-wrap:wrap">'+
+      '<div class="search" style="flex:1;min-width:200px"><input id="cl-find" placeholder="Buscar..." value="'+esc(CLIENTES.filtro)+'"></div>'+
+      '<select class="inp" id="cl-fmarca" style="max-width:200px"><option value="">Todas las marcas</option>'+
+        MARCAS.lista.map(function(m){ return '<option value="'+m.id+'"'+(CLIENTES.filtroMarca===String(m.id)?' selected':'')+'>'+esc(m.nombre)+'</option>'; }).join('')+
+      '</select></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Cliente</th><th>Marca</th><th>Correo</th><th>Teléfono</th></tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  (CLIENTES.nuevo ? clModal() : '');
+
+  q('#cl-find').oninput = function(){ CLIENTES.filtro=this.value; renderApp(); };
+  q('#cl-fmarca').onchange = function(){ CLIENTES.filtroMarca=this.value; renderApp(); };
+  q('#cl-nuevo').onclick = clNuevo;
+
+  if(CLIENTES.nuevo){
+    q('#cln-marca').onchange=function(){ CLIENTES.nuevo.marca_id=Number(this.value); };
+    q('#cln-nombre').onchange=function(){ CLIENTES.nuevo.nombre=this.value; };
+    q('#cln-cif').onchange=function(){ CLIENTES.nuevo.cif=this.value; };
+    q('#cln-email').onchange=function(){ CLIENTES.nuevo.email=this.value; };
+    q('#cln-tel').onchange=function(){ CLIENTES.nuevo.telefono=this.value; };
+    q('#cln-contacto').onchange=function(){ CLIENTES.nuevo.contacto=this.value; };
+    q('#cln-cancela').onclick=function(){ CLIENTES.nuevo=null; renderApp(); };
+    q('#cln-guarda').onclick=clGuarda;
+  }
+}
+function clModal(){
+  var n = CLIENTES.nuevo;
+  return '<div class="ov"><div class="modal">'+
+    '<h3 style="margin:0 0 16px">Nuevo cliente</h3>'+
+    '<div class="field"><label>Marca *</label><select class="inp" id="cln-marca">'+
+      MARCAS.lista.map(function(m){ return '<option value="'+m.id+'"'+(n.marca_id===m.id?' selected':'')+'>'+esc(m.nombre)+'</option>'; }).join('')+
+    '</select></div>'+
+    '<div class="field"><label>Nombre *</label><input class="inp" id="cln-nombre" value="'+esc(n.nombre)+'"></div>'+
+    '<div class="field"><label>CIF</label><input class="inp" id="cln-cif" value="'+esc(n.cif)+'"></div>'+
+    '<div class="field"><label>Correo</label><input class="inp" id="cln-email" value="'+esc(n.email)+'"></div>'+
+    '<div class="field"><label>Teléfono</label><input class="inp" id="cln-tel" value="'+esc(n.telefono)+'"></div>'+
+    '<div class="field"><label>Persona de contacto</label><input class="inp" id="cln-contacto" value="'+esc(n.contacto)+'"></div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:8px">'+
+      '<button class="btn" id="cln-cancela">Cancelar</button>'+
+      '<button class="btn btn-p" id="cln-guarda">Crear</button></div>'+
+  '</div></div>';
+}
+
+/* ------------------------------ FACTURAS ---------------------------------- */
+function fcCarga(){
+  Promise.all([
+    sbSelect('facturas','select=*&order=creado.desc'),
+    sbSelect('clientes','select=id,nombre,marca_id&order=nombre.asc'),
+    sbSelect('marcas','select=id,nombre&order=nombre.asc')
+  ]).then(function(rs){
+    FACTURAS.cargado = true;
+    FACTURAS.lista = (rs[0]&&rs[0].ok) ? (rs[0].datos||[]) : [];
+    CLIENTES.lista = (rs[1]&&rs[1].ok) ? (rs[1].datos||[]) : CLIENTES.lista;
+    MARCAS.lista = (rs[2]&&rs[2].ok) ? (rs[2].datos||[]) : MARCAS.lista;
+    renderApp();
+  });
+}
+function nombreCliente(id){ var c = CLIENTES.lista.filter(function(x){ return x.id===id; })[0]; return c?c.nombre:'—'; }
+function fcChipEstado(e){
+  var cls = e==='Pagada'?'green':e==='Pendiente'?'amber':e==='Impagada'?'red':'';
+  return '<span class="chip'+(cls?' '+cls:'')+'">'+esc(e)+'</span>';
+}
+function fcNueva(){
+  FACTURAS.nueva = {marca_id:(MARCAS.lista[0]&&MARCAS.lista[0].id)||'', cliente_id:'', iva:21,
+    lineas:[{descripcion:'', cantidad:1, precio_unitario:0}]};
+  renderApp();
+}
+function fcAnadeLinea(){ FACTURAS.nueva.lineas.push({descripcion:'', cantidad:1, precio_unitario:0}); renderApp(); }
+function fcQuitaLinea(i){ FACTURAS.nueva.lineas.splice(i,1); if(!FACTURAS.nueva.lineas.length) FACTURAS.nueva.lineas.push({descripcion:'',cantidad:1,precio_unitario:0}); renderApp(); }
+function fcBaseTotal(){
+  var n = FACTURAS.nueva;
+  var base = n.lineas.reduce(function(a,l){ return a + (Number(l.cantidad)||0)*(Number(l.precio_unitario)||0); }, 0);
+  var total = base * (1 + (Number(n.iva)||0)/100);
+  return {base:base, total:total};
+}
+function fcGuarda(){
+  var n = FACTURAS.nueva;
+  if(!n.marca_id){ toast('Elige una marca.'); return; }
+  if(!n.cliente_id){ toast('Elige un cliente.'); return; }
+  if(!n.lineas.some(function(l){ return l.descripcion.trim(); })){ toast('Añade al menos un concepto.'); return; }
+
+  sbRpc('siguiente_numero_factura', {p_marca_id:n.marca_id}).then(function(numero){
+    var t = fcBaseTotal();
+    return sbInsert('facturas', {
+      numero:numero, marca_id:n.marca_id, cliente_id:n.cliente_id,
+      base: Math.round(t.base*100)/100, iva:n.iva, total: Math.round(t.total*100)/100,
+      creado_por:(SB.sesion&&SB.sesion.uid)||null
+    }).then(function(r){
+      if(!r||!r.ok) throw new Error(sbMensaje(r));
+      var factura = r.datos[0];
+      var lineas = n.lineas.filter(function(l){ return l.descripcion.trim(); }).map(function(l,i){
+        return {factura_id:factura.id, descripcion:l.descripcion.trim(), cantidad:l.cantidad, precio_unitario:l.precio_unitario, orden:i};
+      });
+      return sbInsert('factura_lineas', lineas);
+    });
+  }).then(function(){
+    toast('Factura registrada.'); FACTURAS.nueva=null; fcCarga();
+  }).catch(function(e){
+    toast('No se ha podido registrar: ' + (e&&e.message||'error'));
+  });
+}
+function fcCambiaEstado(id, estado){
+  var extra = {estado:estado};
+  if(estado==='Pagada') extra.fecha_pago = new Date().toISOString().slice(0,10);
+  sbUpdate('facturas','id=eq.'+id, extra).then(function(r){
+    if(r&&r.ok){ toast('Estado actualizado.'); fcCarga(); }
+    else toast('No se ha podido actualizar: '+sbMensaje(r));
+  });
+}
+function viewFacturas(v){
+  if(!FACTURAS.cargado && !FACTURAS.cargando){ FACTURAS.cargando=true; fcCarga(); }
+
+  var lista = FACTURAS.lista.filter(function(f){
+    if(FACTURAS.filtroEstado && f.estado!==FACTURAS.filtroEstado) return false;
+    if(FACTURAS.filtroMarca && String(f.marca_id)!==FACTURAS.filtroMarca) return false;
+    return true;
+  });
+
+  var filas = lista.map(function(f){
+    return '<tr><td class="w">'+esc(f.numero)+'</td>'+
+      '<td>'+esc(nombreMarca(f.marca_id))+'</td>'+
+      '<td>'+esc(nombreCliente(f.cliente_id))+'</td>'+
+      '<td class="muted">'+esc(f.fecha_emision)+'</td>'+
+      '<td>'+eur(f.total)+'</td>'+
+      '<td>'+fcChipEstado(f.estado)+'</td>'+
+      '<td style="text-align:right">'+
+        (f.estado==='Pendiente' ? '<button class="btn btn-xs" data-fc-pagar="'+f.id+'">Marcar pagada</button> ' : '')+
+        (f.estado==='Pendiente' ? '<button class="btn btn-xs" data-fc-impagar="'+f.id+'">Impagada</button> ' : '')+
+        (f.estado!=='Anulada' ? '<button class="btn btn-xs" data-fc-anula="'+f.id+'">Anular</button>' : '')+
+      '</td></tr>';
+  }).join('') || '<tr><td colspan="7" class="muted" style="text-align:center;padding:26px">'+(FACTURAS.cargando?'Cargando...':'Sin facturas.')+'</td></tr>';
+
+  v.innerHTML =
+  '<div class="card">'+
+    '<div class="card-h"><div><h3>Facturas</h3><p>Numeración automática por marca y año.</p></div>'+
+      '<button class="btn btn-p" id="fc-nueva">'+ic('plus',16)+' Nueva factura</button></div>'+
+    '<div class="row" style="gap:10px;margin-bottom:16px;flex-wrap:wrap">'+
+      '<select class="inp" id="fc-fest" style="max-width:200px"><option value="">Todos los estados</option>'+
+        ['Pendiente','Pagada','Impagada','Anulada'].map(function(e){ return '<option'+(FACTURAS.filtroEstado===e?' selected':'')+'>'+e+'</option>'; }).join('')+
+      '</select>'+
+      '<select class="inp" id="fc-fmarca" style="max-width:200px"><option value="">Todas las marcas</option>'+
+        MARCAS.lista.map(function(m){ return '<option value="'+m.id+'"'+(FACTURAS.filtroMarca===String(m.id)?' selected':'')+'>'+esc(m.nombre)+'</option>'; }).join('')+
+      '</select></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Número</th><th>Marca</th><th>Cliente</th><th>Emisión</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>'+filas+'</tbody></table></div>'+
+  '</div>'+
+  (FACTURAS.nueva ? fcModal() : '');
+
+  q('#fc-fest').onchange=function(){ FACTURAS.filtroEstado=this.value; renderApp(); };
+  q('#fc-fmarca').onchange=function(){ FACTURAS.filtroMarca=this.value; renderApp(); };
+  q('#fc-nueva').onclick=fcNueva;
+  qa('[data-fc-pagar]').forEach(function(b){ b.onclick=function(){ fcCambiaEstado(Number(b.dataset.fcPagar),'Pagada'); }; });
+  qa('[data-fc-impagar]').forEach(function(b){ b.onclick=function(){ fcCambiaEstado(Number(b.dataset.fcImpagar),'Impagada'); }; });
+  qa('[data-fc-anula]').forEach(function(b){ b.onclick=function(){
+    if(confirm('¿Anular esta factura? Queda registrada, pero deja de contar como facturación activa.')) fcCambiaEstado(Number(b.dataset.fcAnula),'Anulada');
+  }; });
+
+  if(FACTURAS.nueva){
+    var clientesDeMarca = CLIENTES.lista.filter(function(c){ return c.marca_id===FACTURAS.nueva.marca_id; });
+    q('#fcn-marca').onchange=function(){ FACTURAS.nueva.marca_id=Number(this.value); FACTURAS.nueva.cliente_id=''; renderApp(); };
+    if(q('#fcn-cliente')) q('#fcn-cliente').onchange=function(){ FACTURAS.nueva.cliente_id=Number(this.value); };
+    q('#fcn-iva').onchange=function(){ FACTURAS.nueva.iva=Number(this.value)||0; renderApp(); };
+    qa('[data-ln-desc]').forEach(function(el){ el.onchange=function(){ FACTURAS.nueva.lineas[Number(el.dataset.lnDesc)].descripcion=this.value; }; });
+    qa('[data-ln-cant]').forEach(function(el){ el.onchange=function(){ FACTURAS.nueva.lineas[Number(el.dataset.lnCant)].cantidad=Number(this.value)||0; renderApp(); }; });
+    qa('[data-ln-precio]').forEach(function(el){ el.onchange=function(){ FACTURAS.nueva.lineas[Number(el.dataset.lnPrecio)].precio_unitario=Number(this.value)||0; renderApp(); }; });
+    qa('[data-ln-quita]').forEach(function(el){ el.onclick=function(){ fcQuitaLinea(Number(el.dataset.lnQuita)); }; });
+    q('#fcn-anade').onclick=fcAnadeLinea;
+    q('#fcn-cancela').onclick=function(){ FACTURAS.nueva=null; renderApp(); };
+    q('#fcn-guarda').onclick=fcGuarda;
+  }
+}
+function fcModal(){
+  var n = FACTURAS.nueva;
+  var clientesDeMarca = CLIENTES.lista.filter(function(c){ return c.marca_id===n.marca_id; });
+  var t = fcBaseTotal();
+  return '<div class="ov"><div class="modal" style="max-width:600px">'+
+    '<h3 style="margin:0 0 16px">Nueva factura</h3>'+
+    '<div class="grid g-2">'+
+      '<div class="field"><label>Marca *</label><select class="inp" id="fcn-marca">'+
+        MARCAS.lista.map(function(m){ return '<option value="'+m.id+'"'+(n.marca_id===m.id?' selected':'')+'>'+esc(m.nombre)+'</option>'; }).join('')+
+      '</select></div>'+
+      '<div class="field"><label>Cliente *</label><select class="inp" id="fcn-cliente">'+
+        '<option value="">Elige un cliente...</option>'+
+        clientesDeMarca.map(function(c){ return '<option value="'+c.id+'"'+(n.cliente_id===c.id?' selected':'')+'>'+esc(c.nombre)+'</option>'; }).join('')+
+      '</select>'+(clientesDeMarca.length?'':'<div class="tiny muted" style="margin-top:5px">Esta marca no tiene clientes todavía.</div>')+'</div>'+
+    '</div>'+
+    '<div class="field" style="margin-top:4px"><label>Conceptos</label>'+
+      n.lineas.map(function(l,i){
+        return '<div class="row" style="gap:8px;margin-bottom:8px">'+
+          '<input class="inp" style="flex:2" placeholder="Descripción" value="'+esc(l.descripcion)+'" data-ln-desc="'+i+'">'+
+          '<input class="inp" style="flex:0 0 70px" type="number" min="0" step="0.01" value="'+l.cantidad+'" data-ln-cant="'+i+'">'+
+          '<input class="inp" style="flex:0 0 100px" type="number" min="0" step="0.01" value="'+l.precio_unitario+'" data-ln-precio="'+i+'">'+
+          '<button class="icon-btn" data-ln-quita="'+i+'">'+ic('x',15)+'</button>'+
+        '</div>';
+      }).join('')+
+      '<button class="btn btn-xs" id="fcn-anade">'+ic('plus',13)+' Añadir concepto</button></div>'+
+    '<div class="field"><label>IVA (%)</label><input class="inp" id="fcn-iva" type="number" value="'+n.iva+'" style="max-width:120px"></div>'+
+    '<div class="card" style="background:var(--card-2);margin-top:6px">'+
+      '<div class="row" style="justify-content:space-between"><span class="muted tiny">Base</span><span>'+eur(t.base)+'</span></div>'+
+      '<div class="row" style="justify-content:space-between;margin-top:6px"><strong>Total</strong><strong>'+eur(t.total)+'</strong></div>'+
+    '</div>'+
+    '<div class="row" style="gap:10px;justify-content:flex-end;margin-top:16px">'+
+      '<button class="btn" id="fcn-cancela">Cancelar</button>'+
+      '<button class="btn btn-p" id="fcn-guarda">Registrar factura</button></div>'+
+  '</div></div>';
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
