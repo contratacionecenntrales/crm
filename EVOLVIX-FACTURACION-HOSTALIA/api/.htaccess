@@ -1,0 +1,12 @@
+# No debería hacer falta (PHP se ejecuta, nunca se descarga como texto),
+# pero si algún día el hosting sirve .php mal configurado, esto impide que
+# config.php (con la contraseña de la base de datos) se pueda ver por error.
+<Files "config.php">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</Files>
