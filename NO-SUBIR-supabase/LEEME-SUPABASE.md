@@ -18,6 +18,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 6 | `06-endurecimiento.sql` | Cierra huecos de RLS de una auditoría de seguridad. **Obligatorio** |
 | 7 | `07-contactos.sql` | Módulo de Contactos: ficha de leads y clientes con documentos, notas y comentarios |
 | 8 | `08-roles-personalizados.sql` | Plantillas de rol reutilizables (permisos + pestañas visibles) aplicables a cualquier usuario |
+| 9 | `09-agencias-subcuentas.sql` | Base multi-tenant de la plataforma Next.js (`plataforma/`): agencias, subcuentas, equipos, facturación y notificaciones. Independiente de los anteriores |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.
@@ -25,7 +26,7 @@ Los demás son para los módulos correspondientes.
 Si el 01 da error, **párate ahí**: los demás dependen de las tablas que crea, y
 seguir solo acumula errores encima del primero.
 
-> Los archivos `_stub-auth.sql`, `test-esquema.sql` y `test-firma.sql` **no se
+> Los archivos `_stub-auth.sql`, `test-esquema.sql`, `test-firma.sql` y `test-agencias.sql` **no se
 > ejecutan en Supabase**. Son las pruebas que corren contra un PostgreSQL local.
 
 ---

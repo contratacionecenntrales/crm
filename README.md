@@ -14,6 +14,7 @@ opcional para gestión de usuarios y una Edge Function equivalente para Supabase
 | `NO-SUBIR-supabase/` | Guiones SQL (`01`–`05`) y la Edge Function `admin-usuarios` | No — se pegan en el editor SQL de Supabase / se despliegan como función |
 | `NO-SUBIR-backend/` | API Node.js/Express opcional (gestión de usuarios, auditoría) | No — requiere un servidor con Node, no hosting compartido |
 | `documentacion/` | Guías de instalación y ejemplos en PDF | No — solo lectura |
+| `plataforma/` | La nueva plataforma Next.js + Supabase (agencia y subcuentas). Ver `plataforma/README.md` | No — se publica en Vercel |
 | `LEEME-PRIMERO.txt` | Resumen rápido de instalación en Hostalia | — |
 
 Empieza por `LEEME-PRIMERO.txt` y `documentacion/LEEME-INSTALACION.md` para el

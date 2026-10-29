@@ -7,3 +7,5 @@ node_modules/
 .vscode/
 .idea/
 *.swp
+.next/
+*.tsbuildinfo
