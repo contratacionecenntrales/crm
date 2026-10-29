@@ -5,7 +5,7 @@ import { Avatar } from './Avatar';
 import { Aviso } from './Aviso';
 import { BotonEnvio } from './BotonEnvio';
 import { Campo, Selector } from './Campo';
-import { estiloInput } from './clases';
+import { estiloInput, estiloInputBase } from './clases';
 import { fecha } from '@/lib/formato';
 import type { Miembro, Resultado } from '@/lib/tipos';
 
@@ -76,7 +76,7 @@ export function Equipo<R extends string>({ miembros, roles, yo, puedeGestionar, 
                         const rol = e.target.value as R;
                         iniciar(async () => setAviso(await cambiarRol(m.usuario_id, rol)));
                       }}
-                      className={`${estiloInput} w-40 py-1.5`}
+                      className={`${estiloInputBase} w-40 py-1.5`}
                     >
                       {roles.map((r) => <option key={r.valor} value={r.valor}>{r.texto}</option>)}
                     </select>

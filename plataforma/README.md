@@ -21,6 +21,23 @@ igual. Esta carpeta **no** se sube a Hostalia: necesita un servidor Node (Vercel
 | Notificaciones | campana | Pestañas Sistema/Alerta, marcar como leídas, borrar, en directo por Realtime |
 | Webhook de Stripe | `/api/webhooks/stripe` | Suscripciones y cobros entran solos en el tablero |
 
+### Dentro de cada subcuenta
+
+| Pantalla | Ruta | Qué hace |
+|---|---|---|
+| Tablero | `/subcuenta/[id]` | Estado de oportunidad, valor, tasa de conversión, embudo, distribución de etapas y tareas pendientes, con selector de periodo y de embudo |
+| Contactos · Listas inteligentes | `/subcuenta/[id]/contactos` | Tabla con columnas a elegir (incluidos campos personalizados), filtros combinables, orden, búsqueda, paginación, listas guardadas (compartidas o privadas), selección múltiple con añadir/quitar etiqueta, asignar, exportar y eliminar |
+| Importar / exportar | botones de Contactos | Importación CSV (coma o punto y coma) con mapeo automático de columnas, actualización u omisión de duplicados por correo e informe de errores por fila; exportación CSV de la vista o de la selección |
+| Ficha del contacto | `/subcuenta/[id]/contacto/[id]` | Propietario, etiquetas, todos los campos, No molestar por canal, línea de tiempo automática, notas, tareas y oportunidades |
+| Acciones en lote | `/subcuenta/[id]/contactos/acciones-lote` | Registro de importaciones, exportaciones y acciones masivas con su resultado |
+| Campos personalizados | `/subcuenta/[id]/contactos/campos` | 11 tipos (texto, número, importe, fecha, desplegable, casillas, sí/no…), agrupados en carpetas |
+| Tareas | `/subcuenta/[id]/contactos/tareas` | Pendientes/completadas, por persona, vencidas en rojo; avisa en la campana a quien se le asigna |
+| Empresas | `/subcuenta/[id]/contactos/empresas` | Se crean solas al escribir la empresa en un contacto; recuento de contactos |
+| Clientes potenciales | `/subcuenta/[id]/oportunidades` | Tablero por etapas con arrastrar y soltar (ratón, dedo y teclado), vista de lista, filtros por estado y búsqueda |
+| Embudos | `/subcuenta/[id]/oportunidades/embudos` | Crear, renombrar y borrar embudos; añadir, renombrar, reordenar y borrar etapas (moviendo antes sus oportunidades) |
+
+Cada subcuenta nueva nace con un embudo de ventas de 5 etapas.
+
 Tema claro/oscuro/sistema en el menú de usuario. Diseño adaptado a móvil.
 
 ### Roles
@@ -37,8 +54,12 @@ Tema claro/oscuro/sistema en el menú de usuario. Diseño adaptado a móvil.
 
 ### 1 · Base de datos
 
-Supabase → SQL Editor → pega y ejecuta `NO-SUBIR-supabase/09-agencias-subcuentas.sql`.
-Es independiente de los guiones 01–08 y se puede volver a ejecutar.
+Supabase → SQL Editor → pega y ejecuta, en este orden:
+
+1. `NO-SUBIR-supabase/09-agencias-subcuentas.sql` — agencias, subcuentas, equipos, facturación, notificaciones
+2. `NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql` — contactos, empresas, campos, listas, notas, tareas, embudos y oportunidades
+
+Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
 ### 2 · Plantillas de correo de Supabase
 
@@ -98,7 +119,9 @@ Pruebas de seguridad de la base de datos (PostgreSQL local, no Supabase):
 ```bash
 psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/09-agencias-subcuentas.sql \
-     -f NO-SUBIR-supabase/test-agencias.sql
+     -f NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql \
+     -f NO-SUBIR-supabase/test-agencias.sql \
+     -f NO-SUBIR-supabase/test-crm.sql
 ```
 
 ## Estructura
@@ -110,8 +133,10 @@ app/                 rutas (App Router) y Server Actions
   api/webhooks/      webhooks entrantes
 components/shell/    barra lateral, selector, campana, menú de usuario
 components/agencia/  tablero, subcuentas, facturación
+components/crm/      contactos, ficha, importador, tareas, oportunidades, embudos
 components/ui/       piezas comunes
 lib/                 sesión, validación, Supabase, Stripe, formato
+lib/crm/             columnas, filtros, CSV y validación de contactos
 ```
 
 Cada módulo nuevo (contactos, oportunidades, conversaciones, calendarios…) cuelga

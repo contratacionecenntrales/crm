@@ -19,6 +19,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 7 | `07-contactos.sql` | Módulo de Contactos: ficha de leads y clientes con documentos, notas y comentarios |
 | 8 | `08-roles-personalizados.sql` | Plantillas de rol reutilizables (permisos + pestañas visibles) aplicables a cualquier usuario |
 | 9 | `09-agencias-subcuentas.sql` | Base multi-tenant de la plataforma Next.js (`plataforma/`): agencias, subcuentas, equipos, facturación y notificaciones. Independiente de los anteriores |
+| 10 | `10-crm-contactos-oportunidades.sql` | CRM de cada subcuenta en la plataforma Next.js: contactos, empresas, campos personalizados, listas, notas, tareas, embudos y oportunidades. Requiere el 09 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.
@@ -26,7 +27,7 @@ Los demás son para los módulos correspondientes.
 Si el 01 da error, **párate ahí**: los demás dependen de las tablas que crea, y
 seguir solo acumula errores encima del primero.
 
-> Los archivos `_stub-auth.sql`, `test-esquema.sql`, `test-firma.sql` y `test-agencias.sql` **no se
+> Los archivos `_stub-auth.sql`, `test-esquema.sql`, `test-firma.sql`, `test-agencias.sql` y `test-crm.sql` **no se
 > ejecutan en Supabase**. Son las pruebas que corren contra un PostgreSQL local.
 
 ---

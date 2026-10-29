@@ -99,7 +99,7 @@ export default async function TableroAgencia() {
                   {ACCIONES[a.accion] ?? a.accion}
                   {(a.detalle as { nombre?: string })?.nombre && <span className="text-tenue"> · {(a.detalle as { nombre: string }).nombre}</span>}
                 </span>
-                <span className="shrink-0 text-xs text-tenue">{haceCuanto(a.ts)}</span>
+                <span className="shrink-0 text-xs text-tenue" suppressHydrationWarning>{haceCuanto(a.ts)}</span>
               </li>
             ))}
           </ul>

@@ -1,5 +1,5 @@
 import {
-  Building2, LayoutDashboard, Settings, Users, UserCog, Rocket, MessageSquare, CalendarDays, Contact, Receipt,
+  Building2, Filter, LayoutDashboard, Settings, Users, UserCog, Rocket, MessageSquare, CalendarDays, Contact, Receipt,
 } from 'lucide-react';
 
 // Los iconos se eligen por nombre porque un Server Component no puede pasar
@@ -15,6 +15,7 @@ export const ICONOS = {
   calendarios: CalendarDays,
   contactos: Contact,
   facturacion: Receipt,
+  oportunidades: Filter,
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

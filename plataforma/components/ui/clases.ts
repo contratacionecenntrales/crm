@@ -13,7 +13,10 @@ export const estilosBoton = {
     'inline-flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-tenue hover:bg-superficie-2 hover:text-texto',
 };
 
-export const estiloInput =
-  'w-full rounded-lg border bg-superficie px-3 py-2 text-sm text-texto placeholder:text-tenue focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
+// Sin ancho: para controles que fijan el suyo (w-auto, w-40…). Mezclar w-full
+// con otro w-* hace que gane el que salga después en la hoja de estilos.
+export const estiloInputBase =
+  'rounded-lg border bg-superficie px-3 py-2 text-sm text-texto placeholder:text-tenue focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
+export const estiloInput = `w-full ${estiloInputBase}`;
 
 export const estiloTarjeta = 'rounded-xl border bg-superficie shadow-sm';

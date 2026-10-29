@@ -131,7 +131,7 @@ export function Campana({ usuarioId, iniciales }: { usuarioId: string; iniciales
                     <span className="min-w-0 flex-1">
                       <span className="flex justify-between gap-2 text-xs">
                         <span className="text-primario">{n.categoria} · Notificación</span>
-                        <span className="shrink-0 text-tenue">{haceCuanto(n.creado)}</span>
+                        <span className="shrink-0 text-tenue" suppressHydrationWarning>{haceCuanto(n.creado)}</span>
                       </span>
                       <span className="mt-1 block font-semibold">{n.titulo}</span>
                       {n.cuerpo && <span className="mt-1 block text-sm text-tenue">{n.cuerpo}</span>}

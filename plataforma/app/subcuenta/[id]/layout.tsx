@@ -8,7 +8,12 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
   const { subcuenta } = await subcuentaVisible(id);
   const base = `/subcuenta/${id}`;
   // Cada módulo se añade aquí cuando está construido de verdad.
-  const navegacion: ElementoNav[] = [{ href: `${base}/configuracion`, etiqueta: 'Configuración', icono: 'ajustes' }];
+  const navegacion: ElementoNav[] = [
+    { href: base, etiqueta: 'Tablero', icono: 'tablero', exacto: true },
+    { href: `${base}/contactos`, etiqueta: 'Contactos', icono: 'contactos' },
+    { href: `${base}/oportunidades`, etiqueta: 'Clientes Potenciales', icono: 'oportunidades' },
+    { href: `${base}/configuracion`, etiqueta: 'Configuración', icono: 'ajustes' },
+  ];
   return (
     <Panel
       navegacion={navegacion}
