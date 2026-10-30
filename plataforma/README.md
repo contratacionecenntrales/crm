@@ -59,6 +59,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 1. `NO-SUBIR-supabase/09-agencias-subcuentas.sql` — agencias, subcuentas, equipos, facturación, notificaciones
 2. `NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql` — contactos, empresas, campos, listas, notas, tareas, embudos y oportunidades
 3. `NO-SUBIR-supabase/11-configuracion.sql` — datos de empresa, marca blanca (logo, dominios, CSS, tema), expiración de sesión, anuncios y catálogo de etiquetas
+4. `NO-SUBIR-supabase/12-calendarios.sql` — calendarios, horarios, citas, franjas bloqueadas y página pública de reservas (`/reservar/<enlace>`)
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -122,9 +123,11 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/09-agencias-subcuentas.sql \
      -f NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql \
      -f NO-SUBIR-supabase/11-configuracion.sql \
+     -f NO-SUBIR-supabase/12-calendarios.sql \
      -f NO-SUBIR-supabase/test-agencias.sql \
      -f NO-SUBIR-supabase/test-crm.sql \
-     -f NO-SUBIR-supabase/test-configuracion.sql
+     -f NO-SUBIR-supabase/test-configuracion.sql \
+     -f NO-SUBIR-supabase/test-calendarios.sql
 ```
 
 ## Estructura

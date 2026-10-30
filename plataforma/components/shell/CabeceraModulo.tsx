@@ -1,12 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Settings } from 'lucide-react';
 
 export interface Pestana {
   href: string;
   texto: string;
   exacto?: boolean;
   activa?: boolean; // para pestañas que dependen de la query (?pestana=)
+  separada?: boolean; // raya vertical antes (p. ej. «Configuración del calendario»)
+  engranaje?: boolean;
 }
 
 // Segunda fila de la cabecera: título del módulo y sus pestañas
@@ -20,16 +23,19 @@ export function CabeceraModulo({ titulo, pestanas = [], derecha }: { titulo: str
         {pestanas.map((p) => {
           const activa = p.activa ?? (p.exacto ? ruta === p.href : ruta === p.href || ruta.startsWith(p.href + '/'));
           return (
+            <span key={p.href} className="flex items-end">
+            {p.separada && <span aria-hidden className="mx-2 mb-2.5 h-7 w-px self-end bg-borde-fuerte md:mb-3" />}
             <Link
-              key={p.href}
               href={p.href}
               aria-current={activa ? 'page' : undefined}
               className={`mx-1 shrink-0 whitespace-nowrap px-2 pb-2 text-sm font-medium leading-[25.6px] md:pb-3 ${
                 activa ? 'border-b-2 border-pestana text-pestana' : 'text-[var(--menu)] hover:text-pestana'
               }`}
             >
+              {p.engranaje && <Settings className="mr-2 inline size-[18px] -translate-y-px" strokeWidth={1.75} />}
               {p.texto}
             </Link>
+            </span>
           );
         })}
       </nav>

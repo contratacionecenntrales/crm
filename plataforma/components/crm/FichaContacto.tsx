@@ -17,6 +17,7 @@ import { FilaTarea, FormularioTarea } from './Tareas';
 import { dinero, haceCuanto } from '@/lib/formato';
 import { nombreContacto, type Campo, type Contacto, type Embudo, type Evento, type Nota, type Oportunidad, type Tarea, type Usuario } from '@/lib/crm/tipos';
 import type { Resultado } from '@/lib/tipos';
+import { ESTADOS_CITA, estadoCita, type Cita } from '@/lib/calendario/tipos';
 
 interface Props {
   subId: string;
@@ -28,6 +29,8 @@ interface Props {
   tareas: Tarea[];
   oportunidades: (Oportunidad & { etapa?: { nombre: string } | null })[];
   eventos: Evento[];
+  citas: Cita[];
+  calendarios: { id: string; nombre: string; color: string }[];
   embudos: Embudo[];
   moneda: string;
   zona: string;
@@ -44,7 +47,7 @@ export function FichaContacto(p: Props) {
   const [pendiente, iniciar] = useTransition();
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [lateral, setLateral] = useState<'campos' | 'dnd' | 'acciones'>('campos');
-  const [principal, setPrincipal] = useState<'actividad' | 'notas' | 'tareas' | 'oportunidades'>('actividad');
+  const [principal, setPrincipal] = useState<'actividad' | 'notas' | 'tareas' | 'oportunidades' | 'citas'>('actividad');
   const [dialogo, setDialogo] = useState<null | { tipo: 'tarea'; t?: Tarea } | { tipo: 'oportunidad'; o?: Oportunidad }>(null);
   const cerrar = useCallback(() => setDialogo(null), []);
   const nombre = nombreContacto(c);
@@ -141,7 +144,7 @@ export function FichaContacto(p: Props) {
         <section className="min-w-0 rounded-lg border border-borde bg-superficie">
           <div className="flex gap-6 overflow-x-auto border-b px-4">
             {([['actividad', 'Actividad'], ['notas', `Notas (${p.notas.length})`], ['tareas', `Tareas (${p.tareas.filter((t) => !t.completada).length})`],
-              ['oportunidades', `Oportunidades (${p.oportunidades.length})`]] as const).map(([k, t]) => (
+              ['oportunidades', `Oportunidades (${p.oportunidades.length})`], ['citas', `Citas (${p.citas.length})`]] as const).map(([k, t]) => (
               <button key={k} onClick={() => setPrincipal(k)}
                 className={`-mb-px shrink-0 border-b-2 py-3 text-sm font-medium ${principal === k ? 'border-primario text-primario' : 'border-transparent text-tenue'}`}>{t}</button>
             ))}
@@ -154,7 +157,7 @@ export function FichaContacto(p: Props) {
                 <li key={e.id} className="relative flex gap-3 pl-1">
                   <span className="z-10 mt-1 size-3 shrink-0 rounded-full border-2 border-primario bg-superficie" />
                   <div className="text-sm">
-                    <p>{textoEvento(e, p.moneda)}</p>
+                    <p>{textoEvento(e, p.moneda, p.zona)}</p>
                     <p className="text-xs text-tenue" suppressHydrationWarning>{usuario(e.actor_id)} · {haceCuanto(e.ts)}</p>
                   </div>
                 </li>
@@ -172,6 +175,36 @@ export function FichaContacto(p: Props) {
               <ul className="divide-y border-t">
                 {p.tareas.length === 0 && <li className="px-4 py-8 text-center text-sm text-tenue">Sin tareas.</li>}
                 {p.tareas.map((t) => <FilaTarea key={t.id} subId={p.subId} t={t} asignables={p.asignables} zona={p.zona} alEditar={(x) => setDialogo({ tipo: 'tarea', t: x })} />)}
+              </ul>
+            </div>
+          )}
+
+          {principal === 'citas' && (
+            <div>
+              <div className="flex justify-end p-3">
+                <Link className={estilosBoton.primario} href={`/subcuenta/${p.subId}/calendarios?nuevo=1&contacto=${c.id}`}><Plus className="size-4" /> Reservar cita</Link>
+              </div>
+              <ul className="divide-y border-t">
+                {p.citas.length === 0 && <li className="px-4 py-8 text-center text-sm text-tenue">Sin citas.</li>}
+                {p.citas.map((x) => {
+                  const cal = p.calendarios.find((k) => k.id === x.calendario_id);
+                  const e = estadoCita(x.estado);
+                  const dia = new Intl.DateTimeFormat('en-CA', { timeZone: p.zona }).format(new Date(x.inicio));
+                  return (
+                    <li key={x.id}>
+                      <Link href={`/subcuenta/${p.subId}/calendarios?vista=semana&fecha=${dia}&cita=${x.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-superficie-2">
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ background: cal?.color ?? '#98a2b3' }} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{x.titulo}</span>
+                          <span className="text-xs text-tenue">
+                            {new Intl.DateTimeFormat('es-ES', { dateStyle: 'full', timeStyle: 'short', timeZone: p.zona }).format(new Date(x.inicio))} · {cal?.nombre}
+                          </span>
+                        </span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${e.clase}`}>{e.texto}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -214,8 +247,12 @@ export function FichaContacto(p: Props) {
   );
 }
 
-function textoEvento(e: Evento, moneda: string): string {
+const ESTADO_TEXTO: Record<string, string> = Object.fromEntries(ESTADOS_CITA.map((x) => [x.valor, x.texto.toLowerCase()]));
+
+function textoEvento(e: Evento, moneda: string, zona: string): string {
   const d = e.detalle as Record<string, unknown>;
+  const fechaCita = (v: unknown) => typeof v === 'string'
+    ? new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: zona }).format(new Date(v)) : '';
   switch (e.tipo) {
     case 'contacto_creado': return 'Contacto creado';
     case 'etiquetas': {
@@ -231,6 +268,9 @@ function textoEvento(e: Evento, moneda: string): string {
     case 'tarea_completada': return `Tarea completada: ${d.titulo ?? ''}`;
     case 'oportunidad_creada': return `Oportunidad creada: ${d.nombre} (${dinero(Number(d.valor ?? 0), moneda)}) en ${d.etapa}`;
     case 'oportunidad_etapa': return `Oportunidad «${d.nombre}» movida a ${d.etapa}`;
+    case 'cita_creada': return `Cita ${d.origen === 'reserva' ? 'reservada online' : 'creada'}: ${d.titulo ?? ''} (${fechaCita(d.inicio)}) en ${d.calendario ?? ''}`;
+    case 'cita_movida': return `Cita movida: ${d.titulo ?? ''} → ${fechaCita(d.inicio)}`;
+    case 'cita_estado': return `Cita «${d.titulo ?? ''}» marcada como ${ESTADO_TEXTO[String(d.estado)] ?? d.estado}`;
     case 'oportunidad_estado': return `Oportunidad «${d.nombre}» marcada como ${d.estado}`;
     default: return e.tipo;
   }

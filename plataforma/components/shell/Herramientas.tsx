@@ -115,6 +115,7 @@ export function AccionesRapidas({ subId }: { subId: string }) {
   const base = `/subcuenta/${subId}`;
   const acciones = [
     ['Añadir contacto', `${base}/contactos?nuevo=1`],
+    ['Reservar cita', `${base}/calendarios?nuevo=1`],
     ['Importar contactos', `${base}/contactos?importar=1`],
     ['Añadir oportunidad', `${base}/oportunidades?nueva=1`],
     ['Añadir tarea', `${base}/contactos/tareas?nueva=1`],

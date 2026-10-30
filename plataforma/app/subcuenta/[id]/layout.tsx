@@ -10,6 +10,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
   // Cada módulo se añade aquí cuando está construido de verdad.
   const principal: ElementoNav[] = [
     { href: base, etiqueta: 'Tablero', icono: 'tablero', exacto: true },
+    { href: `${base}/calendarios`, etiqueta: 'Calendarios', icono: 'calendarios' },
     { href: `${base}/contactos`, etiqueta: 'Contactos', icono: 'contactos', tambien: [`${base}/contacto/`] },
     { href: `${base}/oportunidades`, etiqueta: 'Clientes Potenciales', icono: 'oportunidades' },
   ];
