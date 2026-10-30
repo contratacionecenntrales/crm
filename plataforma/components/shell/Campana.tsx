@@ -78,11 +78,11 @@ export function Campana({ usuarioId, iniciales }: { usuarioId: string; iniciales
         type="button"
         onClick={abrir}
         aria-label={`Notificaciones${sinLeer ? `, ${sinLeer} sin leer` : ''}`}
-        className="relative inline-flex size-10 items-center justify-center rounded-full bg-orange-500 text-white hover:opacity-90"
+        className="relative inline-flex size-8 items-center justify-center rounded-full bg-[#ff6600] text-white hover:opacity-90"
       >
-        <Bell className="size-5" />
+        <Bell className="size-[17px] fill-white" />
         {sinLeer > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-superficie bg-amber-400 px-1 text-[10px] font-bold text-black">
+          <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-superficie bg-[#ffb020] px-0.5 text-[9px] font-bold leading-none text-black">
             {sinLeer > 99 ? '99+' : sinLeer}
           </span>
         )}
@@ -90,7 +90,7 @@ export function Campana({ usuarioId, iniciales }: { usuarioId: string; iniciales
 
       {abierto && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={() => setAbierto(false)}>
-          <aside onClick={(e) => e.stopPropagation()} className="flex h-full w-full max-w-md flex-col bg-superficie shadow-2xl" aria-label="Recordatorio">
+          <aside onClick={(e) => e.stopPropagation()} className="flex h-full w-full max-w-md flex-col bg-superficie font-sans shadow-2xl" aria-label="Recordatorio">
             <div className="flex items-center justify-between px-5 pt-5">
               <h2 className="text-xl font-semibold">Recordatorio</h2>
               <button onClick={() => setAbierto(false)} className="rounded p-1 text-tenue hover:bg-superficie-2" aria-label="Cerrar">

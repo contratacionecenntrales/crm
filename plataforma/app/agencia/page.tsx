@@ -63,7 +63,7 @@ export default async function TableroAgencia() {
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border bg-superficie shadow-sm">
+        <section className="rounded-lg border border-borde bg-superficie">
           <h3 className="flex items-center gap-2 border-b px-5 py-4 font-semibold">
             Tasa de crecimiento
             <span title="Evolución de los últimos 7 meses: subcuentas nuevas por mes, MRR a cierre de mes e ingresos cobrados." className="text-tenue">
@@ -74,7 +74,7 @@ export default async function TableroAgencia() {
             <GraficoCrecimiento serie={m.serie} moneda={m.moneda} />
           </div>
         </section>
-        <section className="rounded-xl border bg-superficie shadow-sm">
+        <section className="rounded-lg border border-borde bg-superficie">
           <h3 className="flex items-center justify-between gap-2 border-b px-5 py-4 font-semibold">
             Distribución de ingresos del mes pasado
             <span title="Pagos del mes natural anterior agrupados por concepto." className="text-tenue">
@@ -87,7 +87,7 @@ export default async function TableroAgencia() {
         </section>
       </div>
 
-      <section className="mt-5 rounded-xl border bg-superficie shadow-sm">
+      <section className="mt-5 rounded-lg border border-borde bg-superficie">
         <h3 className="border-b px-5 py-4 font-semibold">Actividad reciente</h3>
         {(actividad.data ?? []).length === 0 ? (
           <p className="px-5 py-6 text-sm text-tenue">Todavía no hay actividad.</p>

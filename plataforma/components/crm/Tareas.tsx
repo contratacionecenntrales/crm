@@ -6,7 +6,7 @@ import { alternarTarea, borrarTarea, guardarTarea } from '@/app/subcuenta/[id]/c
 import { Campo } from '@/components/ui/Campo';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
-import { estiloInput } from '@/components/ui/clases';
+import { estiloInput, estiloArea } from '@/components/ui/clases';
 import { SelectorContacto } from './SelectorContacto';
 import { nombreContacto, type Tarea, type Usuario } from '@/lib/crm/tipos';
 
@@ -33,7 +33,7 @@ export function FormularioTarea({ subId, tarea, contactoFijo, asignables, yo, al
       <Campo etiqueta="Título" name="titulo" defaultValue={tarea?.titulo} required maxLength={200} />
       <label className="block">
         <span className="mb-1 block text-sm font-medium">Descripción</span>
-        <textarea name="descripcion" defaultValue={tarea?.descripcion} rows={3} maxLength={5000} className={estiloInput} />
+        <textarea name="descripcion" defaultValue={tarea?.descripcion} rows={3} maxLength={5000} className={estiloArea} />
       </label>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo etiqueta="Vence" name="vence" type="datetime-local" defaultValue={aLocal(tarea?.vence ?? null)} />

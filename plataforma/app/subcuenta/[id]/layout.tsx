@@ -8,15 +8,35 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
   const { subcuenta } = await subcuentaVisible(id);
   const base = `/subcuenta/${id}`;
   // Cada módulo se añade aquí cuando está construido de verdad.
-  const navegacion: ElementoNav[] = [
+  const principal: ElementoNav[] = [
     { href: base, etiqueta: 'Tablero', icono: 'tablero', exacto: true },
-    { href: `${base}/contactos`, etiqueta: 'Contactos', icono: 'contactos' },
+    { href: `${base}/contactos`, etiqueta: 'Contactos', icono: 'contactos', tambien: [`${base}/contacto/`] },
     { href: `${base}/oportunidades`, etiqueta: 'Clientes Potenciales', icono: 'oportunidades' },
-    { href: `${base}/configuracion`, etiqueta: 'Configuración', icono: 'ajustes' },
   ];
+  const ajustes: ElementoNav = { href: `${base}/configuracion`, etiqueta: 'Configuración', icono: 'ajustes' };
+  const c = `${base}/configuracion`;
+  const menuAjustes = {
+    volver: base,
+    prefijo: c,
+    secciones: [
+      { titulo: 'Mi empresa', elementos: [
+        { href: c, etiqueta: 'Perfil de empresa', exacto: true },
+        { href: `${c}/usuarios`, etiqueta: 'Usuarios' },
+        { href: `${c}/embudos`, etiqueta: 'Clientes Potenciales & Pipelines' },
+      ] },
+      { titulo: 'Otros ajustes', elementos: [
+        { href: `${c}/campos`, etiqueta: 'Campos personalizados' },
+        { href: `${c}/etiquetas`, etiqueta: 'Etiquetas' },
+        { href: `${c}/perfil`, etiqueta: 'Mi perfil' },
+      ] },
+    ],
+  };
+
   return (
     <Panel
-      navegacion={navegacion}
+      principal={principal}
+      ajustes={ajustes}
+      menuAjustes={menuAjustes}
       subcuentaActual={{
         id,
         nombre: subcuenta.nombre,

@@ -2,29 +2,44 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Medidas y colores tomados del original (estilos calculados de las páginas
+   guardadas): menú y cabecera en Roboto, contenido en Inter. */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-menu: 'Roboto', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --color-primario: #155eef;
   --color-primario-hover: #004eeb;
-  --color-primario-suave: #eff4ff;
+  --color-primario-texto: #004eeb;
+  --color-primario-suave: var(--primario-suave);
+  --color-pestana: #38a0db;
   --color-fondo: var(--fondo);
   --color-superficie: var(--superficie);
   --color-superficie-2: var(--superficie-2);
   --color-borde: var(--borde);
+  --color-borde-fuerte: var(--borde-fuerte);
   --color-texto: var(--texto);
+  --color-texto-2: var(--texto-2);
   --color-tenue: var(--tenue);
+  --color-menu: var(--menu);
   --color-exito: #12b76a;
   --color-peligro: #f04438;
   --color-aviso: #f79009;
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --shadow-cabecera: 0 2px 3px 0 rgba(0, 0, 0, 0.11);
 }
 
 :root {
-  --fondo: #f2f4f7;
+  --fondo: #f2f7fa;
   --superficie: #ffffff;
   --superficie-2: #f9fafb;
   --borde: #eaecf0;
+  --borde-fuerte: #d0d5dd;
   --texto: #101828;
-  --tenue: #667085;
+  --texto-2: #475467;
+  --tenue: #607179;
+  --menu: #4b5563;
+  --primario-suave: #eff4ff;
+  --hover-menu: #f3f4f6;
   color-scheme: light;
 }
 
@@ -33,9 +48,13 @@
   --superficie: #111827;
   --superficie-2: #0f172a;
   --borde: #1f2937;
+  --borde-fuerte: #374151;
   --texto: #f3f4f6;
+  --texto-2: #d1d5db;
   --tenue: #9ca3af;
-  --color-primario-suave: #172554;
+  --menu: #d1d5db;
+  --primario-suave: #172554;
+  --hover-menu: #1f2937;
   color-scheme: dark;
 }
 
@@ -43,6 +62,7 @@ html,
 body {
   background: var(--fondo);
   color: var(--texto);
+  font-size: 14px;
 }
 
 * {
@@ -52,4 +72,9 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-primario);
   outline-offset: 2px;
+}
+
+/* Si la página dibuja su fila de pestañas, la sombra pasa a esa fila. */
+.marco:has(.cabecera-modulo) .barra-superior {
+  box-shadow: none;
 }

@@ -41,7 +41,7 @@ export function GraficoDistribucion({ datos, moneda }: { datos: { concepto: stri
   if (filas.length === 0) {
     return (
       <div className="flex h-80 items-center justify-center">
-        <div className="flex items-center gap-4 rounded-xl border bg-superficie px-6 py-5 shadow-sm">
+        <div className="flex items-center gap-4 rounded-lg border border-borde bg-superficie px-6 py-5 shadow-sm">
           <span className="inline-flex size-12 items-center justify-center rounded-full bg-superficie-2 text-tenue">
             <IconoTarta className="size-6" />
           </span>

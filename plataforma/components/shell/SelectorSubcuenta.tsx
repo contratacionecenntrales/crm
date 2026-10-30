@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useOptimistic, useRef, useState, useTransition } from 'react';
-import { ChevronsUpDown, CornerUpLeft, Pin, Search } from 'lucide-react';
+import { ChevronsUpDown, CornerUpLeft, Pin, Search, UserRound } from 'lucide-react';
 import { alternarFijada, entrarEnSubcuenta } from '@/app/acciones-panel';
 import { Avatar } from '@/components/ui/Avatar';
 import { useFueraDe } from './useFueraDe';
+import { useMenuExpandido } from './MarcoPanel';
 
 export interface OpcionSubcuenta {
   id: string;
@@ -24,6 +25,7 @@ interface Props {
 
 export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia }: Props) {
   const [abierto, setAbierto] = useState(false);
+  const expandido = useMenuExpandido();
   const [busqueda, setBusqueda] = useState('');
   const [pendiente, iniciar] = useTransition();
   const caja = useRef<HTMLDivElement>(null);
@@ -35,7 +37,7 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
   // scroll propio) un desplegable absoluto quedaría recortado.
   const alternar = () => {
     const r = boton.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 8, left: Math.max(16, Math.min(r.left, window.innerWidth - 16 - Math.min(448, window.innerWidth - 32))) });
+    if (r) setPos({ top: r.top - 4, left: Math.min(r.right + 36, Math.max(8, window.innerWidth - 8 - Math.min(448, window.innerWidth - 16))) });
     setAbierto((v) => !v);
   };
 
@@ -63,19 +65,33 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
         type="button"
         onClick={alternar}
         aria-expanded={abierto}
-        className="flex w-full items-center gap-2 rounded-lg border bg-superficie px-2 py-2 text-left hover:bg-superficie-2"
+        aria-label={`Cuenta actual: ${actual.nombre}. Cambiar de cuenta`}
+        title={actual.nombre}
+        className={`flex items-center rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 ${expandido ? 'h-11 w-full gap-2 px-2 text-left' : 'h-[42px] w-12 justify-center p-1'}`}
       >
-        <Avatar nombre={actual.nombre} url={actual.logo_url} tam="size-8" suave />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">{actual.nombre}</span>
-          <span className="block truncate text-xs text-tenue">{actual.detalle}</span>
-        </span>
-        <ChevronsUpDown className="size-4 shrink-0 text-tenue" />
+        {actual.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={actual.logo_url} alt="" className={`${expandido ? 'size-6' : 'size-8'} shrink-0 rounded-full object-cover`} />
+        ) : (
+          <span className={`inline-flex ${expandido ? 'size-6' : 'size-8'} shrink-0 items-center justify-center rounded-full bg-gray-400 text-white dark:bg-gray-500`}>
+            <UserRound className={expandido ? 'size-4' : 'size-5'} strokeWidth={2} />
+          </span>
+        )}
+        {expandido && (
+          <>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[13px] font-medium text-gray-900 dark:text-gray-100">{enAgencia ? 'Haga clic aquí para cambiar' : actual.nombre}</span>
+              {!enAgencia && actual.detalle && <span className="block truncate text-xs text-gray-500">{actual.detalle}</span>}
+            </span>
+            <ChevronsUpDown className="size-4 shrink-0 text-gray-500" />
+          </>
+        )}
       </button>
 
       {abierto && (
         <div style={{ top: pos.top, left: pos.left }}
-          className="fixed z-50 w-[min(28rem,calc(100vw-2rem))] rounded-xl border bg-superficie p-3 shadow-xl">
+          className="fixed z-50 w-[min(28rem,calc(100vw-1rem))] rounded-md border bg-superficie p-3 font-sans shadow-xl">
+          <p className="mb-2 truncate px-1 text-xs text-tenue">Ahora en: <span className="font-medium text-texto">{actual.nombre}</span></p>
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tenue" />
             <input
@@ -83,13 +99,13 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar una subcuenta"
-              className="w-full rounded-lg border-2 border-primario/40 bg-superficie py-2 pl-9 pr-3 text-sm focus:border-primario focus:outline-none"
+              className="h-10 w-full rounded-md border-2 border-[#84adff] bg-superficie pl-9 pr-3 text-sm focus:border-primario focus:outline-none"
             />
           </label>
 
           {vistaAgencia && !enAgencia && (
-            <Link href="/agencia" onClick={() => setAbierto(false)} className="mt-3 flex items-center gap-2 px-1 text-sm font-medium text-primario">
-              <span className="inline-flex size-6 items-center justify-center rounded-full bg-primario text-white">
+            <Link href="/agencia" onClick={() => setAbierto(false)} className="mt-3 flex items-center gap-2 px-1 text-sm font-medium text-[#2e90fa]">
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#2e90fa] text-white">
                 <CornerUpLeft className="size-3.5" />
               </span>
               Cambiar a la vista de agencia
@@ -100,7 +116,7 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
           <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto">
             {filtradas.length === 0 && <li className="px-1 py-4 text-center text-sm text-tenue">No hay subcuentas que coincidan.</li>}
             {filtradas.map((s) => (
-              <li key={s.id} className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:border-primario/50">
+              <li key={s.id} className="flex items-center gap-2 rounded border border-borde-fuerte px-3 py-2 hover:border-[#84adff]">
                 <button
                   type="button"
                   disabled={pendiente || s.suspendida}
@@ -109,7 +125,7 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
                 >
                   <Avatar nombre={s.nombre} url={s.logo_url} tam="size-8" suave />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
+                    <span className="block truncate text-sm font-medium text-texto">
                       {s.nombre}
                       {s.suspendida && <span className="ml-2 text-xs font-normal text-peligro">Suspendida</span>}
                     </span>
@@ -121,7 +137,7 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
                   onClick={() => fijar(s.id, s.fijada)}
                   aria-label={s.fijada ? 'Desfijar' : 'Fijar'}
                   aria-pressed={s.fijada}
-                  className={`rounded p-1.5 ${s.fijada ? 'text-primario' : 'text-tenue/50 hover:text-tenue'}`}
+                  className={`rounded p-1.5 ${s.fijada ? 'text-[#2e90fa]' : 'text-gray-300 hover:text-tenue'}`}
                 >
                   <Pin className={`size-4 ${s.fijada ? 'fill-current' : ''}`} />
                 </button>

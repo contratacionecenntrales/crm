@@ -41,6 +41,10 @@ export function TableroOportunidades(p: Props) {
   const [, iniciar] = useTransition();
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [dialogo, setDialogo] = useState<null | { o?: Oportunidad; etapa?: string }>(null);
+  useEffect(() => {
+    if (sp.get('nueva') === '1') setDialogo({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const cerrar = useCallback(() => setDialogo(null), []);
   const embudo = p.embudos.find((e) => e.id === p.embudoId)!;
 
@@ -138,15 +142,7 @@ export function TableroOportunidades(p: Props) {
   const totalValor = useMemo(() => p.oportunidades.reduce((s, o) => s + Number(o.valor), 0), [p.oportunidades]);
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <div className="flex flex-wrap items-end gap-x-8 border-b bg-superficie px-4 pt-4 sm:px-6">
-        <h1 className="pb-3 text-2xl font-semibold">Oportunidades</h1>
-        <nav className="-mb-px flex gap-6">
-          <span className="border-b-2 border-primario pb-3 text-sm font-medium text-primario">Oportunidades</span>
-          <Link href={`/subcuenta/${p.subId}/oportunidades/embudos`} className="border-b-2 border-transparent pb-3 text-sm font-medium hover:text-primario">Embudos</Link>
-        </nav>
-      </div>
-
+    <div className="flex h-[calc(100dvh-90px)] flex-col">
       <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
         <select value={p.embudoId} onChange={(e) => navegar('embudo', e.target.value)} className={`${estiloInputBase} w-auto font-medium`} aria-label="Embudo">
           {p.embudos.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
@@ -181,10 +177,10 @@ export function TableroOportunidades(p: Props) {
 
       {p.vista === 'lista' ? (
         <div className="min-h-0 flex-1 overflow-auto px-4 pb-6 sm:px-6">
-          <div className="overflow-x-auto rounded-xl border bg-superficie shadow-sm">
+          <div className="overflow-x-auto rounded-lg border border-borde bg-superficie">
             <table className="w-full min-w-[48rem] text-sm">
-              <thead className="bg-superficie-2 text-left">
-                <tr>{['Oportunidad', 'Contacto', 'Etapa', 'Estado', 'Valor', 'Propietario', 'En la etapa desde'].map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr>
+              <thead className="border-b border-borde-fuerte bg-superficie text-left text-texto">
+                <tr>{['Oportunidad', 'Contacto', 'Etapa', 'Estado', 'Valor', 'Propietario', 'En la etapa desde'].map((h) => <th key={h} className="px-4 py-2.5 text-sm font-semibold">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y">
                 {p.oportunidades.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-tenue">No hay oportunidades en esta vista.</td></tr>}
@@ -232,7 +228,7 @@ function ColumnaEtapa({ id, titulo, oportunidades, moneda, asignables, alAbrir, 
   const { setNodeRef, isOver } = useDroppable({ id });
   const total = oportunidades.reduce((s, o) => s + Number(o.valor), 0);
   return (
-    <section className={`flex w-72 shrink-0 flex-col rounded-xl border bg-superficie-2 ${isOver ? 'ring-2 ring-primario/40' : ''}`}>
+    <section className={`flex w-72 shrink-0 flex-col rounded-lg border border-borde bg-superficie-2 ${isOver ? 'ring-2 ring-primario/40' : ''}`}>
       <header className="border-b px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="truncate text-sm font-semibold">{titulo}</h2>

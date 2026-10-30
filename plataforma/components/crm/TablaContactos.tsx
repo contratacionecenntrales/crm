@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  ArrowDownUp, Columns3, Download, Filter, Mail, MessageSquare, MoreVertical, Phone, Plus, Search, Tag, Trash2, Upload, UserPlus, UserRound, X,
+  ArrowDownUp, ChevronsUpDown, Columns3, Download, Filter, Mail, MessageSquare, MoreVertical, Phone, Plus, Search, Tag, Trash2, Upload, UserPlus, UserRound, X,
 } from 'lucide-react';
 import { accionLote, borrarLista, crearContacto, guardarLista } from '@/app/subcuenta/[id]/contactos/acciones';
 import { Modal } from '@/components/ui/Modal';
@@ -38,8 +38,13 @@ interface Props {
   soyAdmin: boolean;
 }
 
-const fechaHora = (v: string, zona: string) =>
-  new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: zona }).format(new Date(v));
+// Formato del original: «Oct 29, 2026» y debajo «06:59 PM».
+const fechaHora = (v: string, zona: string) => {
+  const d = new Date(v);
+  const fecha = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: zona }).format(d);
+  const hora = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: zona }).format(d);
+  return <>{fecha}<br />{hora}</>;
+};
 
 export function TablaContactos(p: Props) {
   const router = useRouter();
@@ -51,6 +56,11 @@ export function TablaContactos(p: Props) {
   const [dialogo, setDialogo] = useState<null | 'crear' | 'importar' | 'lista' | 'etiquetar' | 'desetiquetar' | 'asignar' | 'borrar'>(null);
   const [panel, setPanel] = useState<null | 'filtros' | 'orden' | 'columnas'>(null);
   const cerrar = useCallback(() => setDialogo(null), []);
+  useEffect(() => {
+    if (params.get('nuevo') === '1') setDialogo('crear');
+    else if (params.get('importar') === '1') setDialogo('importar');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const columnasDisponibles = useMemo(() => todasLasColumnas(p.campos), [p.campos]);
   const claveCols = `cols:${p.subId}`;
@@ -107,26 +117,26 @@ export function TablaContactos(p: Props) {
         const n = [c.nombre, c.apellidos].filter(Boolean).join(' ');
         return (
           <Link href={`/subcuenta/${p.subId}/contacto/${c.id}`} className="flex min-w-0 items-center gap-2 hover:text-primario">
-            <Avatar nombre={n || c.email || '?'} tam="size-8" />
+            <Avatar nombre={n || c.email || '?'} tam="size-6 text-[10px]" pastel />
             <span className="truncate">{n || <span className="text-tenue">Sin nombre</span>}</span>
           </Link>
         );
       }
       case 'telefono':
-        return c.telefono ? <span className="flex items-center gap-1.5"><Phone className="size-4 shrink-0 text-tenue" /><span className="truncate">{c.telefono}</span></span> : null;
+        return c.telefono ? <span className="flex items-center gap-1.5"><Phone className="size-4 shrink-0 text-texto-2" /><span className="truncate">{c.telefono}</span></span> : null;
       case 'email':
-        return c.email ? <span className="flex items-center gap-1.5"><Mail className="size-4 shrink-0 text-tenue" /><span className="truncate">{c.email}</span></span> : null;
+        return c.email ? <span className="flex items-center gap-1.5"><Mail className="size-4 shrink-0 text-texto-2" /><span className="truncate">{c.email}</span></span> : null;
       case 'empresa':
         return c.empresa?.nombre ?? '';
       case 'creado':
       case 'actualizado':
-        return <span className="whitespace-nowrap">{fechaHora(c[col.clave], p.zona)}</span>;
+        return <span className="block leading-[18px]">{fechaHora(c[col.clave], p.zona)}</span>;
       case 'ultima_actividad':
-        return c.ultima_actividad ? <span suppressHydrationWarning className="flex items-center gap-1.5 whitespace-nowrap"><MessageSquare className="size-4 text-tenue" />{haceCuanto(c.ultima_actividad)}</span> : null;
+        return c.ultima_actividad ? <span suppressHydrationWarning className="flex items-center gap-1.5 truncate"><MessageSquare className="size-4 shrink-0 text-texto-2" />{haceCuanto(c.ultima_actividad).replace(/^h/, 'H')}</span> : null;
       case 'etiquetas':
         return (
           <span className="flex gap-1">
-            {c.etiquetas.slice(0, 2).map((e) => <span key={e} className="truncate rounded-md border bg-superficie-2 px-1.5 py-0.5 text-xs">{e}</span>)}
+            {c.etiquetas.slice(0, 2).map((e) => <span key={e} className="truncate rounded-md border border-borde-fuerte px-2 py-0.5 text-xs font-medium text-texto-2">{e}</span>)}
             {c.etiquetas.length > 2 && <span className="text-xs text-tenue">+{c.etiquetas.length - 2}</span>}
           </span>
         );
@@ -179,7 +189,7 @@ export function TablaContactos(p: Props) {
   return (
     <div>
       {/* Listas inteligentes */}
-      <div className="flex flex-wrap items-center gap-x-1 border-b px-4 sm:flex-nowrap sm:px-6">
+      <div className="flex flex-wrap items-center gap-x-1 border-b border-borde-fuerte/60 px-4 sm:flex-nowrap">
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         <Pestana activa={!p.listaActual} onClick={() => navegar({ lista: null, f: null, q: null, o: null })}>Todo</Pestana>
         {p.listas.map((l) => (
@@ -187,13 +197,14 @@ export function TablaContactos(p: Props) {
             {l.nombre}
           </Pestana>
         ))}
-        <button onClick={() => setDialogo('lista')} className="flex shrink-0 items-center gap-1 px-3 py-3 text-sm text-texto hover:text-primario">
+        <span aria-hidden className="mx-1 h-5 w-px bg-borde-fuerte" />
+        <button onClick={() => setDialogo('lista')} className="flex shrink-0 items-center gap-1 px-2 py-3 text-sm font-medium text-texto-2 hover:text-primario">
           <Plus className="size-4" /> Añadir
         </button>
         </div>
         <div className="flex w-full shrink-0 items-center justify-end gap-2 py-2 sm:w-auto">
-          <button onClick={() => setDialogo('crear')} className={`${estilosBoton.secundario} px-2.5`} aria-label="Añadir contacto" title="Añadir contacto">
-            <UserPlus className="size-5" />
+          <button onClick={() => setDialogo('crear')} className={estilosBoton.icono} aria-label="Añadir contacto" title="Añadir contacto">
+            <UserPlus className="size-5" strokeWidth={1.75} />
           </button>
           <button onClick={() => setDialogo('importar')} className={estilosBoton.primario}>
             <Download className="size-4" /> Importar
@@ -220,25 +231,25 @@ export function TablaContactos(p: Props) {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6">
-        <div className="rounded-xl border bg-superficie shadow-sm">
+      <div className="p-4">
+        <div className="rounded-lg border border-borde bg-superficie">
           {/* Barra de herramientas */}
-          <div className="flex flex-wrap items-center gap-2 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-2 p-4">
             <BotonPanel abierto={panel === 'filtros'} onClick={() => setPanel(panel === 'filtros' ? null : 'filtros')}>
               <Filter className="size-4" /> Filtros{p.filtros.length > 0 && <span className="rounded-full bg-primario px-1.5 text-xs text-white">{p.filtros.length}</span>}
             </BotonPanel>
             <BotonPanel abierto={panel === 'orden'} onClick={() => setPanel(panel === 'orden' ? null : 'orden')}>
               <ArrowDownUp className="size-4" /> Ordenar
             </BotonPanel>
-            <span className="rounded-full bg-primario-suave px-3 py-1.5 text-sm font-medium text-primario">
+            <span className="inline-flex h-8 items-center rounded-full bg-[#eff8ff] px-3 text-sm font-semibold text-[#175cd3] dark:bg-blue-950 dark:text-blue-300">
               {p.total.toLocaleString('es-ES')} Contactos
             </span>
             <BotonPanel abierto={panel === 'columnas'} onClick={() => setPanel(panel === 'columnas' ? null : 'columnas')} sinBorde>
               <Columns3 className="size-4" /> {visibles.length}/{columnasDisponibles.length} columnas
             </BotonPanel>
-            <label className="relative ml-auto w-full sm:w-72">
+            <label className="relative ml-auto w-full sm:w-60">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tenue" />
-              <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar contactos" className={`${estiloInput} pl-9`} aria-label="Buscar contactos" />
+              <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar contactos" className={`${estiloInput} h-9 rounded-md pl-9`} aria-label="Buscar contactos" />
             </label>
           </div>
 
@@ -289,22 +300,22 @@ export function TablaContactos(p: Props) {
           )}
 
           {/* Tabla */}
-          <div className={`overflow-x-auto border-t ${pendiente ? 'opacity-60' : ''}`}>
-            <table className="w-full min-w-[48rem] table-fixed text-sm">
-              <thead className="bg-superficie-2 text-left">
-                <tr>
-                  <th className="w-12 px-4 py-3">
-                    <input type="checkbox" checked={todosMarcados} onChange={alternarTodos} aria-label="Seleccionar todos" className="size-4" />
+          <div className={`mx-4 mb-2 overflow-x-auto rounded border border-borde ${pendiente ? 'opacity-60' : ''}`}>
+            <table className="w-full min-w-[48rem] table-fixed border-collapse text-sm">
+              <thead className="text-left">
+                <tr className="border-b border-borde">
+                  <th className="w-12 px-4 py-2.5">
+                    <input type="checkbox" checked={todosMarcados} onChange={alternarTodos} aria-label="Seleccionar todos" className="size-4 rounded accent-[var(--color-primario)]" />
                   </th>
                   {visibles.map((c) => (
-                    <th key={c.clave} className={`px-3 py-3 font-semibold ${c.clave === 'nombre' ? 'w-56' : 'w-44'}`}>
+                    <th key={c.clave} className={`border-l border-borde px-3 py-2.5 font-semibold text-texto-2 ${c.clave === 'nombre' ? 'w-48' : 'w-40'}`}>
                       {c.ordenable ? (
                         <button
-                          className="flex items-center gap-1 truncate hover:text-primario"
+                          className="flex w-full items-center gap-1 truncate hover:text-primario"
                           onClick={() => navegar({ o: `${c.clave}.${p.orden === `${c.clave}.asc` ? 'desc' : 'asc'}` })}
                         >
                           <span className="truncate">{c.titulo}</span>
-                          <ArrowDownUp className={`size-3.5 shrink-0 ${p.orden.startsWith(c.clave + '.') ? 'text-primario' : 'text-tenue'}`} />
+                          <ChevronsUpDown className={`ml-auto size-3.5 shrink-0 ${p.orden.startsWith(c.clave + '.') ? 'text-primario' : 'text-tenue'}`} />
                         </button>
                       ) : (
                         <span className="block truncate">{c.titulo}</span>
@@ -313,18 +324,18 @@ export function TablaContactos(p: Props) {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody>
                 {p.contactos.length === 0 && (
                   <tr><td colSpan={visibles.length + 1} className="px-4 py-16 text-center text-tenue">
                     {p.filtros.length || p.busqueda ? 'Ningún contacto coincide con los filtros.' : 'Aún no hay contactos. Añade uno o importa un CSV.'}
                   </td></tr>
                 )}
                 {p.contactos.map((c) => (
-                  <tr key={c.id} className={`hover:bg-superficie-2 ${seleccion.has(c.id) ? 'bg-primario-suave/50' : ''}`}>
-                    <td className="px-4 py-3">
-                      <input type="checkbox" checked={seleccion.has(c.id)} onChange={() => alternar(c.id)} aria-label="Seleccionar contacto" className="size-4" />
+                  <tr key={c.id} className={`border-b border-borde last:border-b-0 hover:bg-superficie-2 ${seleccion.has(c.id) ? 'bg-primario-suave/50' : ''}`}>
+                    <td className="px-4 py-2">
+                      <input type="checkbox" checked={seleccion.has(c.id)} onChange={() => alternar(c.id)} aria-label="Seleccionar contacto" className="size-4 rounded accent-[var(--color-primario)]" />
                     </td>
-                    {visibles.map((col) => <td key={col.clave} className="truncate px-3 py-3">{celda(c, col)}</td>)}
+                    {visibles.map((col) => <td key={col.clave} className="h-10 truncate border-l border-transparent px-3 py-2 text-texto-2">{celda(c, col)}</td>)}
                   </tr>
                 ))}
               </tbody>
@@ -332,7 +343,7 @@ export function TablaContactos(p: Props) {
           </div>
 
           {/* Paginación */}
-          <div className="flex flex-wrap items-center justify-end gap-3 border-t px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center justify-end gap-3 px-4 pb-4 pt-2 text-sm text-texto-2">
             <label className="flex items-center gap-2">
               Filas por página
               <select value={p.tam} onChange={(e) => navegar({ n: e.target.value })} className={`${estiloInputBase} w-20 py-1`}>
@@ -340,9 +351,9 @@ export function TablaContactos(p: Props) {
               </select>
             </label>
             <span>{desde}-{hasta} de {p.total.toLocaleString('es-ES')}</span>
-            <button disabled={p.pagina <= 1} onClick={() => navegar({ p: String(p.pagina - 1) })} className={`${estilosBoton.secundario} py-1`}>Anterior</button>
-            <span className="rounded-lg border-2 border-primario px-3 py-1">{p.pagina}</span>
-            <button disabled={p.pagina >= paginas} onClick={() => navegar({ p: String(p.pagina + 1) })} className={`${estilosBoton.secundario} py-1`}>Siguiente</button>
+            <button disabled={p.pagina <= 1} onClick={() => navegar({ p: String(p.pagina - 1) })} className={`${estilosBoton.secundario} h-8`}>Anterior</button>
+            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded border border-primario px-2 text-primario">{p.pagina}</span>
+            <button disabled={p.pagina >= paginas} onClick={() => navegar({ p: String(p.pagina + 1) })} className={`${estilosBoton.secundario} h-8`}>Siguiente</button>
           </div>
         </div>
       </div>
@@ -405,7 +416,7 @@ export function TablaContactos(p: Props) {
 
 function Pestana({ activa, onClick, children }: { activa: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`-mb-px shrink-0 border-b-2 px-3 py-3 text-sm font-medium ${activa ? 'border-primario text-primario' : 'border-transparent text-texto hover:text-primario'}`}>
+    <button onClick={onClick} className={`-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-medium ${activa ? 'border-[#2e90fa] text-[#2e90fa]' : 'border-transparent text-texto-2 hover:text-[#2e90fa]'}`}>
       {children}
     </button>
   );
@@ -414,7 +425,7 @@ function Pestana({ activa, onClick, children }: { activa: boolean; onClick: () =
 function BotonPanel({ abierto, onClick, children, sinBorde }: { abierto: boolean; onClick: () => void; children: React.ReactNode; sinBorde?: boolean }) {
   return (
     <button onClick={onClick} aria-expanded={abierto}
-      className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${sinBorde ? '' : 'border'} ${abierto ? 'border-primario text-primario' : 'hover:bg-superficie-2'}`}>
+      className={`inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium text-[#344054] dark:text-texto-2 ${sinBorde ? '' : 'border border-borde-fuerte shadow-xs'} ${abierto ? 'border-primario text-primario' : 'hover:bg-superficie-2'}`}>
       {children}
     </button>
   );
@@ -428,7 +439,7 @@ function MenuMas({ elementos }: { elementos: { texto: string; icono: React.React
     <div ref={caja} className="relative">
       <button onClick={() => setAbierto((v) => !v)} aria-label="Más opciones" className={estilosBoton.fantasma}><MoreVertical className="size-5" /></button>
       {abierto && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-64 rounded-xl border bg-superficie p-1 shadow-xl">
+        <div className="absolute right-0 top-full z-30 mt-1 w-64 rounded-lg border border-borde bg-superficie p-1 shadow-xl">
           {elementos.map((e) =>
             e.href ? (
               <a key={e.texto} href={e.href} onClick={() => setAbierto(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-superficie-2">{e.icono}{e.texto}</a>

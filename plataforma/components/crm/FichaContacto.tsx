@@ -63,7 +63,7 @@ export function FichaContacto(p: Props) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[26rem_1fr]">
         {/* Detalles de contacto */}
-        <aside className="rounded-xl border bg-superficie shadow-sm">
+        <aside className="rounded-lg border border-borde bg-superficie">
           <div className="space-y-4 border-b p-4">
             <div className="flex items-center gap-3">
               <Avatar nombre={nombre} tam="size-12" suave />
@@ -138,7 +138,7 @@ export function FichaContacto(p: Props) {
         </aside>
 
         {/* Actividad, notas, tareas y oportunidades */}
-        <section className="min-w-0 rounded-xl border bg-superficie shadow-sm">
+        <section className="min-w-0 rounded-lg border border-borde bg-superficie">
           <div className="flex gap-6 overflow-x-auto border-b px-4">
             {([['actividad', 'Actividad'], ['notas', `Notas (${p.notas.length})`], ['tareas', `Tareas (${p.tareas.filter((t) => !t.completada).length})`],
               ['oportunidades', `Oportunidades (${p.oportunidades.length})`]] as const).map(([k, t]) => (

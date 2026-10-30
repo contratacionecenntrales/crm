@@ -26,12 +26,12 @@ export function Modal({ abierto, alCerrar, titulo, children, ancho = 'max-w-xl' 
       ref={ref}
       onClose={alCerrar}
       onClick={(e) => e.target === ref.current && alCerrar()}
-      className={`m-auto w-[calc(100%-2rem)] ${ancho} rounded-xl border bg-superficie p-0 text-texto shadow-xl backdrop:bg-black/40`}
+      className={`m-auto w-[calc(100%-2rem)] ${ancho} rounded-lg border border-borde bg-superficie p-0 text-texto shadow-xl backdrop:bg-black/40`}
     >
       {abierto && (
         <div>
           <div className="flex items-center justify-between border-b px-5 py-4">
-            <h2 className="text-base font-semibold">{titulo}</h2>
+            <h2 className="text-lg font-semibold text-texto">{titulo}</h2>
             <button type="button" onClick={alCerrar} className="rounded p-1 text-tenue hover:bg-superficie-2" aria-label="Cerrar">
               <X className="size-5" />
             </button>

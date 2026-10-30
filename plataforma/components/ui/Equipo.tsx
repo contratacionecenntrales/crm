@@ -29,7 +29,7 @@ export function Equipo<R extends string>({ miembros, roles, yo, puedeGestionar, 
   return (
     <div className="space-y-5">
       {puedeGestionar && (
-        <form action={accion} className="rounded-xl border bg-superficie p-4 shadow-sm">
+        <form action={accion} className="rounded-lg border border-borde bg-superficie p-4 shadow-sm">
           {extra && Object.entries(extra).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
           <p className="mb-3 font-medium">Añadir usuario</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
@@ -44,7 +44,7 @@ export function Equipo<R extends string>({ miembros, roles, yo, puedeGestionar, 
 
       {aviso && !aviso.ok && <Aviso estado={aviso} />}
 
-      <div className="overflow-x-auto rounded-xl border bg-superficie shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-borde bg-superficie">
         <table className="w-full min-w-[36rem] text-sm">
           <thead className="bg-superficie-2 text-left text-tenue">
             <tr>

@@ -17,7 +17,7 @@ function aplicarTema(t: Tema) {
   }
 }
 
-export function MenuUsuario({ nombre, email }: { nombre: string; email: string }) {
+export function MenuUsuario({ nombre, email, logo }: { nombre: string; email: string; logo?: string | null }) {
   const [abierto, setAbierto] = useState(false);
   const [tema, setTema] = useState<Tema>('sistema');
   const caja = useRef<HTMLDivElement>(null);
@@ -39,11 +39,16 @@ export function MenuUsuario({ nombre, email }: { nombre: string; email: string }
 
   return (
     <div ref={caja} className="relative">
-      <button onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-label="Menú de usuario" className="rounded-full">
-        <Avatar nombre={nombre || email} tam="size-10" />
+      <button onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-label="Menú de usuario" className="ml-1.5 rounded-full">
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo} alt="" className="h-8 max-w-[40px] object-contain" />
+        ) : (
+          <Avatar nombre={nombre || email} tam="size-8" />
+        )}
       </button>
       {abierto && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border bg-superficie p-2 shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-md border bg-superficie p-2 font-sans shadow-xl">
           <div className="px-3 py-2">
             <p className="truncate text-sm font-semibold">{nombre || email.split('@')[0]}</p>
             <p className="truncate text-xs text-tenue">{email}</p>

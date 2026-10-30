@@ -29,7 +29,7 @@ export function ListaEmpresas({ subId, empresas, soyAdmin, busqueda }: { subId: 
 
   return (
     <div className="p-4 sm:p-6">
-      <div className="rounded-xl border bg-superficie shadow-sm">
+      <div className="rounded-lg border border-borde bg-superficie">
         <div className="flex flex-wrap items-center gap-2 border-b p-4">
           <label className="relative w-full sm:w-72">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tenue" />
@@ -42,8 +42,8 @@ export function ListaEmpresas({ subId, empresas, soyAdmin, busqueda }: { subId: 
         {aviso && <div className="p-3"><Aviso estado={aviso} /></div>}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-sm">
-            <thead className="bg-superficie-2 text-left">
-              <tr>{['Empresa', 'Teléfono', 'Correo', 'Web', 'Ciudad', 'Contactos', ''].map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr>
+            <thead className="border-b border-borde-fuerte bg-superficie text-left text-texto">
+              <tr>{['Empresa', 'Teléfono', 'Correo', 'Web', 'Ciudad', 'Contactos', ''].map((h) => <th key={h} className="px-4 py-2.5 text-sm font-semibold">{h}</th>)}</tr>
             </thead>
             <tbody className="divide-y">
               {empresas.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-tenue">Sin empresas. Se crean solas al poner el nombre de la empresa en un contacto.</td></tr>}

@@ -1,21 +1,22 @@
 import {
-  Building2, Filter, LayoutDashboard, Settings, Users, UserCog, Rocket, MessageSquare, CalendarDays, Contact, Receipt,
+  BookUser, Building2, CalendarDays, LayoutDashboard, LayoutGrid, MessageCircle, Network, Receipt, Settings, User, UserCog, Users,
 } from 'lucide-react';
 
 // Los iconos se eligen por nombre porque un Server Component no puede pasar
 // funciones (componentes) a un Client Component.
 export const ICONOS = {
-  tablero: LayoutDashboard,
-  subcuentas: Building2,
+  tablero: LayoutGrid,
+  tableroAgencia: LayoutDashboard,
+  subcuentas: User,
+  empresas: Building2,
   equipo: Users,
   ajustes: Settings,
   usuario: UserCog,
-  launchpad: Rocket,
-  conversaciones: MessageSquare,
+  conversaciones: MessageCircle,
   calendarios: CalendarDays,
-  contactos: Contact,
+  contactos: BookUser,
+  oportunidades: Network,
   facturacion: Receipt,
-  oportunidades: Filter,
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;
@@ -25,4 +26,6 @@ export interface ElementoNav {
   etiqueta: string;
   icono: NombreIcono;
   exacto?: boolean;
+  // Rutas extra que también marcan este elemento como activo.
+  tambien?: string[];
 }

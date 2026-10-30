@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { subcuentaVisible } from '@/lib/sesion';
 import { asignablesDe, embudosDe, monedaDe } from '@/lib/crm/datos';
-import { Embudo, Rosco, SelectorUrl } from '@/components/crm/GraficosTablero';
+import { BarrasValor, BotonPeriodo, EmbudoTabla, Indicador, Rosco, SelectorUrl } from '@/components/crm/GraficosTablero';
 import { dinero } from '@/lib/formato';
 import { nombreContacto, type Tarea } from '@/lib/crm/tipos';
 
@@ -36,16 +36,20 @@ interface Datos {
   etapas: { etapa: string; n: number; valor: number }[];
 }
 
-function Tarjeta({ titulo, control, children, pie }: { titulo: string; control?: React.ReactNode; children: React.ReactNode; pie?: React.ReactNode }) {
+function Tarjeta({ titulo, control, children, pie, actualizado, clase = '' }: {
+  titulo: string; control?: React.ReactNode; children: React.ReactNode; pie?: React.ReactNode; actualizado: string; clase?: string;
+}) {
   return (
-    <section className="flex flex-col rounded-xl border bg-superficie shadow-sm">
-      <header className="border-b px-5 py-4">
-        <h2 className="text-lg">{titulo}</h2>
-        <p className="text-sm text-tenue">(Actualizado el {new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())})</p>
+    <section className={`flex min-h-[416px] flex-col rounded-lg border border-borde bg-superficie ${clase}`}>
+      <header className="border-b border-borde p-4">
+        <h2 className="text-base font-semibold leading-6 text-texto">{titulo}</h2>
+        <p className="mt-0.5 text-xs leading-[17px] text-texto">(Actualizado el {actualizado})</p>
       </header>
-      {control && <div className="px-5 pt-4">{control}</div>}
-      <div className="flex-1 p-5">{children}</div>
-      {pie && <div className="px-5 pb-5 text-center">{pie}</div>}
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        {control}
+        <div className="min-h-0 flex-1">{children}</div>
+      </div>
+      {pie && <div className="px-4 pb-4 text-center">{pie}</div>}
     </section>
   );
 }
@@ -75,71 +79,77 @@ export default async function TableroSubcuenta({ params, searchParams }: { param
   const tasa = d.conversion.total ? Math.round((d.conversion.ganadas / d.conversion.total) * 100) : 0;
   const opcionesEmbudo = embudos.map((e) => ({ valor: e.id, texto: e.nombre }));
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-2xl font-semibold">Dashboard</h1>
-        <SelectorUrl param="r" valor={r} opciones={RANGOS} etiqueta="Periodo" ancho="w-auto" />
-        <Link href={`/subcuenta/${id}?${new URLSearchParams(sp as Record<string, string>).toString()}`} aria-label="Actualizar"
-          className="rounded-lg border bg-superficie p-2 text-tenue hover:text-texto"><RefreshCw className="size-4" /></Link>
-        <span className="text-sm text-tenue">Oportunidades creadas en el periodo · {subcuenta.nombre}</span>
-      </div>
+  const actualizado = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short', timeZone: subcuenta.zona_horaria }).format(new Date());
+  const pieValor = (t: string, v: number) => (
+    <>
+      <p className="text-xs text-tenue">{t}</p>
+      <p className="text-xl text-texto">{dinero(v, moneda)}</p>
+    </>
+  );
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Tarjeta titulo="Estado de Oportunidad"
+  return (
+    <div className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <span className="inline-flex h-9 items-center rounded-lg border border-borde-fuerte bg-superficie px-3.5 text-sm font-semibold text-texto-2 shadow-xs">Dashboard</span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href={`/subcuenta/${id}?${new URLSearchParams(sp as Record<string, string>).toString()}`} aria-label="Actualizar" title="Actualizar"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-borde-fuerte bg-superficie text-texto-2 shadow-xs hover:bg-superficie-2">
+            <RefreshCw className="size-5" strokeWidth={1.75} />
+          </Link>
+          <BotonPeriodo valor={r} opciones={RANGOS} />
+        </div>
+      </div>
+      <p className="mb-4 mt-3 text-sm font-semibold text-[#84adff]">Filtros rápidos · <span className="font-normal text-tenue">oportunidades creadas en el periodo</span></p>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Tarjeta clase="lg:col-span-5" titulo="Estado de Oportunidad" actualizado={actualizado}
           control={<SelectorUrl param="ee" valor={embEstado} etiqueta="Embudo" opciones={[{ valor: '', texto: 'Todas las secuencias' }, ...opcionesEmbudo]} />}>
           <Rosco datos={[
-            { nombre: 'Abiertas', n: d.estado.abierta, color: '#2e90fa' }, { nombre: 'Ganadas', n: d.estado.ganada, color: '#12b76a' },
-            { nombre: 'Perdidas', n: d.estado.perdida, color: '#f04438' }, { nombre: 'Abandonadas', n: d.estado.abandonada, color: '#667085' },
+            { nombre: 'Abierto', n: d.estado.abierta, color: '#53b1fd' }, { nombre: 'Ganado', n: d.estado.ganada, color: '#32d583' },
+            { nombre: 'Perdido', n: d.estado.perdida, color: '#f97066' }, { nombre: 'Abandonado', n: d.estado.abandonada, color: '#98a2b3' },
           ]} />
         </Tarjeta>
-        <Tarjeta titulo="Valor de Oportunidad"
-          pie={<><p className="text-sm text-tenue">Ingresos totales</p><p className="text-2xl">{dinero(d.valor.total, moneda)}</p></>}>
-          <ul className="space-y-3 text-sm">
-            {([['Abiertas', d.valor.abierta, '#2e90fa'], ['Ganadas', d.valor.ganada, '#12b76a'], ['Perdidas', d.valor.perdida, '#f04438'], ['Abandonadas', d.valor.abandonada, '#667085']] as const).map(([t, v, c]) => (
-              <li key={t}>
-                <div className="mb-1 flex justify-between"><span>{t}</span><span className="font-medium">{dinero(v, moneda)}</span></div>
-                <div className="h-2 overflow-hidden rounded-full bg-superficie-2">
-                  <div className="h-full rounded-full" style={{ width: `${d.valor.total ? (Number(v) / Number(d.valor.total)) * 100 : 0}%`, background: c }} />
-                </div>
-              </li>
-            ))}
-          </ul>
+        <Tarjeta clase="lg:col-span-4" titulo="Valor de Oportunidad" actualizado={actualizado} pie={pieValor('Ingresos totales', d.valor.total)}>
+          <BarrasValor moneda={moneda} datos={[
+            { nombre: 'Abierto', valor: Number(d.valor.abierta), color: '#53b1fd' }, { nombre: 'Ganado', valor: Number(d.valor.ganada), color: '#32d583' },
+            { nombre: 'Perdido', valor: Number(d.valor.perdida), color: '#f97066' }, { nombre: 'Abandonado', valor: Number(d.valor.abandonada), color: '#98a2b3' },
+          ]} />
         </Tarjeta>
-        <Tarjeta titulo="Tasa de conversión"
-          pie={<><p className="text-sm text-tenue">Ingresos ganados</p><p className="text-2xl">{dinero(d.conversion.ingresos_ganados, moneda)}</p></>}>
-          <div className="flex h-full flex-col items-center justify-center gap-2 py-6">
-            <span className="text-5xl font-semibold text-primario">{tasa} %</span>
-            <span className="text-sm text-tenue">{d.conversion.ganadas} ganadas de {d.conversion.total} oportunidades</span>
+        <Tarjeta clase="lg:col-span-3" titulo="Tasa de conversión" actualizado={actualizado} pie={pieValor('Ingresos ganados', d.conversion.ingresos_ganados)}>
+          <div className="flex h-full flex-col items-center justify-center gap-1">
+            <Indicador porcentaje={tasa} />
+            <span className="text-xs text-tenue">{d.conversion.ganadas} ganadas de {d.conversion.total}</span>
           </div>
         </Tarjeta>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Tarjeta titulo="Embudo" control={<SelectorUrl param="eg" valor={embEtapas} etiqueta="Embudo" opciones={opcionesEmbudo} />}>
-          <Embudo datos={d.embudo} moneda={moneda} />
-          <p className="mt-2 text-xs text-tenue">Oportunidades abiertas o ganadas que han llegado al menos a cada etapa.</p>
+        <Tarjeta titulo="Embudo" actualizado={actualizado} control={<SelectorUrl param="eg" valor={embEtapas} etiqueta="Embudo" opciones={opcionesEmbudo} />}>
+          <EmbudoTabla datos={d.embudo} moneda={moneda} />
         </Tarjeta>
-        <Tarjeta titulo="Distribución de etapas" control={<SelectorUrl param="eg" valor={embEtapas} etiqueta="Embudo" opciones={opcionesEmbudo} />}>
+        <Tarjeta titulo="Distribución de etapas" actualizado={actualizado} control={<SelectorUrl param="eg" valor={embEtapas} etiqueta="Embudo" opciones={opcionesEmbudo} />}>
           <Rosco datos={d.etapas.map((e) => ({ nombre: e.etapa, n: e.n, valor: e.valor }))} moneda={moneda} />
         </Tarjeta>
       </div>
 
-      <section className="mt-4 rounded-xl border bg-superficie shadow-sm">
-        <header className="flex items-center justify-between border-b px-5 py-4">
-          <h2 className="text-lg">Tareas <span className="text-sm text-tenue">· Pendiente · Fecha de vencimiento (ASC)</span></h2>
-          <Link href={`/subcuenta/${id}/contactos/tareas`} className="text-sm text-primario hover:underline">Ver todas</Link>
+      <section className="mt-4 rounded-lg border border-borde bg-superficie">
+        <header className="flex items-center justify-between border-b border-borde p-4">
+          <div>
+            <h2 className="text-base font-semibold text-texto">Tareas</h2>
+            <p className="mt-0.5 text-xs text-texto">Pendiente · Fecha de vencimiento (ASC) · Todos los usuarios</p>
+          </div>
+          <Link href={`/subcuenta/${id}/contactos/tareas`} className="text-sm font-semibold text-primario-texto hover:underline">Ver todas</Link>
         </header>
-        <ul className="divide-y">
-          {(tareas.data ?? []).length === 0 && <li className="px-5 py-8 text-center text-sm text-tenue">No hay tareas pendientes.</li>}
+        <ul className="divide-y divide-borde">
+          {(tareas.data ?? []).length === 0 && <li className="px-4 py-8 text-center text-sm text-tenue">No hay tareas pendientes.</li>}
           {((tareas.data ?? []) as unknown as Tarea[]).map((t) => {
             const atrasada = t.vence && new Date(t.vence) < new Date();
             const u = asignables.find((x) => x.usuario_id === t.asignado_id);
             return (
-              <li key={t.id} className="px-5 py-3 text-sm">
-                <p className="font-medium">{t.titulo}</p>
+              <li key={t.id} className="px-4 py-3 text-sm">
+                <p className="font-medium text-texto">{t.titulo}</p>
                 <p className="mt-0.5 flex flex-wrap gap-x-4 text-xs text-tenue">
-                  {t.vence && <span className={atrasada ? 'text-peligro' : ''}>{atrasada ? 'Atrasado' : 'Vence'} - {new Intl.DateTimeFormat('es-ES', { timeZone: subcuenta.zona_horaria }).format(new Date(t.vence))}</span>}
+                  {t.vence && <span className={atrasada ? 'text-peligro' : ''}>{atrasada ? 'Atrasado' : 'Vence'} - {new Intl.DateTimeFormat('en-US', { timeZone: subcuenta.zona_horaria }).format(new Date(t.vence))}</span>}
                   <span>Asignado a: {u ? u.nombre || u.email : 'Sin asignar'}</span>
                   {t.contacto && <Link href={`/subcuenta/${id}/contacto/${t.contacto.id}`} className="text-primario hover:underline">{nombreContacto(t.contacto)}</Link>}
                 </p>

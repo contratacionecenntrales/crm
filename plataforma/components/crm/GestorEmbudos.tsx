@@ -7,7 +7,7 @@ import {
 } from '@/app/subcuenta/[id]/oportunidades/acciones';
 import { Modal } from '@/components/ui/Modal';
 import { Aviso } from '@/components/ui/Aviso';
-import { estilosBoton, estiloInput } from '@/components/ui/clases';
+import { estilosBoton, estiloInput, estiloArea } from '@/components/ui/clases';
 import type { Embudo, Etapa } from '@/lib/crm/tipos';
 import type { Resultado } from '@/lib/tipos';
 
@@ -30,7 +30,7 @@ export function GestorEmbudos({ subId, embudos, porEtapa, inicial, soyAdmin }: {
         <ArrowLeft className="size-4" /> Oportunidades
       </Link>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="flex-1 text-2xl font-semibold">Embudos</h1>
+        <p className="flex-1 text-sm text-tenue">Las etapas de cada embudo, en orden. Arrastra las oportunidades entre ellas desde el tablero.</p>
         {soyAdmin && <button className={estilosBoton.primario} onClick={() => setNuevo(true)}><Plus className="size-4" /> Crear embudo</button>}
       </div>
       {!soyAdmin && <p className="mb-4 text-sm text-tenue">Solo los administradores de la subcuenta pueden cambiar los embudos.</p>}
@@ -49,7 +49,7 @@ export function GestorEmbudos({ subId, embudos, porEtapa, inicial, soyAdmin }: {
         </ul>
 
         {embudo && (
-          <section className="rounded-xl border bg-superficie shadow-sm">
+          <section className="rounded-lg border border-borde bg-superficie">
             <div className="flex flex-wrap items-center gap-2 border-b p-4">
               <Editable valor={embudo.nombre} desactivado={!soyAdmin || pendiente} clase="text-lg font-semibold"
                 alGuardar={(v) => ejecutar(() => renombrarEmbudo(subId, embudo.id, v))} />
@@ -119,7 +119,7 @@ export function GestorEmbudos({ subId, embudos, porEtapa, inicial, soyAdmin }: {
         }}>
           <label className="block"><span className="mb-1 block text-sm font-medium">Nombre</span><input name="nombre" required maxLength={80} className={estiloInput} /></label>
           <label className="block"><span className="mb-1 block text-sm font-medium">Etapas (una por línea, en orden)</span>
-            <textarea name="etapas" rows={6} defaultValue={ETAPAS_TIPO} required className={estiloInput} /></label>
+            <textarea name="etapas" rows={6} defaultValue={ETAPAS_TIPO} required className={estiloArea} /></label>
           <div className="flex justify-end"><button disabled={pendiente} className={estilosBoton.primario}>Crear</button></div>
         </form>
       </Modal>

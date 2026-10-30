@@ -1,5 +1,5 @@
 'use client';
-import { estiloInput } from '@/components/ui/clases';
+import { estiloInput, estiloArea } from '@/components/ui/clases';
 import type { Campo, ValorCampo } from '@/lib/crm/tipos';
 
 // Control de formulario adecuado al tipo de cada campo personalizado.
@@ -9,7 +9,7 @@ export function CampoPersonalizado({ campo, valor }: { campo: Campo; valor: Valo
   let control: React.ReactNode;
   switch (campo.tipo) {
     case 'texto_largo':
-      control = <textarea name={nombre} defaultValue={texto} rows={3} className={estiloInput} maxLength={5000} />;
+      control = <textarea name={nombre} defaultValue={texto} rows={3} className={estiloArea} maxLength={5000} />;
       break;
     case 'numero':
     case 'moneda':

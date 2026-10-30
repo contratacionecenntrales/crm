@@ -2,21 +2,24 @@ export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(' ');
 }
 
+// Botones: 36 px de alto, radio 8, borde #D0D5DD y sombra xs, como el original.
+const baseBoton =
+  'inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg px-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60';
+
 export const estilosBoton = {
-  primario:
-    'inline-flex items-center justify-center gap-2 rounded-lg bg-primario px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primario-hover disabled:opacity-60 disabled:cursor-not-allowed',
-  secundario:
-    'inline-flex items-center justify-center gap-2 rounded-lg border bg-superficie px-4 py-2 text-sm font-medium text-texto shadow-sm hover:bg-superficie-2 disabled:opacity-60 disabled:cursor-not-allowed',
-  peligro:
-    'inline-flex items-center justify-center gap-2 rounded-lg bg-peligro px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-60',
-  fantasma:
-    'inline-flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-tenue hover:bg-superficie-2 hover:text-texto',
+  primario: `${baseBoton} bg-primario text-white shadow-xs hover:bg-primario-hover`,
+  secundario: `${baseBoton} border border-borde-fuerte bg-superficie text-texto-2 shadow-xs hover:bg-superficie-2`,
+  peligro: `${baseBoton} bg-peligro text-white shadow-xs hover:opacity-90`,
+  fantasma: 'inline-flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-texto-2 hover:bg-superficie-2 hover:text-texto',
+  icono: 'inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-borde-fuerte bg-superficie text-texto-2 shadow-xs hover:bg-superficie-2',
 };
 
-// Sin ancho: para controles que fijan el suyo (w-auto, w-40…). Mezclar w-full
-// con otro w-* hace que gane el que salga después en la hoja de estilos.
+// Campos: radio 4, borde #D0D5DD, 32 px de alto.
 export const estiloInputBase =
-  'rounded-lg border bg-superficie px-3 py-2 text-sm text-texto placeholder:text-tenue focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
+  'h-8 rounded border border-borde-fuerte bg-superficie px-2.5 text-sm text-texto shadow-xs placeholder:text-tenue focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
 export const estiloInput = `w-full ${estiloInputBase}`;
+export const estiloArea =
+  'w-full rounded border border-borde-fuerte bg-superficie px-2.5 py-1.5 text-sm text-texto shadow-xs placeholder:text-tenue focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
 
-export const estiloTarjeta = 'rounded-xl border bg-superficie shadow-sm';
+// Tarjetas: blanco, borde #EAECF0, radio 8.
+export const estiloTarjeta = 'rounded-lg border border-borde bg-superficie';

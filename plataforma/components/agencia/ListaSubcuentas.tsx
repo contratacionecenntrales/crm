@@ -72,7 +72,7 @@ export function ListaSubcuentas({ subcuentas, suscripciones, pagos, moneda, zona
       {aviso && <div className="mt-4"><Aviso estado={aviso} /></div>}
 
       {filtradas.length === 0 ? (
-        <div className="mt-6 rounded-xl border bg-superficie">
+        <div className="mt-6 rounded-lg border border-borde bg-superficie">
           {subcuentas.length === 0 ? (
             <Vacio titulo="Aún no tienes subcuentas" texto="Cada subcuenta es un negocio cliente con sus propios contactos, calendarios y conversaciones.">
               {esAdmin && (
@@ -130,7 +130,7 @@ function TarjetaSubcuenta({ s, suscripcion, moneda, zona, esAdmin, alAbrir, alAv
   };
 
   return (
-    <li className={`overflow-visible rounded-xl border bg-superficie shadow-sm ${suspendida ? 'opacity-75' : ''}`}>
+    <li className={`overflow-visible rounded-lg border border-borde bg-superficie ${suspendida ? 'opacity-75' : ''}`}>
       <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-[1fr_auto_auto] sm:gap-8 sm:p-6">
         <div className="flex min-w-0 gap-4">
           <Avatar nombre={s.nombre} url={s.logo_url} tam="size-14" suave />
@@ -176,10 +176,10 @@ function TarjetaSubcuenta({ s, suscripcion, moneda, zona, esAdmin, alAbrir, alAv
               <MoreVertical className="size-5" />
             </button>
             {menu && (
-              <div className="absolute bottom-full right-2 z-20 mb-1 w-56 rounded-xl border bg-superficie p-1 shadow-xl">
+              <div className="absolute bottom-full right-2 z-20 mb-1 w-56 rounded-lg border border-borde bg-superficie p-1 shadow-xl">
                 <ItemMenu onClick={accionMenu(() => alAbrir({ tipo: 'editar', s }))}>Editar datos</ItemMenu>
                 <ItemMenu onClick={accionMenu(() => alAbrir({ tipo: 'facturacion', s }))}>Plan y facturación</ItemMenu>
-                <Link href={`/subcuenta/${s.id}/configuracion?pestana=equipo`}
+                <Link href={`/subcuenta/${s.id}/configuracion/usuarios`}
                   className="block rounded-lg px-3 py-2 text-sm hover:bg-superficie-2">Usuarios de la subcuenta</Link>
                 <ItemMenu onClick={accionMenu(() => iniciar(async () => alAviso(await cambiarEstadoSubcuenta(s.id, suspendida ? 'activa' : 'suspendida'))))}>
                   {suspendida ? 'Reactivar' : 'Suspender'}

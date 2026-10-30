@@ -5,14 +5,29 @@ import type { ElementoNav } from '@/components/shell/iconos';
 export default async function LayoutAgencia({ children }: { children: React.ReactNode }) {
   const { actual } = await exigirAgencia();
   const admin = esAdminAgencia(actual.rol);
-  const navegacion: ElementoNav[] = [
-    ...(admin ? [{ href: '/agencia', etiqueta: 'Tablero de la agencia', icono: 'tablero', exacto: true } as const] : []),
+  const principal: ElementoNav[] = [
+    ...(admin ? [{ href: '/agencia', etiqueta: 'Tablero de la agencia', icono: 'tableroAgencia', exacto: true } as const] : []),
     { href: '/agencia/subcuentas', etiqueta: 'Subcuentas', icono: 'subcuentas' },
-    { href: '/agencia/equipo', etiqueta: 'Equipo', icono: 'equipo' },
-    ...(admin ? [{ href: '/agencia/configuracion', etiqueta: 'Configuración', icono: 'ajustes' } as const] : []),
   ];
+  const c = '/agencia/configuracion';
+  const menuAjustes = {
+    volver: '/agencia',
+    prefijo: c,
+    secciones: [{
+      elementos: [
+        { href: `${c}/perfil`, etiqueta: 'Mi perfil' },
+        { href: `${c}/empresa`, etiqueta: 'Empresa' },
+        { href: `${c}/usuarios`, etiqueta: 'Usuarios' },
+        { href: `${c}/anuncios`, etiqueta: 'Anuncios', nueva: true },
+        { href: `${c}/stripe`, etiqueta: 'Stripe' },
+        { href: `${c}/auditoria`, etiqueta: 'Registros de auditoría' },
+      ],
+    }],
+  };
+  const ajustes: ElementoNav | undefined = admin ? { href: '/agencia/configuracion/empresa', etiqueta: 'Configuración', icono: 'ajustes', tambien: ['/agencia/configuracion'] } : undefined;
+
   return (
-    <Panel navegacion={navegacion} subcuentaActual={null}>
+    <Panel principal={principal} ajustes={ajustes} menuAjustes={admin ? menuAjustes : undefined} subcuentaActual={null}>
       {children}
     </Panel>
   );

@@ -6,7 +6,7 @@ export function Campo({ etiqueta, ayuda, id, name, className, ...resto }: Props)
   const ident = id ?? name;
   return (
     <label htmlFor={ident} className={'block ' + (className ?? '')}>
-      <span className="mb-1 block text-sm font-medium text-texto">{etiqueta}</span>
+      <span className="mb-1.5 block text-sm font-medium text-[#344054] dark:text-texto-2">{etiqueta}</span>
       <input id={ident} name={name} className={estiloInput} {...resto} />
       {ayuda && <span className="mt-1 block text-xs text-tenue">{ayuda}</span>}
     </label>
@@ -22,7 +22,7 @@ export function Selector({ etiqueta, opciones, id, name, className, ...resto }: 
   const ident = id ?? name;
   return (
     <label htmlFor={ident} className={'block ' + (className ?? '')}>
-      <span className="mb-1 block text-sm font-medium text-texto">{etiqueta}</span>
+      <span className="mb-1.5 block text-sm font-medium text-[#344054] dark:text-texto-2">{etiqueta}</span>
       <select id={ident} name={name} className={estiloInput} {...resto}>
         {opciones.map((o) => (
           <option key={o.valor} value={o.valor}>

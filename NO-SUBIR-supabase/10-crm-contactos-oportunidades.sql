@@ -763,3 +763,13 @@ returns text language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.moneda_subcuenta(uuid) from public, anon;
 grant execute on function public.moneda_subcuenta(uuid) to authenticated;
+
+-- Datos de contacto de la agencia para el panel de ayuda de una subcuenta.
+create or replace function public.soporte_subcuenta(p_subcuenta uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('agencia', a.nombre, 'email', a.email, 'telefono', a.telefono, 'web', a.web, 'id', a.id)
+  from public.subcuentas s join public.agencias a on a.id = s.agencia_id
+  where s.id = p_subcuenta and public.puedo_ver_subcuenta(p_subcuenta);
+$$;
+revoke all on function public.soporte_subcuenta(uuid) from public, anon;
+grant execute on function public.soporte_subcuenta(uuid) to authenticated;

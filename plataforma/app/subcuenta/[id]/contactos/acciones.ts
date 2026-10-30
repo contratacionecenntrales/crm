@@ -541,3 +541,33 @@ export async function buscarContactos(subId: string, texto: string) {
   const { data } = await q;
   return (data ?? []) as { id: string; nombre: string; apellidos: string; email: string | null; telefono: string }[];
 }
+
+// --- Etiquetas (catálogo) ----------------------------------------------------------
+
+export async function guardarEtiqueta(subId: string, original: string | null, _: Resultado | null, fd: FormData): Promise<Resultado> {
+  const { supabase } = await contexto(subId);
+  const nombre = String(fd.get('nombre') ?? '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  const descripcion = String(fd.get('descripcion') ?? '').trim().slice(0, 300);
+  const categoria = String(fd.get('categoria') ?? '').trim().slice(0, 60);
+  if (!nombre) return { ok: false, error: 'Pon un nombre a la etiqueta.' };
+  if (original && original !== nombre) {
+    const r = await supabase.rpc('crm_renombrar_etiqueta', { p_subcuenta: subId, p_antes: original, p_despues: nombre });
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+  }
+  const { error } = await supabase.from('crm_etiquetas').upsert({ subcuenta_id: subId, nombre, descripcion, categoria }, { onConflict: 'subcuenta_id,nombre' });
+  if (error) return { ok: false, error: mensajeDeError(error) };
+  refrescar(subId);
+  return { ok: true, mensaje: 'Etiqueta guardada.' };
+}
+
+export async function borrarEtiquetas(subId: string, nombres: string[]): Promise<Resultado> {
+  const { supabase } = await contexto(subId);
+  let total = 0;
+  for (const n of nombres.slice(0, 500)) {
+    const { data, error } = await supabase.rpc('crm_borrar_etiqueta', { p_subcuenta: subId, p_nombre: n });
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    total += Number(data);
+  }
+  refrescar(subId);
+  return { ok: true, mensaje: `Borradas ${nombres.length} etiquetas (${total} contactos actualizados).` };
+}

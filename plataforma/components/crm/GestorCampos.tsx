@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Campo as CampoUI, Selector } from '@/components/ui/Campo';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
-import { estilosBoton, estiloInput } from '@/components/ui/clases';
+import { estilosBoton, estiloInput, estiloArea } from '@/components/ui/clases';
 import { TIPOS_CAMPO, type Campo } from '@/lib/crm/tipos';
 import type { Resultado } from '@/lib/tipos';
 
@@ -26,10 +26,10 @@ export function GestorCampos({ subId, campos, soyAdmin }: { subId: string; campo
       </div>
       {aviso && <div className="mb-3"><Aviso estado={aviso} /></div>}
       {campos.length === 0 ? (
-        <div className="rounded-xl border bg-superficie px-6 py-12 text-center text-sm text-tenue">Aún no hay campos personalizados.</div>
+        <div className="rounded-lg border border-borde bg-superficie px-6 py-12 text-center text-sm text-tenue">Aún no hay campos personalizados.</div>
       ) : (
         carpetas.map((carpeta) => (
-          <section key={carpeta} className="mb-5 overflow-hidden rounded-xl border bg-superficie shadow-sm">
+          <section key={carpeta} className="mb-5 overflow-hidden rounded-lg border border-borde bg-superficie">
             <h2 className="border-b bg-superficie-2 px-4 py-2.5 text-sm font-semibold">{carpeta}</h2>
             <ul className="divide-y">
               {campos.filter((c) => c.carpeta === carpeta).map((c) => (
@@ -77,7 +77,7 @@ function FormularioCampo({ subId, campo, carpetas, alGuardar }: { subId: string;
       {(tipo === 'lista' || tipo === 'casillas') && (
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Opciones (una por línea)</span>
-          <textarea name="opciones" rows={5} defaultValue={campo?.opciones.join('\n')} className={estiloInput} required />
+          <textarea name="opciones" rows={5} defaultValue={campo?.opciones.join('\n')} className={estiloArea} required />
         </label>
       )}
       <label className="block">

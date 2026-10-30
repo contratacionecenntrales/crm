@@ -17,6 +17,21 @@ export interface Agencia {
   moneda: string;
   zona_horaria: string;
   creado: string;
+  categoria: string;
+  nicho: string;
+  uso_principal: string;
+  direccion: string;
+  ciudad: string;
+  codigo_postal: string;
+  provincia: string;
+  pais: string;
+  dominio_marca: string;
+  dominio_api: string;
+  url_privacidad: string;
+  url_terminos: string;
+  css_personalizado: string;
+  tema_defecto: 'claro' | 'oscuro';
+  expiracion_sesion_min: number | null;
 }
 
 export interface Subcuenta {

@@ -61,3 +61,11 @@ export async function borrarNotificacion(id: string): Promise<Resultado> {
   revalidatePath('/', 'layout');
   return { ok: true };
 }
+
+export async function cerrarAnuncio(id: string): Promise<Resultado> {
+  if (!UUID.test(id)) return { ok: false, error: 'Aviso no válido.' };
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc('cerrar_anuncio', { p_anuncio: id });
+  if (error) return { ok: false, error: mensajeDeError(error) };
+  return { ok: true };
+}
