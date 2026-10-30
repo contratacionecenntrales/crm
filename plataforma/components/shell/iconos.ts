@@ -1,10 +1,11 @@
 import {
-  BookUser, Building2, CalendarDays, LayoutDashboard, LayoutGrid, MessageCircle, Network, Receipt, Settings, User, UserCog, Users,
+  BookUser, Building2, CalendarDays, LayoutDashboard, LayoutGrid, MessageCircle, Network, Receipt, Rocket, Settings, User, UserCog, Users,
 } from 'lucide-react';
 
 // Los iconos se eligen por nombre porque un Server Component no puede pasar
 // funciones (componentes) a un Client Component.
 export const ICONOS = {
+  launchpad: Rocket,
   tablero: LayoutGrid,
   tableroAgencia: LayoutDashboard,
   subcuentas: User,

@@ -9,6 +9,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
   const base = `/subcuenta/${id}`;
   // Cada módulo se añade aquí cuando está construido de verdad.
   const principal: ElementoNav[] = [
+    { href: `${base}/launchpad`, etiqueta: 'Launchpad', icono: 'launchpad' },
     { href: base, etiqueta: 'Tablero', icono: 'tablero', exacto: true },
     { href: `${base}/conversaciones`, etiqueta: 'Conversaciones', icono: 'conversaciones' },
     { href: `${base}/calendarios`, etiqueta: 'Calendarios', icono: 'calendarios' },
