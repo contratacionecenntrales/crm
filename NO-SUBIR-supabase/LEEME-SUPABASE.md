@@ -22,6 +22,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 10 | `10-crm-contactos-oportunidades.sql` | CRM de cada subcuenta en la plataforma Next.js: contactos, empresas, campos personalizados, listas, notas, tareas, embudos y oportunidades. Requiere el 09 |
 | 11 | `11-configuracion.sql` | Ajustes de agencia: datos de empresa, marca blanca (logo, dominios, CSS, tema), expiración de sesión, anuncios y catálogo de etiquetas. Requiere el 10 |
 | 12 | `12-calendarios.sql` | Calendarios, horario semanal, citas (sin solapes por persona), franjas bloqueadas y reserva pública sin sesión. Requiere el 11 |
+| 13 | `13-conversaciones.sql` | Conversaciones: SMS/WhatsApp (Twilio), correo (Mailgun/SMTP), notas internas, fragmentos y analítica. Las claves de los proveedores solo las lee el servidor. Requiere el 12 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

@@ -65,8 +65,13 @@ body {
   font-size: 14px;
 }
 
-* {
-  border-color: var(--borde);
+/* En la capa base: así las clases border-* de Tailwind pueden cambiarlo. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--borde);
+  }
 }
 
 :focus-visible {

@@ -60,8 +60,15 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 2. `NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql` — contactos, empresas, campos, listas, notas, tareas, embudos y oportunidades
 3. `NO-SUBIR-supabase/11-configuracion.sql` — datos de empresa, marca blanca (logo, dominios, CSS, tema), expiración de sesión, anuncios y catálogo de etiquetas
 4. `NO-SUBIR-supabase/12-calendarios.sql` — calendarios, horarios, citas, franjas bloqueadas y página pública de reservas (`/reservar/<enlace>`)
+5. `NO-SUBIR-supabase/13-conversaciones.sql` — bandeja de Conversaciones (SMS, WhatsApp, correo y notas internas), fragmentos y ajustes de Twilio / Mailgun / SMTP
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
+
+### Conversaciones (SMS, WhatsApp y correo)
+
+- `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_SITE_URL` (con https) son **obligatorias**: el servidor lee con ellas las claves de Twilio/Mailgun, que nadie del equipo puede leer.
+- Cada subcuenta conecta su cuenta en **Configuración → Integración telefónica** (Twilio) y **Servicios de correo** (Mailgun o SMTP). Allí aparece la URL del webhook que hay que pegar en Twilio y en la «Route» de Mailgun para recibir respuestas.
+- Los webhooks comprueban la firma de Twilio (`X-Twilio-Signature`) y de Mailgun; las peticiones falsas se rechazan.
 
 ### 2 · Plantillas de correo de Supabase
 
@@ -124,10 +131,12 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/10-crm-contactos-oportunidades.sql \
      -f NO-SUBIR-supabase/11-configuracion.sql \
      -f NO-SUBIR-supabase/12-calendarios.sql \
+     -f NO-SUBIR-supabase/13-conversaciones.sql \
      -f NO-SUBIR-supabase/test-agencias.sql \
      -f NO-SUBIR-supabase/test-crm.sql \
      -f NO-SUBIR-supabase/test-configuracion.sql \
-     -f NO-SUBIR-supabase/test-calendarios.sql
+     -f NO-SUBIR-supabase/test-calendarios.sql \
+     -f NO-SUBIR-supabase/test-conversaciones.sql
 ```
 
 ## Estructura

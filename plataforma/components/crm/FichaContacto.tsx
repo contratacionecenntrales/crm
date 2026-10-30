@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
-import { ArrowLeft, Mail, Phone, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Plus, Trash2, X } from 'lucide-react';
 import {
   actualizarContacto, borrarContacto, borrarNota, cambiarDnd, cambiarEtiquetas, cambiarPropietario, crearNota, editarNota,
 } from '@/app/subcuenta/[id]/contactos/acciones';
@@ -75,6 +75,7 @@ export function FichaContacto(p: Props) {
                 <p className="flex flex-wrap gap-x-3 text-sm text-tenue">
                   {c.telefono && <a href={`tel:${c.telefono}`} className="flex items-center gap-1 hover:text-primario"><Phone className="size-3.5" />{c.telefono}</a>}
                   {c.email && <a href={`mailto:${c.email}`} className="flex items-center gap-1 truncate hover:text-primario"><Mail className="size-3.5" />{c.email}</a>}
+                  <Link href={`/subcuenta/${p.subId}/conversaciones?contacto=${c.id}`} className="flex items-center gap-1 font-medium text-primario hover:underline"><MessageSquare className="size-3.5" />Enviar mensaje</Link>
                 </p>
               </div>
             </div>

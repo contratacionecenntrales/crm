@@ -10,6 +10,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
   // Cada módulo se añade aquí cuando está construido de verdad.
   const principal: ElementoNav[] = [
     { href: base, etiqueta: 'Tablero', icono: 'tablero', exacto: true },
+    { href: `${base}/conversaciones`, etiqueta: 'Conversaciones', icono: 'conversaciones' },
     { href: `${base}/calendarios`, etiqueta: 'Calendarios', icono: 'calendarios' },
     { href: `${base}/contactos`, etiqueta: 'Contactos', icono: 'contactos', tambien: [`${base}/contacto/`] },
     { href: `${base}/oportunidades`, etiqueta: 'Clientes Potenciales', icono: 'oportunidades' },
@@ -24,6 +25,10 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
         { href: c, etiqueta: 'Perfil de empresa', exacto: true },
         { href: `${c}/usuarios`, etiqueta: 'Usuarios' },
         { href: `${c}/embudos`, etiqueta: 'Clientes Potenciales & Pipelines' },
+      ] },
+      { titulo: 'Servicios empresariales', elementos: [
+        { href: `${c}/telefonia`, etiqueta: 'Integración telefónica' },
+        { href: `${c}/correo`, etiqueta: 'Servicios de correo' },
       ] },
       { titulo: 'Otros ajustes', elementos: [
         { href: `${c}/campos`, etiqueta: 'Campos personalizados' },
