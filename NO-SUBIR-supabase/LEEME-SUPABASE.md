@@ -23,6 +23,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 11 | `11-configuracion.sql` | Ajustes de agencia: datos de empresa, marca blanca (logo, dominios, CSS, tema), expiración de sesión, anuncios y catálogo de etiquetas. Requiere el 10 |
 | 12 | `12-calendarios.sql` | Calendarios, horario semanal, citas (sin solapes por persona), franjas bloqueadas y reserva pública sin sesión. Requiere el 11 |
 | 13 | `13-conversaciones.sql` | Conversaciones: SMS/WhatsApp (Twilio), correo (Mailgun/SMTP), notas internas, fragmentos y analítica. Las claves de los proveedores solo las lee el servidor. Requiere el 12 |
+| 14 | `14-recordatorios.sql` | Avisos de cita (confirmación, recordatorios, cambios y cancelaciones) por correo/SMS/WhatsApp y cancelación por el cliente con enlace. Requiere el 13 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

@@ -5,9 +5,9 @@ import { crearClienteServidor } from '@/lib/supabase/server';
 import { usuarioActual } from '@/lib/sesion';
 import { mensajeDeError } from '@/lib/errores';
 import { leerFormulario, primerError } from '@/lib/validacion';
-import { CAMPOS_CALENDARIO, esquemaBloqueo, esquemaCalendario, esquemaCita, esquemaFranjas, slugCalendario } from '@/lib/calendario/validacion';
+import { CAMPOS_CALENDARIO, esquemaRecordatorios, esquemaBloqueo, esquemaCalendario, esquemaCita, esquemaFranjas, slugCalendario } from '@/lib/calendario/validacion';
 import { esDia, horaEn, instante, sumarDias } from '@/lib/calendario/tiempo';
-import type { EstadoCita } from '@/lib/calendario/tipos';
+import type { Aviso, EstadoCita } from '@/lib/calendario/tipos';
 import type { Resultado } from '@/lib/tipos';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -64,6 +64,7 @@ export async function guardarCita(subId: string, citaId: string | null, _: Resul
       ubicacion: d.ubicacion,
       estado: d.estado,
       notas: d.notas,
+      avisar: fd.get('avisar') === 'on',
     };
     const r = citaId
       ? (validarIds(citaId), await supabase.from('cal_citas').update(fila).eq('id', citaId).eq('subcuenta_id', subId).select('id').single())
@@ -195,8 +196,21 @@ export async function guardarCalendario(subId: string, calId: string | null, _: 
       return { ok: false, error: 'Un calendario personal solo puede tener una persona. Elige «Por turnos» para repartir entre varias.' };
     }
 
+    let recCrudos: unknown;
+    try {
+      recCrudos = JSON.parse(String(fd.get('recordatorios') ?? '[]'));
+    } catch {
+      return { ok: false, error: 'Recordatorios no válidos.' };
+    }
+    const recordatorios = esquemaRecordatorios.safeParse(recCrudos);
+    if (!recordatorios.success) return { ok: false, error: primerError(recordatorios.error) };
+    const avisos_canales = fd.getAll('avisos_canales').map(String).filter((x) => ['email', 'sms', 'whatsapp'].includes(x));
+
     const { supabase } = await contexto(subId);
-    const fila = { ...datos.data, equipo };
+    const fila = {
+      ...datos.data, equipo, recordatorios: recordatorios.data, avisos_canales,
+      aviso_confirmacion: fd.get('aviso_confirmacion') === 'on', permitir_cancelar: fd.get('permitir_cancelar') === 'on',
+    };
     const r = calId
       ? (validarIds(calId), await supabase.from('cal_calendarios').update(fila).eq('id', calId).eq('subcuenta_id', subId).select('id').single())
       : await supabase.from('cal_calendarios').insert({ ...fila, subcuenta_id: subId }).select('id').single();
@@ -253,4 +267,13 @@ export async function borrarCalendario(subId: string, calId: string): Promise<Re
   if (!r.data?.length) return { ok: false, error: 'No tienes permiso para borrar este calendario.' };
   refrescar(subId);
   return { ok: true };
+}
+
+// Avisos programados o enviados de una cita (para el formulario).
+export async function avisosDeCita(subId: string, citaId: string) {
+  if (!UUID.test(subId) || !UUID.test(citaId)) return [];
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from('cal_avisos').select('id, tipo, canal, enviar_en, estado, error')
+    .eq('cita_id', citaId).eq('subcuenta_id', subId).order('enviar_en').limit(50);
+  return (data ?? []) as Aviso[];
 }

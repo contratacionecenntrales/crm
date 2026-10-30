@@ -87,3 +87,31 @@ test('columnas para eventos que se solapan', () => {
   assert.equal(por.c, '0/2'); // reutiliza la columna de «a», que ya terminó
   assert.equal(por.d, '0/1');
 });
+
+import { antelacionTexto, rellenar, textoAviso } from '../lib/calendario/avisos.ts';
+
+const datos = { nombre: 'Luis', calendario: 'Consulta', empresa: 'Clínica Norte', fecha: 'jueves, 5 de noviembre', hora: '10:00', ubicacion: 'Calle Mayor 1', enlace: 'https://x.es/cita/abc' };
+
+test('avisos: texto por defecto con ubicación y enlace', () => {
+  const t = textoAviso('confirmacion', { confirmacion: '', recordatorio: '' }, datos);
+  assert.equal(t.cuerpo, 'Hola Luis, tu cita «Consulta» con Clínica Norte está confirmada para el jueves, 5 de noviembre a las 10:00. Lugar: Calle Mayor 1. Si no puedes venir, avísanos aquí: https://x.es/cita/abc');
+  assert.equal(t.asunto, 'Cita confirmada: Consulta el jueves, 5 de noviembre a las 10:00');
+  const sin = textoAviso('recordatorio', { confirmacion: '', recordatorio: '' }, { ...datos, ubicacion: '' });
+  assert.ok(sin.cuerpo.includes('a las 10:00. ¿No puedes venir?'));
+});
+
+test('avisos: plantilla propia y variables desconocidas', () => {
+  const t = textoAviso('recordatorio', { confirmacion: '', recordatorio: 'Mañana {{ hora }} en {{ubicacion}} {{otra}}' }, datos);
+  assert.equal(t.cuerpo, 'Mañana 10:00 en Calle Mayor 1 {{otra}}');
+  // Cambio y cancelación usan siempre su texto
+  assert.ok(textoAviso('cancelacion', { confirmacion: 'X', recordatorio: 'Y' }, datos).cuerpo.includes('ha sido cancelada'));
+  assert.equal(rellenar('{{nombre}}  y   {{empresa}}', datos), 'Luis y Clínica Norte');
+});
+
+test('avisos: antelación legible', () => {
+  assert.equal(antelacionTexto(1440), '1 día antes');
+  assert.equal(antelacionTexto(2880), '2 días antes');
+  assert.equal(antelacionTexto(60), '1 hora antes');
+  assert.equal(antelacionTexto(120), '2 horas antes');
+  assert.equal(antelacionTexto(90), '90 minutos antes');
+});

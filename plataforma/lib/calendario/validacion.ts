@@ -53,7 +53,14 @@ export const esquemaCalendario = z.object({
   }, 'Zona horaria no válida'),
   ubicacion: z.string().trim().max(500),
   confirmacion: z.string().trim().max(1000),
+  plantilla_confirmacion: z.string().trim().max(1600, 'La plantilla de confirmación es demasiado larga'),
+  plantilla_recordatorio: z.string().trim().max(1600, 'La plantilla de recordatorio es demasiado larga'),
 });
+
+// Avisos: canales marcados y antelaciones de los recordatorios (en minutos).
+export const esquemaRecordatorios = z.array(z.number().int().min(5, 'Un recordatorio necesita al menos 5 minutos de antelación')
+  .max(43200, 'Un recordatorio puede ir como mucho 30 días antes')).max(5, 'Máximo 5 recordatorios')
+  .transform((l) => [...new Set(l)].sort((a, b) => b - a));
 
 export const CAMPOS_CALENDARIO = Object.keys(esquemaCalendario.shape);
 

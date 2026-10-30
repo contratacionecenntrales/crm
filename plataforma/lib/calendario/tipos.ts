@@ -28,10 +28,16 @@ export interface Calendario {
   ubicacion: string;
   confirmacion: string;
   activo: boolean;
+  aviso_confirmacion: boolean;
+  avisos_canales: ('email' | 'sms' | 'whatsapp')[];
+  recordatorios: number[];
+  plantilla_confirmacion: string;
+  plantilla_recordatorio: string;
+  permitir_cancelar: boolean;
 }
 
 export const COLUMNAS_CALENDARIO =
-  'id, nombre, descripcion, slug, color, tipo, equipo, duracion_min, intervalo_min, antelacion_min, dias_reserva, margen_antes, margen_despues, max_por_dia, zona_horaria, ubicacion, confirmacion, activo';
+  'id, nombre, descripcion, slug, color, tipo, equipo, duracion_min, intervalo_min, antelacion_min, dias_reserva, margen_antes, margen_despues, max_por_dia, zona_horaria, ubicacion, confirmacion, activo, aviso_confirmacion, avisos_canales, recordatorios, plantilla_confirmacion, plantilla_recordatorio, permitir_cancelar';
 
 export interface Franja { dia: number; inicio: string; fin: string }
 
@@ -49,12 +55,13 @@ export interface Cita {
   notas: string;
   ubicacion: string;
   origen: 'interno' | 'reserva';
+  avisar: boolean;
   creado: string;
   contacto: ContactoCita | null;
 }
 
 export const COLUMNAS_CITA =
-  'id, calendario_id, contacto_id, asignado_id, titulo, inicio, fin, estado, notas, ubicacion, origen, creado, contacto:crm_contactos(id, nombre, apellidos, email, telefono)';
+  'id, calendario_id, contacto_id, asignado_id, titulo, inicio, fin, estado, notas, ubicacion, origen, avisar, creado, contacto:crm_contactos(id, nombre, apellidos, email, telefono)';
 
 export interface Bloqueo {
   id: string;
@@ -78,3 +85,12 @@ export function fondoSuave(hex: string, alfa = 0.14): string {
 
 export const nombrePersona = (u: { nombre: string; email: string } | undefined | null) =>
   u ? u.nombre || u.email.split('@')[0] : 'Sin asignar';
+
+export interface Aviso {
+  id: string;
+  tipo: 'confirmacion' | 'recordatorio' | 'cambio' | 'cancelacion';
+  canal: 'email' | 'sms' | 'whatsapp';
+  enviar_en: string;
+  estado: 'pendiente' | 'procesando' | 'enviado' | 'fallido' | 'omitido';
+  error: string;
+}

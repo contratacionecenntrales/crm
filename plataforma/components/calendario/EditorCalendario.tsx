@@ -9,6 +9,11 @@ import { DIAS_LARGOS } from '@/lib/calendario/tiempo';
 import { COLORES_CALENDARIO, nombrePersona, type Calendario, type Franja } from '@/lib/calendario/tipos';
 import type { Usuario } from '@/lib/crm/tipos';
 import { BotonCopiar } from './TablaCalendarios';
+import { POR_DEFECTO, VARIABLES, antelacionTexto, textoAviso } from '@/lib/calendario/avisos';
+
+const UNIDADES = [['1', 'minutos'], ['60', 'horas'], ['1440', 'días']] as const;
+const partirMinutos = (m: number): [number, string] => (m % 1440 === 0 ? [m / 1440, '1440'] : m % 60 === 0 ? [m / 60, '60'] : [m, '1']);
+const EJEMPLO = { nombre: 'Marta', empresa: 'tu empresa', fecha: 'jueves, 5 de noviembre', hora: '10:00', enlace: 'https://…/cita/…' };
 
 const etiqueta = 'mb-1.5 block text-sm font-medium text-[#344054] dark:text-texto-2';
 const ayuda = 'mt-1 block text-xs text-tenue';
@@ -16,6 +21,7 @@ const PESTANAS = [
   ['detalles', 'Detalles de la reunión'],
   ['disponibilidad', 'Disponibilidad'],
   ['preferencias', 'Preferencias de reserva'],
+  ['notificaciones', 'Notificaciones'],
   ['insertar', 'Enlace e inserción'],
 ] as const;
 type Pestana = (typeof PESTANAS)[number][0];
@@ -45,6 +51,9 @@ export function EditorCalendario({ subId, calendario: c, horario, usuarios, orig
   const [slug, setSlug] = useState(c.slug);
   const [franjas, setFranjas] = useState<Franja[]>(horario);
   const [zonas, setZonas] = useState<string[]>([c.zona_horaria]);
+  const [recordatorios, setRecordatorios] = useState<number[]>(c.recordatorios);
+  const [plantillas, setPlantillas] = useState({ confirmacion: c.plantilla_confirmacion, recordatorio: c.plantilla_recordatorio });
+  const [nombreCal, setNombreCal] = useState(c.nombre);
   useEffect(() => {
     try {
       const todas = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? [];
@@ -96,7 +105,7 @@ export function EditorCalendario({ subId, calendario: c, horario, usuarios, orig
           <div className="grid gap-5 md:grid-cols-2">
             <label className="block">
               <span className={etiqueta}>Nombre del calendario</span>
-              <input name="nombre" defaultValue={c.nombre} required maxLength={120} className={estiloInput} />
+              <input name="nombre" value={nombreCal} onChange={(e) => setNombreCal(e.target.value)} required maxLength={120} className={estiloInput} />
             </label>
             <label className="block">
               <span className={etiqueta}>Enlace de reserva</span>
@@ -223,6 +232,74 @@ export function EditorCalendario({ subId, calendario: c, horario, usuarios, orig
             <textarea name="confirmacion" defaultValue={c.confirmacion} rows={3} maxLength={1000} className={estiloArea}
               placeholder="Lo que verá el cliente al terminar la reserva. Ej.: «Te esperamos. Si no puedes venir, llámanos.»" />
           </label>
+        </section>
+
+        <section hidden={pestana !== 'notificaciones'} className="space-y-6">
+          <input type="hidden" name="recordatorios" value={JSON.stringify(recordatorios)} />
+          <fieldset>
+            <legend className={etiqueta}>Canales por los que se avisa al contacto</legend>
+            <div className="flex flex-wrap gap-2">
+              {([['email', 'Correo'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp']] as const).map(([v, t]) => (
+                <label key={v} className="flex cursor-pointer items-center gap-2 rounded-lg border border-borde-fuerte px-3 py-2 text-sm">
+                  <input type="checkbox" name="avisos_canales" value={v} defaultChecked={c.avisos_canales.includes(v)} className="size-4 accent-primario" /> {t}
+                </label>
+              ))}
+            </div>
+            <span className={ayuda}>Se envían desde Conversaciones con la cuenta configurada en Integración telefónica y Servicios de correo, y quedan en el historial del contacto.</span>
+          </fieldset>
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" name="aviso_confirmacion" defaultChecked={c.aviso_confirmacion} className="mt-0.5 size-4 accent-primario" />
+              <span><span className="block font-medium text-texto">Confirmación al reservar</span><span className="text-tenue">En cuanto se crea la cita. Los cambios de hora y las cancelaciones se avisan siempre.</span></span>
+            </label>
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" name="permitir_cancelar" defaultChecked={c.permitir_cancelar} className="mt-0.5 size-4 accent-primario" />
+              <span><span className="block font-medium text-texto">El cliente puede cancelar desde el enlace</span><span className="text-tenue">El enlace de los avisos abre una página con la cita y el botón «Cancelar mi cita».</span></span>
+            </label>
+          </div>
+          <div>
+            <span className={etiqueta}>Recordatorios</span>
+            <div className="space-y-2">
+              {recordatorios.length === 0 && <p className="text-sm text-tenue">Sin recordatorios.</p>}
+              {recordatorios.map((m, i) => {
+                const [n, u] = partirMinutos(m);
+                const poner = (nn: number, uu: string) => setRecordatorios((l) => l.map((x, j) => (j === i ? Math.max(1, nn) * Number(uu) : x)));
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <input type="number" min={1} value={n} onChange={(e) => poner(Number(e.target.value) || 1, u)} aria-label="Cantidad" className={`${estiloInput} w-24`} />
+                    <select value={u} onChange={(e) => poner(n, e.target.value)} aria-label="Unidad" className={`${estiloInput} w-32`}>
+                      {UNIDADES.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+                    </select>
+                    <span className="text-sm text-tenue">antes de la cita</span>
+                    <button type="button" aria-label="Quitar recordatorio" onClick={() => setRecordatorios((l) => l.filter((_, j) => j !== i))}
+                      className="rounded p-1.5 text-tenue hover:bg-superficie-2 hover:text-peligro"><Trash2 className="size-4" /></button>
+                  </div>
+                );
+              })}
+            </div>
+            {recordatorios.length < 5 && (
+              <button type="button" onClick={() => setRecordatorios((l) => [...l, l.includes(60) ? 120 : 60])} className={`${estilosBoton.fantasma} mt-2 text-primario-texto`}>
+                <Plus className="size-4" /> Añadir recordatorio
+              </button>
+            )}
+            {recordatorios.length > 0 && <span className={ayuda}>Se enviarán: {[...recordatorios].sort((a, b) => b - a).map(antelacionTexto).join(', ')}.</span>}
+          </div>
+          {(['confirmacion', 'recordatorio'] as const).map((tipo) => (
+            <div key={tipo} className="grid gap-4 lg:grid-cols-2">
+              <label className="block">
+                <span className={etiqueta}>Texto de {tipo === 'confirmacion' ? 'la confirmación' : 'los recordatorios'}</span>
+                <textarea name={`plantilla_${tipo}`} rows={5} maxLength={1600} value={plantillas[tipo]} placeholder={POR_DEFECTO[tipo]}
+                  onChange={(e) => setPlantillas((p) => ({ ...p, [tipo]: e.target.value }))} className={estiloArea} />
+                <span className={ayuda}>Vacío = el texto de ejemplo. Variables: {VARIABLES.map((v) => `{{${v.clave}}}`).join(' ')}</span>
+              </label>
+              <div>
+                <span className={etiqueta}>Vista previa</span>
+                <p className="whitespace-pre-wrap rounded-lg bg-[#eff4ff] px-3 py-2 text-sm text-[#101828]">
+                  {textoAviso(tipo, plantillas, { ...EJEMPLO, calendario: nombreCal || 'Calendario', ubicacion: c.ubicacion }).cuerpo}
+                </p>
+              </div>
+            </div>
+          ))}
         </section>
 
         <section hidden={pestana !== 'insertar'} className="space-y-5">

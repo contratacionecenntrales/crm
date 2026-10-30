@@ -2,13 +2,13 @@
 import Link from 'next/link';
 import { useActionState, useEffect, useMemo, useState, useTransition } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
-import { borrarCita, guardarCita, huecosDelDia } from '@/app/subcuenta/[id]/calendarios/acciones';
+import { avisosDeCita, borrarCita, guardarCita, huecosDelDia } from '@/app/subcuenta/[id]/calendarios/acciones';
 import { SelectorContacto } from '@/components/crm/SelectorContacto';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
 import { estiloArea, estiloInput, estilosBoton } from '@/components/ui/clases';
 import { diaEn, horaEn, sumarMinutosHora, type Dia } from '@/lib/calendario/tiempo';
-import { ESTADOS_CITA, nombrePersona, type Calendario, type Cita } from '@/lib/calendario/tipos';
+import { ESTADOS_CITA, nombrePersona, type Aviso as AvisoCita, type Calendario, type Cita } from '@/lib/calendario/tipos';
 import type { Usuario } from '@/lib/crm/tipos';
 
 const etiqueta = 'mb-1.5 block text-sm font-medium text-[#344054] dark:text-texto-2';
@@ -175,6 +175,11 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
         <span className={etiqueta}>Notas</span>
         <textarea name="notas" defaultValue={cita?.notas} rows={3} maxLength={5000} className={estiloArea} />
       </label>
+      <label className="flex items-start gap-2 text-sm text-[#344054] dark:text-texto-2">
+        <input type="checkbox" name="avisar" defaultChecked={cita?.avisar ?? true} className="mt-0.5 size-4 accent-primario" />
+        <span>Avisar al contacto <span className="text-tenue">(confirmación, cambios y recordatorios según el calendario)</span></span>
+      </label>
+      {cita && <AvisosCita subId={subId} citaId={cita.id} zona={zona} />}
 
       <Aviso estado={estado} />
       {errorBorrar && <Aviso estado={{ ok: false, error: errorBorrar }} />}
@@ -191,5 +196,39 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
         <BotonEnvio>{cita ? 'Guardar' : 'Reservar cita'}</BotonEnvio>
       </div>
     </form>
+  );
+}
+
+const TIPO_AVISO = { confirmacion: 'Confirmación', recordatorio: 'Recordatorio', cambio: 'Cambio de hora', cancelacion: 'Cancelación' };
+const ESTADO_AVISO = {
+  pendiente: ['Programado', 'bg-[#f2f4f7] text-[#344054]'], procesando: ['Enviando', 'bg-[#eff4ff] text-[#175cd3]'],
+  enviado: ['Enviado', 'bg-[#dcfae6] text-[#067647]'], fallido: ['Falló', 'bg-[#fee4e2] text-[#b42318]'], omitido: ['Omitido', 'bg-[#fef0c7] text-[#93370d]'],
+} as const;
+const CANAL_AVISO = { email: 'Correo', sms: 'SMS', whatsapp: 'WhatsApp' };
+
+function AvisosCita({ subId, citaId, zona }: { subId: string; citaId: string; zona: string }) {
+  const [lista, setLista] = useState<AvisoCita[] | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void avisosDeCita(subId, citaId).then((l) => vivo && setLista(l));
+    return () => { vivo = false; };
+  }, [subId, citaId]);
+  if (!lista || lista.length === 0) return null;
+  const f = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: zona });
+  return (
+    <div className="rounded-lg border border-borde">
+      <p className="border-b border-borde px-3 py-2 text-sm font-medium text-texto">Avisos al contacto</p>
+      <ul className="divide-y divide-borde text-sm">
+        {lista.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+            <span className="min-w-28 text-texto">{TIPO_AVISO[a.tipo]}</span>
+            <span className="text-tenue">{CANAL_AVISO[a.canal]}</span>
+            <span className="text-tenue">{f.format(new Date(a.enviar_en))}</span>
+            <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_AVISO[a.estado][1]}`} title={a.error || undefined}>{ESTADO_AVISO[a.estado][0]}</span>
+            {a.error && <span className="w-full text-xs text-[#b42318]">{a.error}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

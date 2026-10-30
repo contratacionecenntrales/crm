@@ -61,6 +61,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 3. `NO-SUBIR-supabase/11-configuracion.sql` — datos de empresa, marca blanca (logo, dominios, CSS, tema), expiración de sesión, anuncios y catálogo de etiquetas
 4. `NO-SUBIR-supabase/12-calendarios.sql` — calendarios, horarios, citas, franjas bloqueadas y página pública de reservas (`/reservar/<enlace>`)
 5. `NO-SUBIR-supabase/13-conversaciones.sql` — bandeja de Conversaciones (SMS, WhatsApp, correo y notas internas), fragmentos y ajustes de Twilio / Mailgun / SMTP
+6. `NO-SUBIR-supabase/14-recordatorios.sql` — avisos de cita (confirmación, recordatorios, cambios, cancelaciones) y enlace para que el cliente cancele
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -69,6 +70,25 @@ Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a
 - `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_SITE_URL` (con https) son **obligatorias**: el servidor lee con ellas las claves de Twilio/Mailgun, que nadie del equipo puede leer.
 - Cada subcuenta conecta su cuenta en **Configuración → Integración telefónica** (Twilio) y **Servicios de correo** (Mailgun o SMTP). Allí aparece la URL del webhook que hay que pegar en Twilio y en la «Route» de Mailgun para recibir respuestas.
 - Los webhooks comprueban la firma de Twilio (`X-Twilio-Signature`) y de Mailgun; las peticiones falsas se rechazan.
+
+### Recordatorios de citas
+
+Los avisos se envían desde `/api/cron/recordatorios`, que hay que llamar **cada 5 minutos** con la cabecera
+`Authorization: Bearer <CRON_SECRET>` (pon `CRON_SECRET` en las variables de entorno: una cadena larga al azar).
+
+- **Vercel Pro:** ya está programado en `vercel.json` (Vercel añade la cabecera solo).
+- **Vercel Hobby u otro alojamiento:** prográmalo desde Supabase (SQL Editor), cambiando dominio y secreto:
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+select cron.schedule('recordatorios-citas', '*/5 * * * *', $$
+  select net.http_post(
+    url := 'https://TU-DOMINIO/api/cron/recordatorios',
+    headers := jsonb_build_object('Authorization', 'Bearer TU_CRON_SECRET'),
+    body := '{}'::jsonb);
+$$);
+```
 
 ### 2 · Plantillas de correo de Supabase
 
@@ -132,11 +152,13 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/11-configuracion.sql \
      -f NO-SUBIR-supabase/12-calendarios.sql \
      -f NO-SUBIR-supabase/13-conversaciones.sql \
+     -f NO-SUBIR-supabase/14-recordatorios.sql \
      -f NO-SUBIR-supabase/test-agencias.sql \
      -f NO-SUBIR-supabase/test-crm.sql \
      -f NO-SUBIR-supabase/test-configuracion.sql \
      -f NO-SUBIR-supabase/test-calendarios.sql \
-     -f NO-SUBIR-supabase/test-conversaciones.sql
+     -f NO-SUBIR-supabase/test-conversaciones.sql \
+     -f NO-SUBIR-supabase/test-recordatorios.sql
 ```
 
 ## Estructura
