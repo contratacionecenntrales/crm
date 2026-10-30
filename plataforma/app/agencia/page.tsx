@@ -40,13 +40,13 @@ export default async function TableroAgencia() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-      <div className="flex items-end gap-6 border-b">
-        <h1 className="pb-3 text-2xl font-semibold sm:text-3xl">Tablero de la agencia</h1>
-        <span className="border-b-2 border-primario pb-3 text-sm font-medium text-primario">Resumen</span>
+      <div className="flex items-end gap-6 border-b border-borde">
+        <h1 className="pb-2 text-[28px] font-medium leading-10 text-[#101828] sm:text-[34px] dark:text-texto">Tablero de la agencia</h1>
+        <span className="border-b-2 border-primario px-3 pb-3 text-[17px] font-medium text-primario">Resumen</span>
       </div>
 
-      <h2 className="mt-6 text-lg text-texto">Visión general de ingresos y clientes</h2>
-      <p className="mt-3 flex gap-2 rounded-xl border border-blue-300 bg-primario-suave px-4 py-3 text-sm text-primario">
+      <h2 className="mt-6 text-[22px] font-normal leading-8 text-[#344054] dark:text-texto-2">Visión general de ingresos y clientes</h2>
+      <p className="mt-3 flex gap-2 rounded-xl border border-[#84caff] bg-[#f5faff] px-4 py-3 text-[15px] text-[#175cd3] dark:bg-primario-suave">
         <Info className="mt-0.5 size-4 shrink-0" />
         El MRR suma las suscripciones activas o impagadas de tus subcuentas. Los ingresos son los pagos registrados a mano o recibidos desde Stripe.
       </p>
@@ -63,8 +63,8 @@ export default async function TableroAgencia() {
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-lg border border-borde bg-superficie">
-          <h3 className="flex items-center gap-2 border-b px-5 py-4 font-semibold">
+        <section className="rounded-xl border border-borde bg-superficie shadow-[0_1px_3px_rgba(16,24,40,0.1)]">
+          <h3 className="flex items-center gap-2 border-b px-6 py-5 text-lg font-semibold text-[#101828] dark:text-texto">
             Tasa de crecimiento
             <span title="Evolución de los últimos 7 meses: subcuentas nuevas por mes, MRR a cierre de mes e ingresos cobrados." className="text-tenue">
               <Info className="size-4" />
@@ -74,8 +74,8 @@ export default async function TableroAgencia() {
             <GraficoCrecimiento serie={m.serie} moneda={m.moneda} />
           </div>
         </section>
-        <section className="rounded-lg border border-borde bg-superficie">
-          <h3 className="flex items-center justify-between gap-2 border-b px-5 py-4 font-semibold">
+        <section className="rounded-xl border border-borde bg-superficie shadow-[0_1px_3px_rgba(16,24,40,0.1)]">
+          <h3 className="flex items-center justify-between gap-2 border-b px-6 py-5 text-lg font-semibold text-[#101828] dark:text-texto">
             Distribución de ingresos del mes pasado
             <span title="Pagos del mes natural anterior agrupados por concepto." className="text-tenue">
               <Info className="size-4" />
@@ -88,7 +88,7 @@ export default async function TableroAgencia() {
       </div>
 
       <section className="mt-5 rounded-lg border border-borde bg-superficie">
-        <h3 className="border-b px-5 py-4 font-semibold">Actividad reciente</h3>
+        <h3 className="border-b px-6 py-5 text-lg font-semibold text-[#101828] dark:text-texto">Actividad reciente</h3>
         {(actividad.data ?? []).length === 0 ? (
           <p className="px-5 py-6 text-sm text-tenue">Todavía no hay actividad.</p>
         ) : (

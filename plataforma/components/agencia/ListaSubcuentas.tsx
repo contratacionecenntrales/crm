@@ -18,7 +18,44 @@ import { Facturacion } from './Facturacion';
 import { dinero, direccionCompleta, fecha } from '@/lib/formato';
 import type { Pago, Resultado, Subcuenta, Suscripcion } from '@/lib/tipos';
 
-const TONO_ETAPA = { 'Cerrado (Ganado)': 'azul', Prueba: 'ambar', Prospecto: 'gris', Cancelado: 'rojo' } as const;
+const ETAPA_CLASE = {
+  'Cerrado (Ganado)': 'border-[#84caff] bg-[#eff8ff] text-[#175cd3]',
+  Prueba: 'border-[#fedf89] bg-[#fffaeb] text-[#b54708]',
+  Prospecto: 'border-[#d0d5dd] bg-[#f9fafb] text-[#344054]',
+  Cancelado: 'border-[#fecdca] bg-[#fef3f2] text-[#b42318]',
+} as const;
+
+// Menú ⋮ de la cabecera: exportar la lista (lo que se ve, con el filtro aplicado).
+function MenuCabecera({ subcuentas, zona }: { subcuentas: Subcuenta[]; zona: string }) {
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+  useFueraDe(caja, abierto, () => setAbierto(false));
+  const exportar = () => {
+    const celda = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const filas = [['Nombre', 'Correo', 'Teléfono', 'Dirección', 'Etapa', 'Estado', 'Fecha de adición', 'Último inicio de sesión', 'ID']]
+      .concat(subcuentas.map((s) => [s.nombre, s.email ?? '', s.telefono ? `${s.prefijo} ${s.telefono}` : '', direccionCompleta(s), s.etapa, s.estado,
+        fecha(s.creado, zona), s.ultimo_acceso ? fecha(s.ultimo_acceso, zona) : '', s.id]));
+    const csv = '\ufeff' + filas.map((f) => f.map(celda).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `subcuentas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setAbierto(false);
+  };
+  return (
+    <div ref={caja} className="relative">
+      <button onClick={() => setAbierto((v) => !v)} aria-label="Más opciones" aria-expanded={abierto} className="rounded p-2 text-[#475467] hover:bg-superficie-2">
+        <MoreVertical className="size-5" />
+      </button>
+      {abierto && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-borde bg-superficie p-1 shadow-xl">
+          <ItemMenu onClick={exportar}>Exportar a CSV ({subcuentas.length})</ItemMenu>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type Dialogo =
   | { tipo: 'crear' }
@@ -53,14 +90,17 @@ export function ListaSubcuentas({ subcuentas, suscripciones, pagos, moneda, zona
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">Subcuentas</h1>
-        <Insignia>{subcuentas.length} {subcuentas.length === 1 ? 'Subcuenta' : 'Subcuentas'}</Insignia>
+        <h1 className="text-[28px] font-medium leading-9 text-[#101828] dark:text-texto">Subcuentas</h1>
+        <span className="rounded-full bg-[#eff8ff] px-3 py-0.5 text-sm font-medium text-[#175cd3]">
+          {subcuentas.length} {subcuentas.length === 1 ? 'Subcuenta' : 'Subcuentas'}
+        </span>
         <div className="flex-1" />
         {esAdmin && (
-          <button className={estilosBoton.primario} onClick={() => setDialogo({ tipo: 'crear' })}>
-            <UserPlus className="size-4" /> Crear Subcuenta
+          <button className={`${estilosBoton.primario} h-10 px-4`} onClick={() => setDialogo({ tipo: 'crear' })}>
+            <UserPlus className="size-5" /> Crear Subcuenta
           </button>
         )}
+        <MenuCabecera subcuentas={filtradas} zona={zona} />
       </div>
 
       <label className="relative mt-5 block">
@@ -130,14 +170,14 @@ function TarjetaSubcuenta({ s, suscripcion, moneda, zona, esAdmin, alAbrir, alAv
   };
 
   return (
-    <li className={`overflow-visible rounded-lg border border-borde bg-superficie ${suspendida ? 'opacity-75' : ''}`}>
+    <li className={`overflow-visible rounded-lg border border-borde bg-superficie shadow-[0_1px_3px_rgba(16,24,40,0.1)] ${suspendida ? 'opacity-75' : ''}`}>
       <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-[1fr_auto_auto] sm:gap-8 sm:p-6">
         <div className="flex min-w-0 gap-4">
           <Avatar nombre={s.nombre} url={s.logo_url} tam="size-14" suave />
           <div className="min-w-0 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="truncate text-lg">{s.nombre}</span>
-              <Insignia tono={TONO_ETAPA[s.etapa]}>{s.etapa}</Insignia>
+              <span className="truncate text-lg text-[#101828] dark:text-texto">{s.nombre}</span>
+              <span className={`rounded-full border px-2.5 py-0.5 text-sm ${ETAPA_CLASE[s.etapa]}`}>{s.etapa}</span>
               {suspendida && <Insignia tono="rojo">Suspendida</Insignia>}
             </div>
             {direccion && (
@@ -151,17 +191,17 @@ function TarjetaSubcuenta({ s, suscripcion, moneda, zona, esAdmin, alAbrir, alAv
         </div>
         <div>
           <p className="text-sm text-tenue">Fecha de adición</p>
-          <p className="mt-2 text-lg">{fecha(s.creado, zona)}</p>
+          <p className="mt-2 text-lg font-medium text-[#101828] dark:text-texto">{fecha(s.creado, zona)}</p>
         </div>
         <div>
           <p className="text-sm text-tenue">Último inicio de sesión</p>
-          <p className="mt-2 text-lg">{s.ultimo_acceso ? fecha(s.ultimo_acceso, zona) : 'Nunca'}</p>
+          <p className="mt-2 text-lg font-medium text-[#101828] dark:text-texto">{s.ultimo_acceso ? fecha(s.ultimo_acceso, zona) : 'Nunca'}</p>
           {esAdmin && suscripcion && suscripcion.estado !== 'cancelada' && (
             <p className="mt-1 text-xs text-tenue">{suscripcion.plan} · {dinero(suscripcion.importe_mensual, moneda)}/mes</p>
           )}
         </div>
       </div>
-      <div className="flex items-center border-t bg-superficie-2">
+      <div className="flex min-h-[72px] items-center rounded-b-lg border-t bg-[#f9fafb] dark:bg-superficie-2">
         <div className="flex-1" />
         <button
           disabled={pendiente || suspendida}

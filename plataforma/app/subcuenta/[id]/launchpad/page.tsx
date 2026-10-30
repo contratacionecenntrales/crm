@@ -38,68 +38,59 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
 
   const pasos = [
     { icono: Building2, titulo: 'Completa el perfil de tu empresa', texto: 'Correo, teléfono y dirección: aparecen en tus avisos y páginas de reserva.',
-      hecho: Boolean(subcuenta.email && subcuenta.telefono && subcuenta.direccion), href: `${base}/configuracion`, boton: 'Completar perfil' },
+      hecho: Boolean(subcuenta.email && subcuenta.telefono && subcuenta.direccion), href: `${base}/configuracion`, boton: 'Completar' },
     { icono: Users, titulo: 'Invita a tu equipo', texto: 'Da acceso a las personas que atenderán contactos, citas y mensajes.',
-      hecho: equipo > 0, href: `${base}/configuracion/usuarios`, boton: 'Añadir usuarios' },
+      hecho: equipo > 0, href: `${base}/configuracion/usuarios`, boton: 'Invitar' },
     { icono: BookUser, titulo: 'Importa tus contactos', texto: 'Sube un CSV o crea tus primeros contactos a mano.',
-      hecho: contactos > 0, href: `${base}/contactos?importar=1`, boton: 'Importar contactos' },
+      hecho: contactos > 0, href: `${base}/contactos?importar=1`, boton: 'Importar' },
     { icono: MessageSquare, titulo: 'Conecta SMS y WhatsApp', texto: 'Conecta tu cuenta de Twilio para escribir y recibir mensajes desde Conversaciones.',
-      hecho: Boolean(a?.twilio_sid && a?.twilio_numero_sms && s.twilio_token), href: `${base}/configuracion/telefonia`, boton: 'Conectar Twilio' },
+      hecho: Boolean(a?.twilio_sid && a?.twilio_numero_sms && s.twilio_token), href: `${base}/configuracion/telefonia`, boton: 'Conectar' },
     { icono: Mail, titulo: 'Configura el correo', texto: 'Mailgun o SMTP para enviar correos, confirmaciones y recordatorios.',
-      hecho: correoListo, href: `${base}/configuracion/correo`, boton: 'Configurar correo' },
+      hecho: correoListo, href: `${base}/configuracion/correo`, boton: 'Conectar' },
     { icono: CalendarDays, titulo: 'Crea tu calendario', texto: 'Define tu horario y comparte el enlace para que te reserven citas.',
-      hecho: calendarios > 0, href: `${base}/calendarios/configuracion`, boton: 'Crear calendario' },
+      hecho: calendarios > 0, href: `${base}/calendarios/configuracion`, boton: 'Crear' },
     { icono: CalendarCheck2, titulo: 'Recibe tu primera reserva online', texto: 'Comparte tu página de reserva en tu web, redes o WhatsApp.',
       hecho: reservas > 0, href: primerCal.data ? `/reservar/${primerCal.data.slug}` : `${base}/calendarios/configuracion`,
-      boton: primerCal.data ? 'Abrir página de reserva' : 'Crea antes un calendario', externo: Boolean(primerCal.data),
+      boton: primerCal.data ? 'Abrir página' : 'Crear calendario', externo: Boolean(primerCal.data),
       copiar: primerCal.data ? `${web}/reservar/${primerCal.data.slug}` : null },
     { icono: Network, titulo: 'Crea tu primera oportunidad', texto: 'Sigue cada venta en tu embudo, de nuevo lead a cerrado.',
-      hecho: oportunidades > 0, href: `${base}/oportunidades?nueva=1`, boton: 'Crear oportunidad' },
+      hecho: oportunidades > 0, href: `${base}/oportunidades?nueva=1`, boton: 'Crear' },
   ];
   const hechos = pasos.filter((p) => p.hecho).length;
   const pct = Math.round((hechos / pasos.length) * 100);
 
+  const verde = 'inline-flex h-12 min-w-[150px] items-center justify-center rounded px-5 text-[15px] font-semibold text-white shadow-xs bg-[#16803c] hover:bg-[#126a32]';
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 font-sans sm:p-6">
-      <section className="rounded-lg border border-borde bg-superficie p-6">
-        <h1 className="text-2xl font-semibold text-texto">Emprendamos juntos el camino del éxito</h1>
-        <p className="mt-1 text-sm text-tenue">
-          {hechos === pasos.length ? '¡Todo listo! Tu cuenta está configurada.' : `Completa estos pasos para sacar todo el partido a ${subcuenta.nombre}.`}
-        </p>
-        <div className="mt-5 flex items-center gap-3">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eaecf0]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-exito transition-all" style={{ width: `${pct}%` }} />
-          </div>
-          <span className="text-sm font-medium text-texto">{hechos} de {pasos.length} completados</span>
-        </div>
-      </section>
-
-      <ol className="space-y-3">
-        {pasos.map((p, i) => {
+    <div className="mx-auto max-w-[860px] px-4 py-8 font-sans sm:px-6">
+      <h1 className="mb-6 text-center text-[28px] font-medium leading-9 text-[#101828] dark:text-texto">Emprendamos juntos el camino del éxito</h1>
+      <p className="mb-4 text-center text-sm text-tenue">{hechos} de {pasos.length} pasos completados ({pct} %)</p>
+      <ol className="divide-y divide-borde overflow-hidden rounded border border-borde bg-superficie">
+        {pasos.map((p) => {
           const Icono = p.icono;
           const soloAdmin = !soyAdmin && /configuracion/.test(p.href);
           return (
-            <li key={p.titulo} className={`flex flex-wrap items-center gap-4 rounded-lg border bg-superficie p-4 ${p.hecho ? 'border-borde' : 'border-[#b2ccff]'}`}>
-              <span className={`flex size-10 shrink-0 items-center justify-center rounded-full ${p.hecho ? 'bg-[#dcfae6] text-[#067647]' : 'bg-primario-suave text-primario'}`}>
-                {p.hecho ? <Check className="size-5" /> : <Icono className="size-5" />}
+            <li key={p.titulo} className="flex flex-wrap items-center gap-5 px-6 py-5 sm:flex-nowrap">
+              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primario-suave text-primario">
+                <Icono className="size-7" strokeWidth={1.75} />
               </span>
-              <div className="min-w-0 flex-1">
-                <p className={`font-medium ${p.hecho ? 'text-tenue line-through' : 'text-texto'}`}><span className="text-tenue">{i + 1}.</span> {p.titulo}</p>
-                <p className="text-sm text-tenue">{p.texto}</p>
+              <div className="min-w-0 flex-1 text-[15px] leading-6 text-[#344054] dark:text-texto-2">
+                <p className="font-medium text-[#101828] dark:text-texto">{p.titulo}</p>
+                <p>{p.texto}</p>
               </div>
-              {p.hecho ? (
-                <span className="rounded-full bg-[#dcfae6] px-2.5 py-0.5 text-xs font-medium text-[#067647]">Completado</span>
-              ) : soloAdmin ? (
-                <span className="text-xs text-tenue">Lo hace un administrador</span>
-              ) : (
-                <div className="flex items-center gap-1">
-                  {'copiar' in p && p.copiar && <BotonCopiar texto={p.copiar} />}
-                  <Link href={p.href} target={'externo' in p && p.externo ? '_blank' : undefined}
-                    className="inline-flex h-9 items-center rounded-lg bg-primario px-3.5 text-sm font-semibold text-white shadow-xs hover:bg-primario-hover">
-                    {p.boton}
-                  </Link>
-                </div>
-              )}
+              <div className="flex w-[170px] shrink-0 items-center justify-center gap-1">
+                {p.hecho ? (
+                  <span className="flex size-14 items-center justify-center rounded-full bg-[#16803c] text-white" title="Completado" aria-label="Completado">
+                    <Check className="size-7" strokeWidth={2.5} />
+                  </span>
+                ) : soloAdmin ? (
+                  <span className="text-center text-xs text-tenue">Lo hace un administrador</span>
+                ) : (
+                  <>
+                    {'copiar' in p && p.copiar && <BotonCopiar texto={p.copiar} />}
+                    <Link href={p.href} target={'externo' in p && p.externo ? '_blank' : undefined} className={verde}>{p.boton}</Link>
+                  </>
+                )}
+              </div>
             </li>
           );
         })}
