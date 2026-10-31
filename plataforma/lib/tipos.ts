@@ -32,6 +32,10 @@ export interface Agencia {
   css_personalizado: string;
   tema_defecto: 'claro' | 'oscuro';
   expiracion_sesion_min: number | null;
+  sso_activo: boolean;
+  sso_proveedor: 'saml' | 'google' | 'azure';
+  sso_obligatorio: boolean;
+  sso_autoalta: boolean;
 }
 
 export interface Subcuenta {

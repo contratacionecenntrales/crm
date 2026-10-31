@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
     error = 'Enlace incompleto.';
   }
 
+  // Entrada por SSO / OAuth: alta automática en la agencia si está activada.
+  if (!error && codigo) await supabase.rpc('sso_unirse');
+
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('El enlace no es válido o ha caducado.')}`);
   }

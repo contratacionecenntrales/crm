@@ -16,6 +16,10 @@ export async function iniciarSesion(_: Resultado | null, fd: FormData): Promise<
   if (!email || !clave) return { ok: false, error: 'Escribe tu correo y tu contraseña.' };
 
   const supabase = await crearClienteServidor();
+  const { data: sso } = await supabase.rpc('sso_para_email', { p_email: email });
+  if ((sso as { obligatorio?: boolean } | null)?.obligatorio) {
+    return { ok: false, error: 'Tu empresa usa inicio de sesión único. Pulsa «Continuar con SSO».' };
+  }
   const { error } = await supabase.auth.signInWithPassword({ email, password: clave });
   if (error) {
     return {
@@ -52,4 +56,35 @@ export async function cambiarClave(_: Resultado | null, fd: FormData): Promise<R
   const { error } = await supabase.auth.updateUser({ password: clave });
   if (error) return { ok: false, error: error.message };
   redirect('/');
+}
+
+// Inicio de sesión único: según el dominio del correo, SAML (signInWithSSO)
+// o OAuth de Google / Microsoft. Supabase devuelve la URL del proveedor.
+export async function entrarConSso(_: Resultado | null, fd: FormData): Promise<Resultado> {
+  const email = String(fd.get('email') ?? '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Escribe tu correo de empresa.' };
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.rpc('sso_para_email', { p_email: email });
+  const sso = data as { dominio: string; proveedor: 'saml' | 'google' | 'azure' } | null;
+  if (!sso) return { ok: false, error: 'Tu empresa no tiene configurado el inicio de sesión único. Entra con tu contraseña.' };
+  const vuelta = `${siteUrl()}/auth/confirmar?siguiente=${encodeURIComponent(destinoSeguro(fd.get('siguiente')))}`;
+  let url: string | undefined;
+  if (sso.proveedor === 'saml') {
+    const r = await supabase.auth.signInWithSSO({ domain: sso.dominio, options: { redirectTo: vuelta } });
+    if (r.error) return { ok: false, error: /not found|no sso provider/i.test(r.error.message) ? 'El proveedor SAML de tu empresa aún no está registrado en el servidor.' : r.error.message };
+    url = r.data?.url;
+  } else {
+    const r = await supabase.auth.signInWithOAuth({
+      provider: sso.proveedor,
+      options: {
+        redirectTo: vuelta,
+        scopes: sso.proveedor === 'azure' ? 'email' : undefined,
+        queryParams: sso.proveedor === 'google' ? { hd: sso.dominio, login_hint: email } : { login_hint: email },
+      },
+    });
+    if (r.error) return { ok: false, error: r.error.message };
+    url = r.data?.url;
+  }
+  if (!url) return { ok: false, error: 'No se pudo iniciar el acceso con tu proveedor.' };
+  redirect(url);
 }

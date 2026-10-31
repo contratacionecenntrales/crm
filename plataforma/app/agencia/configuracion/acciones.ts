@@ -198,3 +198,22 @@ export async function quitarUsuario(tipo: 'agencia' | 'subcuenta', usuarioId: st
   revalidatePath('/agencia/configuracion/usuarios');
   return { ok: true };
 }
+
+// --- Inicio de sesión único (SSO) ---------------------------------------------------
+
+export async function guardarSso(_: Resultado | null, fd: FormData): Promise<Resultado> {
+  const { actual } = await exigirAgencia({ admin: true });
+  const proveedor = String(fd.get('sso_proveedor') ?? 'saml');
+  if (!['saml', 'google', 'azure'].includes(proveedor)) return { ok: false, error: 'Proveedor no válido.' };
+  const dominios = String(fd.get('sso_dominios') ?? '').split(/[\s,;]+/).map((d) => d.trim().toLowerCase().replace(/^@/, '')).filter(Boolean);
+  const malo = dominios.find((d) => !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(d));
+  if (malo) return { ok: false, error: `«${malo}» no es un dominio válido (ej. tuempresa.com).` };
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc('sso_guardar', {
+    p_agencia: actual.agencia.id, p_activo: fd.get('sso_activo') === 'on', p_proveedor: proveedor, p_dominios: dominios,
+    p_obligatorio: fd.get('sso_obligatorio') === 'on', p_autoalta: fd.get('sso_autoalta') === 'on',
+  });
+  if (error) return { ok: false, error: mensajeDeError(error) };
+  revalidatePath('/agencia/configuracion', 'layout');
+  return { ok: true, mensaje: 'Inicio de sesión único guardado.' };
+}

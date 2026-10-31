@@ -20,6 +20,11 @@ export function FormularioLogin({ siguiente }: { siguiente: string }) {
           ¿Has olvidado la contraseña?
         </Link>
       </p>
+      <div className="flex items-center gap-3 text-xs text-tenue"><span className="h-px flex-1 bg-borde" />o<span className="h-px flex-1 bg-borde" /></div>
+      <Link href={`/login/sso?siguiente=${encodeURIComponent(siguiente)}`}
+        className="flex h-9 w-full items-center justify-center rounded-lg border border-borde-fuerte bg-superficie text-sm font-semibold text-texto-2 shadow-xs hover:bg-superficie-2">
+        Continuar con SSO
+      </Link>
     </form>
   );
 }

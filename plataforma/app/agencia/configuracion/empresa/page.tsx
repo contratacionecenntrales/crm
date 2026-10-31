@@ -2,6 +2,9 @@ import { Copy } from 'lucide-react';
 import { exigirAgencia } from '@/lib/sesion';
 import { ContenedorAjustes, PestanasAjustes, TituloAjustes } from '@/components/ajustes/Piezas';
 import { Avanzada, Basicos, MarcaBlanca } from '@/components/ajustes/Empresa';
+import { AjustesSso } from '@/components/ajustes/Sso';
+import { crearClienteServidor } from '@/lib/supabase/server';
+import { siteUrl, supabaseUrl } from '@/lib/env';
 
 export const metadata = { title: 'Configuración de la empresa' };
 
@@ -20,6 +23,7 @@ export default async function PaginaEmpresa({ searchParams }: { searchParams: Pr
           { clave: 'basicos', texto: 'Detalles básicos', href: '?tab=basicos' },
           { clave: 'marca', texto: 'Marca Blanca', href: '?tab=marca' },
           { clave: 'avanzada', texto: 'Configuración avanzada', href: '?tab=avanzada' },
+          { clave: 'sso', texto: 'Inicio de sesión único (SSO)', href: '?tab=sso' },
         ]}
       />
       {tab === 'basicos' && (
@@ -32,7 +36,15 @@ export default async function PaginaEmpresa({ searchParams }: { searchParams: Pr
         </>
       )}
       {tab === 'marca' && (<><h2 className="mb-4 text-lg font-medium text-texto">Marca Blanca</h2><MarcaBlanca agencia={a} /></>)}
+      {tab === 'sso' && (<><h2 className="mb-4 text-lg font-medium text-texto">Inicio de sesión único (SSO)</h2>
+        <AjustesSso agencia={a} dominios={await dominiosSso(a.id)} supabase={supabaseUrl()} web={siteUrl()} /></>)}
       {tab === 'avanzada' && (<><h2 className="mb-4 text-lg font-medium text-texto">Configuración avanzada</h2><Avanzada agencia={a} /></>)}
     </ContenedorAjustes>
   );
+}
+
+async function dominiosSso(agenciaId: string): Promise<string[]> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from('sso_dominios').select('dominio').eq('agencia_id', agenciaId).order('dominio');
+  return (data ?? []).map((d) => d.dominio as string);
 }
