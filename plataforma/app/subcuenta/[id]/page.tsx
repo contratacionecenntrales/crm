@@ -5,6 +5,7 @@ import { subcuentaVisible } from '@/lib/sesion';
 import { asignablesDe, embudosDe, monedaDe } from '@/lib/crm/datos';
 import { BarrasValor, BotonPeriodo, EmbudoTabla, Indicador, Rosco, SelectorUrl } from '@/components/crm/GraficosTablero';
 import { dinero } from '@/lib/formato';
+import { diaEn, inicioMes, instante, sumarMeses } from '@/lib/calendario/tiempo';
 import { nombreContacto, type Tarea } from '@/lib/crm/tipos';
 
 export const metadata = { title: 'Tablero' };
@@ -15,14 +16,17 @@ const RANGOS = [
   { valor: 'todo', texto: 'Todo' },
 ];
 
-function rango(r: string): [Date, Date] {
+// Rangos del panel: los meses y años empiezan a medianoche en la zona de la subcuenta.
+function rango(r: string, zona: string): [Date, Date] {
   const ahora = new Date();
   const fin = new Date(ahora.getTime() + 60_000);
+  const hoy = diaEn(ahora, zona);
+  const inicio = (dia: string) => instante(dia, '00:00', zona);
   switch (r) {
     case '7': case '90': return [new Date(ahora.getTime() - Number(r) * 86_400_000), fin];
-    case 'mes': return [new Date(ahora.getFullYear(), ahora.getMonth(), 1), fin];
-    case 'mes_pasado': return [new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1), new Date(ahora.getFullYear(), ahora.getMonth(), 1)];
-    case 'anio': return [new Date(ahora.getFullYear(), 0, 1), fin];
+    case 'mes': return [inicio(inicioMes(hoy)), fin];
+    case 'mes_pasado': return [inicio(sumarMeses(hoy, -1)), inicio(inicioMes(hoy))];
+    case 'anio': return [inicio(hoy.slice(0, 4) + '-01-01'), fin];
     case 'todo': return [new Date('2000-01-01'), fin];
     default: return [new Date(ahora.getTime() - 30 * 86_400_000), fin];
   }
@@ -60,7 +64,7 @@ export default async function TableroSubcuenta({ params, searchParams }: { param
   const { subcuenta } = await subcuentaVisible(id);
   const [embudos, asignables, moneda] = await Promise.all([embudosDe(id), asignablesDe(id), monedaDe(id)]);
   const r = RANGOS.some((x) => x.valor === sp.r) ? sp.r! : '30';
-  const [desde, hasta] = rango(r);
+  const [desde, hasta] = rango(r, subcuenta.zona_horaria);
   const embEstado = embudos.find((e) => e.id === sp.ee)?.id ?? '';
   const embEtapas = embudos.find((e) => e.id === sp.eg)?.id ?? embudos[0]?.id ?? '';
 
@@ -149,7 +153,7 @@ export default async function TableroSubcuenta({ params, searchParams }: { param
               <li key={t.id} className="px-4 py-3 text-sm">
                 <p className="font-medium text-texto">{t.titulo}</p>
                 <p className="mt-0.5 flex flex-wrap gap-x-4 text-xs text-tenue">
-                  {t.vence && <span className={atrasada ? 'text-peligro' : ''}>{atrasada ? 'Atrasado' : 'Vence'} - {new Intl.DateTimeFormat('en-US', { timeZone: subcuenta.zona_horaria }).format(new Date(t.vence))}</span>}
+                  {t.vence && <span className={atrasada ? 'text-peligro' : ''}>{atrasada ? 'Atrasado' : 'Vence'} - {new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short', timeZone: subcuenta.zona_horaria }).format(new Date(t.vence))}</span>}
                   <span>Asignado a: {u ? u.nombre || u.email : 'Sin asignar'}</span>
                   {t.contacto && <Link href={`/subcuenta/${id}/contacto/${t.contacto.id}`} className="text-primario hover:underline">{nombreContacto(t.contacto)}</Link>}
                 </p>

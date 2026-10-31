@@ -22,7 +22,7 @@ export function GestorAnuncios({ anuncios, subcuentas }: { anuncios: Anuncio[]; 
   const [q, setQ] = useState('');
   const [dialogo, setDialogo] = useState<null | 'nuevo' | Anuncio>(null);
   const [aviso, setAviso] = useState<Resultado | null>(null);
-  const [, iniciar] = useTransition();
+  const [pendiente, iniciar] = useTransition();
   const lista = useMemo(() => anuncios.filter((a) => (!filtro || a.prioridad === filtro) && (!q || a.titulo.toLowerCase().includes(q.toLowerCase()))), [anuncios, filtro, q]);
 
   return (
@@ -65,7 +65,7 @@ export function GestorAnuncios({ anuncios, subcuentas }: { anuncios: Anuncio[]; 
                 <td className={`px-3 py-2.5 ${PRIORIDAD[a.prioridad][1]}`}>{PRIORIDAD[a.prioridad][0]}</td>
                 <td className="px-3 py-2.5 text-texto-2">{a.subcuentas.length ? `${a.subcuentas.length} subcuentas` : 'Todas'}</td>
                 <td className="px-3 py-2.5 text-texto-2">{FRECUENCIA[a.frecuencia]}</td>
-                <td className="px-3 py-2.5"><Interruptor defaultChecked={a.activo} onChange={(v) => iniciar(async () => setAviso(await alternarAnuncio(a.id, v)))} /></td>
+                <td className="px-3 py-2.5"><Interruptor checked={a.activo} ariaLabel={`Activar «${a.titulo}»`} disabled={pendiente} onChange={(v) => iniciar(async () => setAviso(await alternarAnuncio(a.id, v)))} /></td>
                 <td className="px-3 py-2.5 text-center">
                   <button onClick={() => setDialogo(a)} aria-label="Editar aviso" className="rounded p-1 text-texto-2 hover:text-primario"><Pencil className="size-4" /></button>
                   <button aria-label="Borrar aviso" className="rounded p-1 text-texto-2 hover:text-peligro"
@@ -105,6 +105,7 @@ function FormAnuncio({ anuncio: a, subcuentas, alTerminar }: { anuncio?: Anuncio
       </div>
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">Destino</legend>
+        <input type="hidden" name="destino" value={todas ? 'todas' : 'algunas'} />
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={todas} onChange={(e) => setTodas(e.target.checked)} className="size-4" /> Todas las subcuentas</label>
         {!todas && (
           <div className="mt-2 grid max-h-40 grid-cols-1 gap-1 overflow-y-auto rounded border p-2 sm:grid-cols-2">

@@ -9,7 +9,7 @@
   --font-menu: 'Roboto', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --color-primario: #155eef;
   --color-primario-hover: #004eeb;
-  --color-primario-texto: #004eeb;
+  --color-primario-texto: var(--primario-texto);
   --color-primario-suave: var(--primario-suave);
   --color-pestana: #38a0db;
   --color-fondo: var(--fondo);
@@ -39,6 +39,7 @@
   --tenue: #607179;
   --menu: #4b5563;
   --primario-suave: #eff4ff;
+  --primario-texto: #004eeb;
   --hover-menu: #f3f4f6;
   color-scheme: light;
 }
@@ -54,6 +55,7 @@
   --tenue: #9ca3af;
   --menu: #d1d5db;
   --primario-suave: #172554;
+  --primario-texto: #84adff;
   --hover-menu: #1f2937;
   color-scheme: dark;
 }

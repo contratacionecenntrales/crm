@@ -6,6 +6,7 @@ import { usuarioActual } from '@/lib/sesion';
 import { mensajeDeError } from '@/lib/errores';
 import { leerFormulario, primerError } from '@/lib/validacion';
 import type { Resultado } from '@/lib/tipos';
+import { numeroEs } from '@/lib/formato';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const uuid = (m: string) => z.string().trim().regex(UUID, m);
@@ -25,7 +26,7 @@ const esquemaOportunidad = z.object({
   contacto_id: uuid('Elige un contacto'),
   embudo_id: uuid('Elige un embudo'),
   etapa_id: uuid('Elige una etapa'),
-  valor: z.string().trim().transform((v) => (v === '' ? 0 : Number(v.replace(',', '.')))).refine((v) => Number.isFinite(v) && v >= 0, 'Importe no válido'),
+  valor: z.string().trim().transform((v) => (v === '' ? 0 : numeroEs(v))).refine((v) => Number.isFinite(v) && v >= 0, 'Importe no válido'),
   estado: z.enum(['abierta', 'ganada', 'perdida', 'abandonada']),
   propietario_id: z.string().trim().refine((v) => v === '' || UUID.test(v), 'Propietario no válido').transform((v) => v || null),
   fuente: z.string().trim().max(100),

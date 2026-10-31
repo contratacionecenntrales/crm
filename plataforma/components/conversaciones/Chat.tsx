@@ -116,7 +116,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
           )}
         </div>
         {conversacion && (
-          <div className="flex items-center gap-1 text-[#475467]">
+          <div className="flex items-center gap-1 text-[#475467] dark:text-texto-2">
             <div className="relative">
               <button type="button" onClick={() => setMenu(menu === 'asignar' ? null : 'asignar')} title="Asignar" aria-label="Asignar conversación" className="rounded p-1.5 hover:bg-superficie-2">
                 <UserPlus className="size-5" />
@@ -164,7 +164,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
           </div>
         )}
         <button type="button" onClick={alPanel} title={panelAbierto ? 'Ocultar detalles' : 'Ver detalles del contacto'} aria-label="Detalles del contacto"
-          className={`hidden rounded p-1.5 hover:bg-superficie-2 xl:block ${panelAbierto ? 'text-primario' : 'text-[#475467]'}`}>
+          className={`hidden rounded p-1.5 hover:bg-superficie-2 xl:block ${panelAbierto ? 'text-primario' : 'text-[#475467] dark:text-texto-2'}`}>
           <PanelRight className="size-5" />
         </button>
       </header>
@@ -176,7 +176,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
         {grupos.map((g) => (
           <div key={g.dia}>
             <div className="flex justify-center pb-2 pt-6">
-              <span className="inline-flex h-6 items-center rounded-full bg-[#f2f4f7] px-2.5 text-[13px] font-medium text-[#475467] dark:bg-superficie-2" suppressHydrationWarning>
+              <span className="inline-flex h-6 items-center rounded-full bg-[#f2f4f7] px-2.5 text-[13px] font-medium text-[#475467] dark:bg-superficie-2 dark:text-texto-2" suppressHydrationWarning>
                 {fechaChip(g.mensajes[0].creado)}
               </span>
             </div>
@@ -188,15 +188,15 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
                 return (
                   <li key={m.id} className={`flex items-end gap-2 ${sale ? 'justify-end' : 'justify-start'}`}>
                     {!sale && <AvatarContacto c={contacto} tam={28} />}
-                    <div className={`flex max-w-[75%] flex-col ${sale ? 'items-end' : 'items-start'}`}>
-                      <div className={`rounded-lg px-3 py-2 text-[14px] leading-[21px] text-[#101828] ${
+                    <div className={`flex min-w-0 max-w-[85%] flex-col sm:max-w-[75%] ${sale ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-full rounded-lg px-3 py-2 text-[14px] leading-[21px] text-[#101828] ${
                         nota ? 'border border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-50' : sale ? 'bg-[#eff4ff] dark:bg-primario-suave dark:text-texto' : 'bg-[#f2f4f7] dark:bg-superficie-2 dark:text-texto'}`}>
-                        {nota && <p className="mb-1 flex items-center gap-1 text-xs font-medium text-[#b54708]"><StickyNote className="size-3.5" /> Comentario interno</p>}
-                        {m.canal === 'email' && m.asunto && <p className="mb-1 font-semibold">{m.asunto}</p>}
-                        <p className="whitespace-pre-wrap break-words">{m.cuerpo}</p>
+                        {nota && <p className="mb-1 flex items-center gap-1 text-xs font-medium text-[#b54708] dark:text-amber-300"><StickyNote className="size-3.5" /> Comentario interno</p>}
+                        {m.canal === 'email' && m.asunto && <p className="mb-1 font-semibold [overflow-wrap:anywhere]">{m.asunto}</p>}
+                        <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.cuerpo}</p>
                         {m.estado === 'fallido' && (
                           <div className="mt-2 flex flex-col gap-1 border-t border-[#fecdca] pt-2">
-                            <p className="flex items-start gap-1.5 text-[13px] text-[#b42318]"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{m.error || 'No se pudo enviar.'}</p>
+                            <p className="flex items-start gap-1.5 text-[13px] text-[#b42318] dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{m.error || 'No se pudo enviar.'}</p>
                             {!m.id.startsWith('tmp-') && (
                               <button type="button" disabled={enviando} onClick={() => accion(() => reintentarMensaje(subId, m.id))}
                                 className="flex items-center gap-1 self-end text-[13px] font-medium text-primario-texto hover:underline">
@@ -210,7 +210,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
                         <Ic className="size-3" />
                         {sale && !nota && `${autor(m.autor_id)} · `}{hora(m.creado)}
                         {sale && !nota && ESTADO[m.estado] && (
-                          <span className={`flex items-center gap-0.5 ${m.estado === 'fallido' ? 'text-[#b42318]' : m.estado === 'leido' ? 'text-primario' : ''}`}>
+                          <span className={`flex items-center gap-0.5 ${m.estado === 'fallido' ? 'text-[#b42318] dark:text-red-300' : m.estado === 'leido' ? 'text-primario' : ''}`}>
                             · {m.estado === 'pendiente' ? <Loader2 className="size-3 animate-spin" /> : m.estado === 'enviado' ? <Check className="size-3" /> : m.estado !== 'fallido' ? <CheckCheck className="size-3" /> : null}
                             {ESTADO[m.estado]}
                           </span>
@@ -226,9 +226,9 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
       </div>
 
       <div className="shrink-0 px-4 pb-4">
-        {error && <p role="alert" className="mb-2 flex items-start gap-1.5 rounded-lg bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318]"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</p>}
-        {dnd && canal !== 'nota' && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708]">Este contacto tiene «No molestar» activado para {NOMBRE_CANAL[canal]}: el mensaje no se enviará.</p>}
-        {falta && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708]">{falta}</p>}
+        {error && <p role="alert" className="mb-2 flex items-start gap-1.5 rounded-lg bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318] dark:bg-red-950/40 dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</p>}
+        {dnd && canal !== 'nota' && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708] dark:bg-amber-950/40 dark:text-amber-300">Este contacto tiene «No molestar» activado para {NOMBRE_CANAL[canal]}: el mensaje no se enviará.</p>}
+        {falta && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708] dark:bg-amber-950/40 dark:text-amber-300">{falta}</p>}
         <div className={`overflow-hidden rounded-lg border ${canal === 'nota' ? 'border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40' : 'border-borde-fuerte bg-superficie'}`}>
           {canal === 'email' && (
             <input value={asunto} onChange={(e) => setAsunto(e.target.value)} placeholder="Asunto" maxLength={300}

@@ -10,6 +10,7 @@ import { comprobarStripe, secretosStripe } from '@/lib/pagos/stripe';
 import { enviarMensaje } from '@/app/subcuenta/[id]/conversaciones/acciones';
 import type { Linea, Metodo } from '@/lib/pagos/tipos';
 import type { Resultado } from '@/lib/tipos';
+import { numeroEs } from '@/lib/formato';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DIA = /^\d{4}-\d{2}-\d{2}$/;
@@ -140,7 +141,7 @@ export async function borrarFactura(subId: string, facturaId: string): Promise<R
 export async function registrarCobro(subId: string, facturaId: string | null, _: Resultado | null, fd: FormData): Promise<Resultado> {
   try {
     validar(facturaId);
-    const importe = Number(String(fd.get('importe') ?? '').replace(',', '.'));
+    const importe = numeroEs(fd.get('importe') ?? '');
     if (!(importe > 0) || importe > 1e10) return { ok: false, error: 'Importe no válido.' };
     const metodo = String(fd.get('metodo') ?? '') as Metodo;
     if (!['efectivo', 'transferencia', 'tarjeta', 'bizum', 'otro'].includes(metodo)) return { ok: false, error: 'Elige el método de pago.' };
@@ -195,8 +196,8 @@ export async function guardarProducto(subId: string, prodId: string | null, _: R
   try {
     validar(prodId);
     const nombre = String(fd.get('nombre') ?? '').trim();
-    const precio = Number(String(fd.get('precio') ?? '').replace(',', '.'));
-    const impuesto = Number(String(fd.get('impuesto') ?? '0').replace(',', '.'));
+    const precio = numeroEs(fd.get('precio') ?? '');
+    const impuesto = numeroEs(fd.get('impuesto') ?? '0');
     if (!nombre || nombre.length > 200) return { ok: false, error: 'Ponle un nombre al producto.' };
     if (!(precio >= 0) || precio > 1e10) return { ok: false, error: 'Precio no válido.' };
     if (!(impuesto >= 0 && impuesto <= 100)) return { ok: false, error: 'El impuesto va de 0 a 100 %.' };
@@ -233,7 +234,7 @@ export async function guardarAjustesPago(subId: string, _: Resultado | null, fd:
     const moneda = String(fd.get('moneda') ?? 'EUR').trim().toUpperCase();
     const prefijo = String(fd.get('prefijo') ?? '').trim();
     const siguiente = Number(fd.get('siguiente_numero'));
-    const impuesto = Number(String(fd.get('impuesto_defecto') ?? '0').replace(',', '.'));
+    const impuesto = numeroEs(fd.get('impuesto_defecto') ?? '0');
     if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, error: 'Moneda en formato ISO de 3 letras (EUR, USD…).' };
     if (!/^[A-Za-z0-9/_-]{0,12}$/.test(prefijo)) return { ok: false, error: 'El prefijo admite letras, números, guiones y barras (máx. 12).' };
     if (!Number.isInteger(siguiente) || siguiente < 1) return { ok: false, error: 'El siguiente número tiene que ser un entero mayor que 0.' };

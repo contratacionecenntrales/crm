@@ -147,7 +147,7 @@ export function Bandeja(p: Props) {
             <span key={b.v} className="contents">
               {i === 3 && <span aria-hidden className="my-1 h-px w-8 bg-borde-fuerte" />}
               <Link href={url({ b: b.v === 'equipo' ? null : b.v, c: null, contacto: null })} title={b.texto} aria-label={b.texto} aria-current={on ? 'page' : undefined}
-                className={`flex size-[38px] items-center justify-center rounded ${on ? 'bg-primario text-white' : 'text-[#475467] hover:bg-superficie'}`}>
+                className={`flex size-[38px] items-center justify-center rounded ${on ? 'bg-primario text-white' : 'text-[#475467] dark:text-texto-2 hover:bg-superficie'}`}>
                 <Icono className="size-5" strokeWidth={1.75} />
               </Link>
             </span>
@@ -155,7 +155,7 @@ export function Bandeja(p: Props) {
         })}
         <span aria-hidden className="my-1 h-px w-8 bg-borde-fuerte" />
         <button type="button" onClick={() => setNuevo(true)} title="Nuevo mensaje" aria-label="Nuevo mensaje"
-          className="flex size-[38px] items-center justify-center rounded text-[#475467] hover:bg-superficie">
+          className="flex size-[38px] items-center justify-center rounded text-[#475467] dark:text-texto-2 hover:bg-superficie">
           <SquarePen className="size-5" strokeWidth={1.75} />
         </button>
       </nav>
@@ -166,7 +166,7 @@ export function Bandeja(p: Props) {
           <div className="px-4 pt-4">
             <div className="flex items-center justify-between gap-2">
               <h1 className="m-0.5 min-w-0 truncate text-[16px] font-semibold leading-[19px] text-[#101828] dark:text-texto">{titulo}</h1>
-              <div className="flex shrink-0 items-center gap-1 text-[#475467]">
+              <div className="flex shrink-0 items-center gap-1 text-[#475467] dark:text-texto-2">
                 <button type="button" onClick={() => setBuscando((v) => !v)} title="Buscar" aria-label="Buscar" className="rounded p-1 hover:bg-superficie-2"><Search className="size-5" /></button>
                 <Link href={url({ o: p.orden === 'desc' ? 'asc' : null })} title={p.orden === 'desc' ? 'Más recientes primero' : 'Más antiguas primero'}
                   aria-label="Cambiar orden" className="rounded p-1 hover:bg-superficie-2"><ArrowUpDown className="size-5" /></Link>
@@ -188,7 +188,7 @@ export function Bandeja(p: Props) {
                   <Link key={f.v} href={url({ f: f.v === 'todo' ? null : f.v })} aria-current={on ? 'page' : undefined}
                     className={`-mb-px flex flex-col items-center gap-1 border-b-2 pb-2 pt-1 ${on ? 'border-primario' : 'border-transparent hover:border-borde-fuerte'}`}>
                     <span className="relative">
-                      <Icono className={`size-5 ${on ? 'text-[#101828]' : 'text-[#667085]'}`} strokeWidth={1.75} />
+                      <Icono className={`size-5 ${on ? 'text-[#101828] dark:text-texto' : 'text-[#667085]'}`} strokeWidth={1.75} />
                       {f.v === 'no_leidos' && noLeidas > 0 && (
                         <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded bg-primario px-1 text-center text-[10px] font-semibold leading-4 text-white">{noLeidas}</span>
                       )}
@@ -239,7 +239,7 @@ export function Bandeja(p: Props) {
                         <span className="flex items-start justify-between gap-2">
                           <span className={`truncate text-[14px] leading-[21px] text-[#475467] dark:text-texto-2 ${c.no_leidos ? 'font-bold' : 'font-semibold'}`}>{nombreContacto(c.contacto)}</span>
                           <span className="flex shrink-0 items-center gap-1">
-                            <span className="whitespace-nowrap text-[12px] leading-[18px] text-[#667085]" suppressHydrationWarning>{fechaFila(c.ultimo_mensaje_en)}</span>
+                            <span className="whitespace-nowrap text-[12px] leading-[18px] text-[#667085] dark:text-tenue" suppressHydrationWarning>{fechaFila(c.ultimo_mensaje_en)}</span>
                             {c.no_leidos > 0 && <span className="min-w-4 rounded bg-primario px-1 text-center text-[11px] font-semibold leading-4 text-white">{c.no_leidos}</span>}
                           </span>
                         </span>

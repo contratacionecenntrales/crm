@@ -112,3 +112,24 @@ test('teléfonos y claves', () => {
   assert.equal(slug('Tipo de Negocio'), 'tipo_de_negocio');
   assert.equal(slug('2º contacto'), 'c_2_contacto');
 });
+
+test('los filtros negativos incluyen los vacíos (NULL)', () => {
+  const { consulta } = aplicarFiltros(new Falso(), [
+    { campo: 'campo:sector', op: 'no_es', valor: 'Hotel, spa' },
+    { campo: 'campo:sector', op: 'no_contiene', valor: 'x' },
+    { campo: 'nombre', op: 'no_contiene', valor: 'y' },
+  ]);
+  assert.deepEqual(consulta.llamadas, [
+    'or campos->>sector.is.null,campos->>sector.not.ilike."Hotel, spa"',
+    'or campos->>sector.is.null,campos->>sector.not.ilike."%x%"',
+    'not nombre ilike %y%',
+  ]);
+});
+
+test('los filtros de fecha cortan a medianoche en la zona de la subcuenta', () => {
+  const { consulta } = aplicarFiltros(new Falso(), [
+    { campo: 'creado', op: 'despues', valor: '2026-07-01' },
+    { campo: 'fecha_nacimiento', op: 'antes', valor: '2000-01-01' },
+  ], { zona: 'Europe/Madrid' });
+  assert.deepEqual(consulta.llamadas, ['gte creado 2026-06-30T22:00:00.000Z', 'lt fecha_nacimiento 2000-01-01']);
+});

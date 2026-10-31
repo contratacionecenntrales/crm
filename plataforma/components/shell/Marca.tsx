@@ -1,7 +1,16 @@
 'use client';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { AlertTriangle, Info, X, XOctagon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { cerrarAnuncio } from '@/app/acciones-panel';
+
+// CSS de la agencia. No se aplica en su configuración: un CSS roto no debe
+// impedir entrar a arreglarlo. Se guarda sin «<», así no cierra la etiqueta.
+export function CssAgencia({ css }: { css: string }) {
+  const ruta = usePathname();
+  if (ruta.startsWith('/agencia/configuracion')) return null;
+  return <style dangerouslySetInnerHTML={{ __html: css.replace(/</g, '') }} />;
+}
 
 // Tema por defecto de la agencia, solo si el usuario no ha elegido uno.
 export function TemaPorDefecto({ tema }: { tema: 'claro' | 'oscuro' }) {
@@ -12,6 +21,19 @@ export function TemaPorDefecto({ tema }: { tema: 'claro' | 'oscuro' }) {
       /* sin almacenamiento */
     }
   }, [tema]);
+  // Con «Sistema», seguir los cambios del sistema operativo en vivo.
+  useEffect(() => {
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const cambiar = () => {
+      try {
+        if (localStorage.getItem('tema') === 'sistema') document.documentElement.classList.toggle('dark', mq.matches);
+      } catch {
+        /* nada */
+      }
+    };
+    mq.addEventListener('change', cambiar);
+    return () => mq.removeEventListener('change', cambiar);
+  }, []);
   return null;
 }
 

@@ -89,7 +89,9 @@ export function TablaContactos(p: Props) {
   const navegar = (cambios: Record<string, string | null>) => {
     const sp = new URLSearchParams(params.toString());
     for (const [k, v] of Object.entries(cambios)) {
-      if (v === null || v === '') sp.delete(k);
+      // Con una lista abierta, «q=» vacío anula la búsqueda guardada (si se borrase, volvería la de la lista).
+      if (v === '' && k === 'q' && p.listaActual?.busqueda) sp.set(k, '');
+      else if (v === null || v === '') sp.delete(k);
       else sp.set(k, v);
     }
     if (!('p' in cambios)) sp.delete('p');

@@ -96,13 +96,13 @@ export function Reserva({ slug, info }: { slug: string; info: InfoCalendario }) 
         // eslint-disable-next-line @next/next/no-img-element
         ? <img src={info.logo_url} alt={info.empresa} className="max-h-12 max-w-[180px] object-contain" />
         : <p className="text-sm font-semibold text-tenue">{info.empresa}</p>}
-      <h1 className="text-xl font-semibold text-[#101828]">{info.nombre}</h1>
-      <ul className="space-y-2 text-sm text-[#475467]">
+      <h1 className="text-xl font-semibold text-[#101828] dark:text-texto">{info.nombre}</h1>
+      <ul className="space-y-2 text-sm text-[#475467] dark:text-texto-2">
         <li className="flex items-center gap-2"><Clock className="size-4 shrink-0" />{duracionTexto(info.duracion_min)}</li>
         {info.ubicacion && <li className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0" /><span className="break-words">{info.ubicacion}</span></li>}
-        {dia && hora && <li className="flex items-start gap-2 font-medium text-[#101828]"><CalendarCheck className="mt-0.5 size-4 shrink-0" />{fmtHora(hora)}, {fechaLarga(diaEn(new Date(hora), zona))}</li>}
+        {dia && hora && <li className="flex items-start gap-2 font-medium text-[#101828] dark:text-texto"><CalendarCheck className="mt-0.5 size-4 shrink-0" />{fmtHora(hora)}, {fechaLarga(diaEn(new Date(hora), zona))}</li>}
       </ul>
-      {info.descripcion && <p className="whitespace-pre-line text-sm text-[#475467]">{info.descripcion}</p>}
+      {info.descripcion && <p className="whitespace-pre-line text-sm text-[#475467] dark:text-texto-2">{info.descripcion}</p>}
     </div>
   );
 
@@ -110,18 +110,18 @@ export function Reserva({ slug, info }: { slug: string; info: InfoCalendario }) 
     return (
       <div className="w-full max-w-lg self-start rounded-xl border border-borde bg-white p-8 text-center shadow-sm">
         <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-[#dcfae6] text-[#067647]"><CalendarCheck className="size-6" /></span>
-        <h1 className="text-xl font-semibold text-[#101828]">¡Cita confirmada!</h1>
-        <p className="mt-2 text-[#475467]">{info.nombre} con {info.empresa}</p>
-        <p className="mt-4 text-lg font-medium capitalize text-[#101828]">{fechaLarga(diaEn(new Date(resultado.inicio), zona))}</p>
-        <p className="text-[#475467]">{fmtHora(resultado.inicio)} – {fmtHora(resultado.fin)} ({zona.replace(/_/g, ' ')})</p>
-        {resultado.ubicacion && <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-[#475467]"><MapPin className="size-4" />{resultado.ubicacion}</p>}
-        {resultado.confirmacion && <p className="mt-5 whitespace-pre-line rounded-lg bg-[#f9fafb] p-4 text-sm text-[#344054]">{resultado.confirmacion}</p>}
+        <h1 className="text-xl font-semibold text-[#101828] dark:text-texto">¡Cita confirmada!</h1>
+        <p className="mt-2 text-[#475467] dark:text-texto-2">{info.nombre} con {info.empresa}</p>
+        <p className="mt-4 text-lg font-medium capitalize text-[#101828] dark:text-texto">{fechaLarga(diaEn(new Date(resultado.inicio), zona))}</p>
+        <p className="text-[#475467] dark:text-texto-2">{fmtHora(resultado.inicio)} – {fmtHora(resultado.fin)} ({zona.replace(/_/g, ' ')})</p>
+        {resultado.ubicacion && <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-[#475467] dark:text-texto-2"><MapPin className="size-4" />{resultado.ubicacion}</p>}
+        {resultado.confirmacion && <p className="mt-5 whitespace-pre-line rounded-lg bg-[#f9fafb] p-4 text-sm text-[#344054] dark:text-texto-2">{resultado.confirmacion}</p>}
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1000px] self-start overflow-hidden rounded-xl border border-borde bg-white text-[#101828] shadow-sm md:flex">
+    <div className="w-full max-w-[1000px] self-start overflow-hidden rounded-xl border border-borde bg-white text-[#101828] dark:text-texto shadow-sm md:flex">
       {cabecera}
       {paso === 'elegir' ? (
         <div className="flex-1 p-6">
@@ -153,7 +153,7 @@ export function Reserva({ slug, info }: { slug: string; info: InfoCalendario }) 
                 <p className="text-sm text-tenue">No quedan horas libres este mes. Prueba con el siguiente.</p>
               ) : (
                 <>
-                  <p className="mb-3 text-sm font-medium capitalize text-[#344054]">{fechaLarga(dia)}</p>
+                  <p className="mb-3 text-sm font-medium capitalize text-[#344054] dark:text-texto-2">{fechaLarga(dia)}</p>
                   <div className="grid max-h-[360px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
                     {(porDia.get(dia) ?? []).map((t) => (
                       <button key={t} type="button" onClick={() => setHora(t)}
@@ -173,7 +173,7 @@ export function Reserva({ slug, info }: { slug: string; info: InfoCalendario }) 
         </div>
       ) : (
         <form action={accion} className="flex-1 space-y-4 p-6">
-          <button type="button" onClick={() => setPaso('elegir')} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#475467] hover:text-primario-texto">
+          <button type="button" onClick={() => setPaso('elegir')} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#475467] dark:text-texto-2 hover:text-primario-texto">
             <ArrowLeft className="size-4" /> Cambiar la hora
           </button>
           <h2 className="text-lg font-semibold">Tus datos</h2>
@@ -185,7 +185,7 @@ export function Reserva({ slug, info }: { slug: string; info: InfoCalendario }) 
           </div>
           <label className="block"><span className={etiqueta}>¿Algo que debamos saber?</span><textarea name="notas" rows={3} maxLength={2000} className={estiloArea} /></label>
           <input name="web" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-          <label className="flex items-start gap-2 text-sm text-[#475467]">
+          <label className="flex items-start gap-2 text-sm text-[#475467] dark:text-texto-2">
             <input type="checkbox" name="acepto" required className="mt-0.5 size-4 accent-primario" />
             <span>
               Acepto que {info.empresa} use mis datos para gestionar esta cita

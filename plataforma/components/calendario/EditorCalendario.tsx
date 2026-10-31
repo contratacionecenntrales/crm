@@ -294,7 +294,7 @@ export function EditorCalendario({ subId, calendario: c, horario, usuarios, orig
               </label>
               <div>
                 <span className={etiqueta}>Vista previa</span>
-                <p className="whitespace-pre-wrap rounded-lg bg-[#eff4ff] px-3 py-2 text-sm text-[#101828]">
+                <p className="whitespace-pre-wrap rounded-lg bg-[#eff4ff] px-3 py-2 text-sm text-[#101828] dark:text-texto">
                   {textoAviso(tipo, plantillas, { ...EJEMPLO, calendario: nombreCal || 'Calendario', ubicacion: c.ubicacion }).cuerpo}
                 </p>
               </div>

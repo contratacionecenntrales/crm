@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { rutaInterna } from '@/lib/red/ruta';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { crearClienteServidor } from '@/lib/supabase/server';
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   const tipo = searchParams.get('type') as EmailOtpType | null;
   const codigo = searchParams.get('code');
   const pedido = searchParams.get('siguiente') ?? '/';
-  const siguiente = pedido.startsWith('/') && !pedido.startsWith('//') ? pedido : '/';
+  const siguiente = rutaInterna(pedido);
 
   const supabase = await crearClienteServidor();
   let error: string | null = null;
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (!error && codigo) await supabase.rpc('sso_unirse');
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('El enlace no es válido o ha caducado.')}`);
+    return NextResponse.redirect(`${origin}/login?error=enlace`);
   }
   // Invitaciones y recuperaciones siempre pasan por crear contraseña.
   const destino = tipo === 'invite' || tipo === 'recovery' ? '/auth/nueva-clave' : siguiente;

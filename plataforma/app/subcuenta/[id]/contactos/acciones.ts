@@ -1,6 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { esDia, instante } from '@/lib/calendario/tiempo';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { usuarioActual } from '@/lib/sesion';
@@ -273,6 +274,7 @@ export async function importarTrozo(
 
     const nuevos: Record<string, unknown>[] = [];
     const numFilaNuevo: number[] = [];
+    const nuevoPorCorreo = new Map<string, number>(); // correo repetido dentro del propio CSV
     for (let i = 0; i < entrada.filas.length; i++) {
       const f = entrada.filas[i];
       const n = entrada.inicio + i;
@@ -314,8 +316,16 @@ export async function importarTrozo(
         const previo = email ? existentes.get(email) : undefined;
         if (previo) {
           if (entrada.duplicados === 'omitir') continue;
-          // Solo se sobrescriben los campos que trae el CSV.
-          const cambios = Object.fromEntries(Object.entries(fila).filter(([k, v]) => v !== '' && v !== null && (k !== 'fuente' || f.fuente)));
+          // Solo se sobrescriben los campos que trae el CSV (el tipo, solo si viene).
+          const cambios = Object.fromEntries(Object.entries(fila).filter(([k, v]) => v !== '' && v !== null && (k !== 'fuente' || f.fuente) && (k !== 'tipo' || tipoTxt)));
+          const idx = nuevoPorCorreo.get(email);
+          if (idx !== undefined) {
+            // Ya viene antes en este mismo archivo: se fusiona con esa fila.
+            const p = nuevos[idx];
+            nuevos[idx] = { ...p, ...cambios, etiquetas: Array.from(new Set([...(p.etiquetas as string[]), ...etiquetas])), campos: { ...(p.campos as object), ...camposFila } };
+            res.actualizados++;
+            continue;
+          }
           const { error } = await supabase
             .from('crm_contactos')
             .update({ ...cambios, etiquetas: Array.from(new Set([...previo.etiquetas, ...etiquetas])), campos: { ...previo.campos, ...camposFila } })
@@ -323,7 +333,10 @@ export async function importarTrozo(
           if (error) throw new Error(mensajeDeError(error));
           res.actualizados++;
         } else {
-          if (email) existentes.set(email, { id: '', etiquetas, campos: camposFila }); // duplicado dentro del propio CSV
+          if (email) {
+            existentes.set(email, { id: '', etiquetas, campos: camposFila });
+            nuevoPorCorreo.set(email, nuevos.length);
+          }
           nuevos.push({ ...fila, etiquetas, campos: camposFila, subcuenta_id: subId, creado_por: usuario.id });
           numFilaNuevo.push(n);
         }
@@ -404,23 +417,23 @@ export async function borrarNota(subId: string, notaId: string): Promise<Resulta
 const esquemaTarea = z.object({
   titulo: z.string().trim().min(1, 'Pon un título').max(200),
   descripcion: z.string().trim().max(5000),
-  vence: z.string().trim().refine((v) => v === '' || !Number.isNaN(Date.parse(v)), 'Fecha no válida'),
+  vence: z.string().trim().refine((v) => v === '' || /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/.test(v), 'Fecha no válida'),
   asignado_id: z.string().trim().refine((v) => v === '' || UUID.test(v), 'Persona no válida'),
   contacto_id: z.string().trim().refine((v) => v === '' || UUID.test(v), 'Contacto no válido'),
-  zona: z.string().trim(),
 });
 
-// `vence` llega como "AAAA-MM-DDTHH:MM" en la hora local del navegador; `zona`
-// es su desfase en minutos (getTimezoneOffset) para guardarlo bien en UTC.
+// `vence` llega como "AAAA-MM-DDTHH:MM" en la hora de la zona de la subcuenta.
 export async function guardarTarea(subId: string, tareaId: string | null, _: Resultado | null, fd: FormData): Promise<Resultado> {
-  const datos = esquemaTarea.safeParse(leerFormulario(fd, ['titulo', 'descripcion', 'vence', 'asignado_id', 'contacto_id', 'zona']));
+  const datos = esquemaTarea.safeParse(leerFormulario(fd, ['titulo', 'descripcion', 'vence', 'asignado_id', 'contacto_id']));
   if (!datos.success) return { ok: false, error: primerError(datos.error) };
   const { supabase } = await contexto(subId);
   const d = datos.data;
   let vence: string | null = null;
   if (d.vence) {
-    const desfase = Number(d.zona) || 0;
-    vence = new Date(Date.parse(d.vence + 'Z') + desfase * 60_000).toISOString();
+    const { data: sc } = await supabase.from('subcuentas').select('zona_horaria').eq('id', subId).maybeSingle();
+    const [dia, hora] = d.vence.split('T');
+    if (!esDia(dia)) return { ok: false, error: 'Fecha no válida' };
+    vence = instante(dia, hora, (sc?.zona_horaria as string | undefined) ?? 'Europe/Madrid').toISOString();
   }
   const fila = { titulo: d.titulo, descripcion: d.descripcion, vence, asignado_id: d.asignado_id || null, contacto_id: d.contacto_id || null };
   const r = tareaId

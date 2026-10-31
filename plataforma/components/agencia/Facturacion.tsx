@@ -1,5 +1,5 @@
 'use client';
-import { useActionState, useTransition } from 'react';
+import { useActionState, useState, useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { borrarPago, guardarSuscripcion, registrarPago } from '@/app/agencia/acciones';
 import { Campo, Selector } from '@/components/ui/Campo';
@@ -18,6 +18,7 @@ export function Facturacion({ subcuentaId, suscripcion, pagos, moneda }: {
   const [estadoPlan, accionPlan] = useActionState(guardarSuscripcion, null);
   const [estadoPago, accionPago] = useActionState(registrarPago, null);
   const [pendiente, iniciar] = useTransition();
+  const [errorBorrar, setErrorBorrar] = useState('');
   const deStripe = Boolean(suscripcion?.stripe_subscription_id);
 
   return (
@@ -54,6 +55,7 @@ export function Facturacion({ subcuentaId, suscripcion, pagos, moneda }: {
 
       <section className="border-t pt-5">
         <h3 className="mb-3 font-semibold">Últimos pagos</h3>
+        {errorBorrar && <p role="alert" className="mb-2 text-sm text-peligro">{errorBorrar}</p>}
         {pagos.length === 0 ? (
           <p className="text-sm text-tenue">Sin pagos registrados.</p>
         ) : (
@@ -65,7 +67,10 @@ export function Facturacion({ subcuentaId, suscripcion, pagos, moneda }: {
                 {p.origen === 'stripe' && <Insignia tono="gris">Stripe</Insignia>}
                 <span className="font-medium">{dinero(p.importe, moneda)}</span>
                 {p.origen === 'manual' && (
-                  <button disabled={pendiente} onClick={() => iniciar(async () => void (await borrarPago(p.id)))}
+                  <button disabled={pendiente} onClick={() => iniciar(async () => {
+                    const r = await borrarPago(p.id);
+                    setErrorBorrar(r.ok ? '' : r.error ?? 'No se pudo borrar el pago.');
+                  })}
                     aria-label="Borrar pago" className="rounded p-1 text-tenue hover:text-peligro">
                     <Trash2 className="size-4" />
                   </button>

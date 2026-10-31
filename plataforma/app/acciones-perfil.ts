@@ -1,5 +1,6 @@
 'use server';
 import { z } from 'zod';
+import { mensajeDeAuth } from '@/lib/errores';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { usuarioActual } from '@/lib/sesion';
 import { siteUrl } from '@/lib/env';
@@ -21,7 +22,7 @@ export async function guardarPerfil(_: Resultado | null, fd: FormData): Promise<
   const { error } = await supabase.auth.updateUser({
     data: { nombre: nombreCompleto, nombre_pila: d.data.nombre, apellidos: d.data.apellidos, telefono: d.data.telefono.replace(/\s/g, '') },
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: mensajeDeAuth(error) };
   return { ok: true, mensaje: 'Perfil guardado.' };
 }
 
@@ -32,7 +33,7 @@ export async function cambiarCorreo(_: Resultado | null, fd: FormData): Promise<
   if (email === usuario.email) return { ok: false, error: 'Es el mismo correo que ya tienes.' };
   const supabase = await crearClienteServidor();
   const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${siteUrl()}/auth/confirmar` });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: mensajeDeAuth(error) };
   return { ok: true, mensaje: `Te hemos enviado un enlace a ${email} para confirmar el cambio.` };
 }
 
@@ -48,6 +49,6 @@ export async function cambiarContrasena(_: Resultado | null, fd: FormData): Prom
   const { error: e1 } = await supabase.auth.signInWithPassword({ email: usuario.email ?? '', password: actual });
   if (e1) return { ok: false, error: 'La contraseña actual no es correcta.' };
   const { error } = await supabase.auth.updateUser({ password: nueva });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: mensajeDeAuth(error) };
   return { ok: true, mensaje: 'Contraseña cambiada.' };
 }

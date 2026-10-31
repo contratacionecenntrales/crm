@@ -45,7 +45,7 @@ function MenuCabecera({ subcuentas, zona }: { subcuentas: Subcuenta[]; zona: str
   };
   return (
     <div ref={caja} className="relative">
-      <button onClick={() => setAbierto((v) => !v)} aria-label="Más opciones" aria-expanded={abierto} className="rounded p-2 text-[#475467] hover:bg-superficie-2">
+      <button onClick={() => setAbierto((v) => !v)} aria-label="Más opciones" aria-expanded={abierto} className="rounded p-2 text-[#475467] dark:text-texto-2 hover:bg-superficie-2">
         <MoreVertical className="size-5" />
       </button>
       {abierto && (
@@ -205,7 +205,10 @@ function TarjetaSubcuenta({ s, suscripcion, moneda, zona, esAdmin, alAbrir, alAv
         <div className="flex-1" />
         <button
           disabled={pendiente || suspendida}
-          onClick={() => iniciar(() => entrarEnSubcuenta(s.id))}
+          onClick={() => iniciar(async () => {
+            const r = await entrarEnSubcuenta(s.id);
+            if (r && !r.ok) alAviso(r);
+          })}
           className="flex items-center gap-2 px-5 py-3 text-sm font-medium text-primario hover:underline disabled:text-tenue disabled:no-underline"
         >
           <ArrowLeftRight className="size-4" /> Cambiar a subcuenta

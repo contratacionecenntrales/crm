@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { normalizarTelefono } from './csv.ts';
 import type { Campo, ValorCampo } from './tipos';
+import { numeroEs } from '../formato.ts';
 
 const t = (max: number) => z.string().trim().max(max, `Máximo ${max} caracteres`);
 
@@ -68,7 +69,7 @@ export function valorCampo(campo: Campo, crudo: string | string[] | undefined): 
   switch (campo.tipo) {
     case 'numero':
     case 'moneda': {
-      const n = Number(texto.replace(',', '.'));
+      const n = numeroEs(texto);
       if (!Number.isFinite(n)) throw error('tiene que ser un número');
       return n;
     }

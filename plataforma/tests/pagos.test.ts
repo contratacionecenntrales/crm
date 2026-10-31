@@ -26,3 +26,15 @@ test('estado visible', () => {
   assert.equal(estadoVisible({ estado: 'enviada', vencimiento: null, cobrado: 10 }, '2026-10-31'), 'parcial');
   assert.equal(estadoVisible({ estado: 'pagada', vencimiento: '2026-10-01', cobrado: 10 }, '2026-10-31'), 'pagada');
 });
+
+test('numeroEs entiende formato español e inglés', async () => {
+  const { numeroEs } = await import('../lib/formato.ts');
+  assert.equal(numeroEs('1.500,50'), 1500.5);
+  assert.equal(numeroEs('1,500.50'), 1500.5);
+  assert.equal(numeroEs('1.500'), 1500);
+  assert.equal(numeroEs('1,5'), 1.5);
+  assert.equal(numeroEs('0.125'), 0.125);
+  assert.equal(numeroEs('21 %'), 21);
+  assert.ok(Number.isNaN(numeroEs('abc')));
+  assert.ok(Number.isNaN(numeroEs('')));
+});

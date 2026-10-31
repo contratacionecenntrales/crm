@@ -52,3 +52,23 @@ export function direccionCompleta(s: { direccion: string; ciudad: string; provin
     .filter(Boolean)
     .join(', ');
 }
+
+// Número escrito a la española o a la inglesa: «1.500,50», «1500,5», «1,500.50»,
+// «1.500» (mil quinientos), «12 %». NaN si no es un número.
+export function numeroEs(valor: unknown): number {
+  let t = String(valor ?? '').trim().replace(/[\s €$%]/g, '');
+  if (!t) return NaN;
+  const coma = t.lastIndexOf(',');
+  const punto = t.lastIndexOf('.');
+  if (coma >= 0 && punto >= 0) {
+    t = coma > punto ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  } else if (coma >= 0) {
+    t = (t.match(/,/g) ?? []).length > 1 ? t.replace(/,/g, '') : t.replace(',', '.');
+  } else if (punto >= 0) {
+    const varios = (t.match(/\./g) ?? []).length > 1;
+    const miles = /^-?[1-9]\d{0,2}\.\d{3}$/.test(t);
+    if (varios || miles) t = t.replace(/\./g, '');
+  }
+  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return NaN;
+  return Number(t);
+}

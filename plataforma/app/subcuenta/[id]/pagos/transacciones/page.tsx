@@ -34,7 +34,7 @@ export default async function PaginaTransacciones({ params }: { params: Promise<
                 <td className="px-4 py-2.5">{t.factura_id && t.factura ? <Link href={`/subcuenta/${id}/pagos/facturas/${t.factura_id}`} className="text-primario-texto hover:underline">{t.factura.numero}</Link> : '—'}</td>
                 <td className="px-4 py-2.5">{t.contacto ? <Link href={`/subcuenta/${id}/contacto/${t.contacto.id}`} className="hover:underline">{nombreContacto(t.contacto)}</Link> : '—'}</td>
                 <td className="max-w-[200px] truncate px-4 py-2.5">{t.referencia || '—'}</td>
-                <td className="px-4 py-2.5">{t.estado === 'completada' ? <span className="rounded-full bg-[#dcfae6] px-2.5 py-0.5 text-xs font-medium text-[#067647]">Completada</span> : <span className="rounded-full bg-[#f2f4f7] px-2.5 py-0.5 text-xs font-medium text-[#344054]">Reembolsada</span>}</td>
+                <td className="px-4 py-2.5">{t.estado === 'completada' ? <span className="rounded-full bg-[#dcfae6] px-2.5 py-0.5 text-xs font-medium text-[#067647]">Completada</span> : <span className="rounded-full bg-[#f2f4f7] dark:bg-superficie-2 px-2.5 py-0.5 text-xs font-medium text-[#344054] dark:text-texto-2">Reembolsada</span>}</td>
               </tr>
             ))}
           </tbody>

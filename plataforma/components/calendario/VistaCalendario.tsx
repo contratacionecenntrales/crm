@@ -290,7 +290,7 @@ function SinCalendarios({ subId, soyAdmin, base }: { subId: string; soyAdmin: bo
   const router = useRouter();
   return (
     <div className="mx-4 my-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#b2ccff] bg-[#f5f8ff] px-4 py-3 text-sm">
-      <p className="flex-1 text-[#344054]">
+      <p className="flex-1 text-[#344054] dark:text-texto-2">
         <span className="font-semibold">Todavía no hay calendarios.</span>{' '}
         {soyAdmin ? 'Crea el primero para recibir reservas y organizar citas.' : 'Pide a un administrador que cree uno.'}
       </p>
@@ -390,7 +390,7 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
                 <div key={dias[i]} className="space-y-0.5 border-r border-t p-0.5" style={{ borderColor: LINEA }}>
                   {todoElDia.map((b) => (
                     <button key={b.id} type="button" onClick={() => alBloqueo(b)}
-                      className="block w-full truncate rounded bg-[repeating-linear-gradient(135deg,#f2f4f7,#f2f4f7_6px,#e4e7ec_6px,#e4e7ec_12px)] px-1.5 text-left text-xs font-medium text-[#475467]">
+                      className="block w-full truncate rounded bg-[repeating-linear-gradient(135deg,#f2f4f7,#f2f4f7_6px,#e4e7ec_6px,#e4e7ec_12px)] dark:bg-[repeating-linear-gradient(135deg,#1f2937,#1f2937_6px,#111827_6px,#111827_12px)] px-1.5 text-left text-xs font-medium text-[#475467] dark:text-texto-2">
                       {b.titulo}
                     </button>
                   ))}
@@ -441,7 +441,7 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
                     const b = pz.bloqueo;
                     return (
                       <button key={'b' + b.id} type="button" onClick={() => alBloqueo(b)} style={estilo}
-                        className="absolute z-[1] overflow-hidden rounded border border-[#d0d5dd] bg-[repeating-linear-gradient(135deg,#f9fafb,#f9fafb_6px,#eaecf0_6px,#eaecf0_12px)] px-1.5 py-0.5 text-left text-xs leading-4 text-[#475467]">
+                        className="absolute z-[1] overflow-hidden rounded border border-[#d0d5dd] bg-[repeating-linear-gradient(135deg,#f9fafb,#f9fafb_6px,#eaecf0_6px,#eaecf0_12px)] dark:bg-[repeating-linear-gradient(135deg,#1f2937,#1f2937_6px,#111827_6px,#111827_12px)] dark:border-borde-fuerte px-1.5 py-0.5 text-left text-xs leading-4 text-[#475467] dark:text-texto-2">
                         <span className="block truncate font-semibold">{b.titulo}</span>
                         <span className="block truncate">{horaEn(new Date(b.inicio), zona)} – {horaEn(new Date(b.fin), zona)}</span>
                       </button>
@@ -492,7 +492,7 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
                         {horaEn(new Date(c.inicio), zona)} – {horaEn(new Date(c.fin), zona)}
                         {c.asignado_id && ` · ${nombrePersona(usuarios.find((u) => u.usuario_id === c.asignado_id))}`}
                       </span>
-                      {c.contacto && pz.fin - pz.ini >= 60 && <span className="block truncate text-[#475467]">{nombreContacto(c.contacto)}</span>}
+                      {c.contacto && pz.fin - pz.ini >= 60 && <span className="block truncate text-[#475467] dark:text-texto-2">{nombreContacto(c.contacto)}</span>}
                     </button>
                   );
                 })}
@@ -505,8 +505,8 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
                   return (
                     <div className="pointer-events-none absolute inset-x-0.5 z-10 rounded border-l-[3px] px-1.5 py-0.5 text-xs leading-4 shadow-lg ring-2 ring-primario/40"
                       style={{ top: fantasma.min * PX_MIN + 1, height: Math.max(20, dur * PX_MIN - 2), background: fondoSuave(cal?.color ?? '#155eef', 0.3), borderLeftColor: cal?.color }}>
-                      <span className="block truncate font-semibold text-[#101828]">{c.titulo}</span>
-                      <span className="block text-[#344054]">{hh(fantasma.min)} – {hh(fantasma.min + dur)}</span>
+                      <span className="block truncate font-semibold text-[#101828] dark:text-texto">{c.titulo}</span>
+                      <span className="block text-[#344054] dark:text-texto-2">{hh(fantasma.min)} – {hh(fantasma.min + dur)}</span>
                     </div>
                   );
                 })()}
@@ -554,7 +554,7 @@ function RejillaMes({ dia, hoy, zona, citas, bloqueos, porCal, alDia, alVacio, a
           const x = porDia.get(d)!;
           const items = [
             ...x.bloqueos.map((b) => ({ k: 'b' + b.id, orden: b.todo_el_dia ? '' : b.inicio, nodo: (
-              <button type="button" onClick={() => alBloqueo(b)} className="block w-full truncate rounded bg-[#f2f4f7] px-1.5 text-left text-xs text-[#475467]">
+              <button type="button" onClick={() => alBloqueo(b)} className="block w-full truncate rounded bg-[#f2f4f7] px-1.5 text-left dark:bg-superficie-2 text-xs text-[#475467] dark:text-texto-2">
                 {b.todo_el_dia ? '' : horaEn(new Date(b.inicio), zona) + ' '}{b.titulo}
               </button>) })),
             ...x.citas.map((c) => ({ k: 'c' + c.id, orden: c.inicio, nodo: (
@@ -639,7 +639,7 @@ function PanelVista({ filtros, cambiar, usuarios, calendarios, alCerrar }: {
           {hayFiltros && <button type="button" onClick={() => cambiar(SIN_FILTROS)} className="text-xs font-medium text-primario-texto hover:underline">Quitar filtros</button>}
         </div>
         <div className="relative mx-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#667085]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#667085] dark:text-tenue" />
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar usuarios, calendarios o grupos"
             className="h-[34px] w-full rounded-lg border border-borde-fuerte bg-superficie pl-9 pr-3 text-sm text-texto shadow-xs placeholder:text-[#667085] focus:border-primario focus:outline-none" />
         </div>

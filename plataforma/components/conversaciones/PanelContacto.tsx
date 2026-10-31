@@ -48,13 +48,13 @@ export function PanelContacto({ subId, contacto: c, asignables, etiquetas, alCer
     <aside className={`hidden w-[300px] shrink-0 flex-col overflow-y-auto rounded-lg bg-superficie p-4 font-sans xl:flex ${pendiente ? 'opacity-80' : ''}`} aria-label="Detalles de contacto">
       <div className="mb-2 flex h-8 items-center justify-between">
         <p className="text-sm font-medium text-[#101828] dark:text-texto">Detalles de Contacto</p>
-        <button type="button" onClick={alCerrar} aria-label="Cerrar detalles" className="rounded p-1 text-[#475467] hover:bg-superficie-2"><X className="size-4" /></button>
+        <button type="button" onClick={alCerrar} aria-label="Cerrar detalles" className="rounded p-1 text-[#475467] dark:text-texto-2 hover:bg-superficie-2"><X className="size-4" /></button>
       </div>
       <div className="space-y-4 rounded-lg border border-borde p-3">
         <div className="flex items-center gap-3">
           <AvatarContacto c={c} />
           <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#101828] dark:text-texto">{nombreContacto(c)}</span>
-          <Link href={`/subcuenta/${subId}/contacto/${c.id}`} title="Ver detalles de contacto" aria-label="Ver detalles de contacto" className="text-[#475467] hover:text-primario">
+          <Link href={`/subcuenta/${subId}/contacto/${c.id}`} title="Ver detalles de contacto" aria-label="Ver detalles de contacto" className="text-[#475467] dark:text-texto-2 hover:text-primario">
             <ExternalLink className="size-4" />
           </Link>
         </div>
@@ -70,7 +70,7 @@ export function PanelContacto({ subId, contacto: c, asignables, etiquetas, alCer
           <span className="mb-1 block text-sm font-medium text-[#475467] dark:text-texto-2">Etiquetas ({tags.length})</span>
           <div className="flex flex-wrap gap-1">
             {tags.map((t) => (
-              <span key={t} className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#f2f4f7] px-2 py-0.5 text-xs font-medium text-[#475467]">
+              <span key={t} className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#f2f4f7] dark:bg-superficie-2 px-2 py-0.5 text-xs font-medium text-[#475467] dark:text-texto-2">
                 <span className="truncate">{t}</span>
                 <button type="button" aria-label={`Quitar ${t}`} onClick={() => ponerTags(tags.filter((x) => x !== t))} className="hover:text-peligro"><X className="size-3" /></button>
               </span>
@@ -85,7 +85,7 @@ export function PanelContacto({ subId, contacto: c, asignables, etiquetas, alCer
             <input list={`etiquetas-${c.id}`} value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Añadir etiqueta" maxLength={60}
               className="h-8 min-w-0 flex-1 rounded border border-borde-fuerte bg-superficie px-2 text-sm text-texto focus:border-primario focus:outline-none" />
             <datalist id={`etiquetas-${c.id}`}>{etiquetas.filter((e) => !tags.includes(e)).map((e) => <option key={e} value={e} />)}</datalist>
-            <button aria-label="Añadir etiqueta" className="rounded border border-borde-fuerte px-2 text-[#475467] hover:bg-superficie-2"><Plus className="size-4" /></button>
+            <button aria-label="Añadir etiqueta" className="rounded border border-borde-fuerte px-2 text-[#475467] dark:text-texto-2 hover:bg-superficie-2"><Plus className="size-4" /></button>
           </form>
         </div>
       </div>
@@ -108,7 +108,7 @@ export function PanelContacto({ subId, contacto: c, asignables, etiquetas, alCer
             <dl className="space-y-4 px-4 py-4">
               {campos.map(([k, v]) => (
                 <div key={k}>
-                  <dt className="text-sm text-[#667085]">{k}</dt>
+                  <dt className="text-sm text-[#667085] dark:text-tenue">{k}</dt>
                   <dd className="break-words text-sm font-medium text-[#101828] dark:text-texto">{v || '--'}</dd>
                 </div>
               ))}

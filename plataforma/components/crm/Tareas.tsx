@@ -9,34 +9,31 @@ import { Aviso } from '@/components/ui/Aviso';
 import { estiloInput, estiloArea } from '@/components/ui/clases';
 import { SelectorContacto } from './SelectorContacto';
 import { nombreContacto, type Tarea, type Usuario } from '@/lib/crm/tipos';
+import { diaEn, horaEn } from '@/lib/calendario/tiempo';
 
-// "AAAA-MM-DDTHH:MM" en hora local del navegador, para <input type="datetime-local">.
-function aLocal(iso: string | null) {
+// "AAAA-MM-DDTHH:MM" en la zona de la subcuenta, para <input type="datetime-local">.
+function aLocal(iso: string | null, zona: string) {
   if (!iso) return '';
   const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${diaEn(d, zona)}T${horaEn(d, zona)}`;
 }
 
-export function FormularioTarea({ subId, tarea, contactoFijo, asignables, yo, alGuardar }: {
-  subId: string; tarea?: Tarea; contactoFijo?: string; asignables: Usuario[]; yo: string; alGuardar: () => void;
+export function FormularioTarea({ subId, tarea, contactoFijo, asignables, yo, zona, alGuardar }: {
+  subId: string; tarea?: Tarea; contactoFijo?: string; asignables: Usuario[]; yo: string; zona: string; alGuardar: () => void;
 }) {
   const [estado, accion] = useActionState(guardarTarea.bind(null, subId, tarea?.id ?? null), null);
-  const [zona, setZona] = useState('0');
-  useEffect(() => setZona(String(new Date().getTimezoneOffset())), []);
   useEffect(() => {
     if (estado?.ok) alGuardar();
   }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
-      <input type="hidden" name="zona" value={zona} />
       <Campo etiqueta="Título" name="titulo" defaultValue={tarea?.titulo} required maxLength={200} />
       <label className="block">
         <span className="mb-1 block text-sm font-medium">Descripción</span>
         <textarea name="descripcion" defaultValue={tarea?.descripcion} rows={3} maxLength={5000} className={estiloArea} />
       </label>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Campo etiqueta="Vence" name="vence" type="datetime-local" defaultValue={aLocal(tarea?.vence ?? null)} />
+        <Campo etiqueta="Vence" name="vence" type="datetime-local" defaultValue={aLocal(tarea?.vence ?? null, zona)} ayuda={`Hora de ${zona.replace(/_/g, ' ')}`} />
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Asignado a</span>
           <select name="asignado_id" defaultValue={tarea ? tarea.asignado_id ?? '' : yo} className={estiloInput}>

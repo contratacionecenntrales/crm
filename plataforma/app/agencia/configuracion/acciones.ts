@@ -110,13 +110,15 @@ export async function guardarAnuncio(anuncioId: string | null, _: Resultado | nu
   const { actual } = await exigirAgencia({ admin: true });
   const d = esquemaAnuncio.safeParse(leerFormulario(fd, ['titulo', 'cuerpo', 'enlace', 'prioridad', 'frecuencia']));
   if (!d.success) return { ok: false, error: primerError(d.error) };
-  const subcuentas = fd.getAll('subcuentas').map(String).filter((x) => UUID.test(x));
+  const subcuentas = fd.get('destino') === 'todas' ? [] : [...new Set(fd.getAll('subcuentas').map(String).filter((x) => UUID.test(x)))];
+  if (fd.get('destino') === 'algunas' && !subcuentas.length) return { ok: false, error: 'Elige al menos una subcuenta o marca «Todas las subcuentas».' };
   const fila = { ...d.data, subcuentas, activo: fd.get('activo') === 'on' };
   const supabase = await crearClienteServidor();
   const r = anuncioId
     ? (UUID.test(anuncioId) ? await supabase.from('anuncios').update(fila).eq('id', anuncioId).select('id') : { data: null, error: { message: 'Anuncio no válido.' } })
     : await supabase.from('anuncios').insert({ ...fila, agencia_id: actual.agencia.id }).select('id');
   if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+  if (!r.data?.length) return { ok: false, error: 'No se encontró el anuncio o no tienes permiso.' };
   revalidatePath('/agencia/configuracion/anuncios');
   return { ok: true, mensaje: 'Anuncio guardado.' };
 }
@@ -125,8 +127,9 @@ export async function alternarAnuncio(anuncioId: string, activo: boolean): Promi
   await exigirAgencia({ admin: true });
   if (!UUID.test(anuncioId)) return { ok: false, error: 'Anuncio no válido.' };
   const supabase = await crearClienteServidor();
-  const { error } = await supabase.from('anuncios').update({ activo }).eq('id', anuncioId);
+  const { data, error } = await supabase.from('anuncios').update({ activo }).eq('id', anuncioId).select('id');
   if (error) return { ok: false, error: mensajeDeError(error) };
+  if (!data?.length) return { ok: false, error: 'No se encontró el anuncio o no tienes permiso.' };
   revalidatePath('/agencia/configuracion/anuncios');
   return { ok: true };
 }
@@ -135,8 +138,9 @@ export async function borrarAnuncio(anuncioId: string): Promise<Resultado> {
   await exigirAgencia({ admin: true });
   if (!UUID.test(anuncioId)) return { ok: false, error: 'Anuncio no válido.' };
   const supabase = await crearClienteServidor();
-  const { error } = await supabase.from('anuncios').delete().eq('id', anuncioId);
+  const { data, error } = await supabase.from('anuncios').delete().eq('id', anuncioId).select('id');
   if (error) return { ok: false, error: mensajeDeError(error) };
+  if (!data?.length) return { ok: false, error: 'No se encontró el anuncio o no tienes permiso.' };
   revalidatePath('/agencia/configuracion/anuncios');
   return { ok: true };
 }
@@ -178,6 +182,9 @@ export async function anadirUsuario(_: Resultado | null, fd: FormData): Promise<
 export async function cambiarRolUsuario(tipo: 'agencia' | 'subcuenta', usuarioId: string, subcuentaId: string | null, rol: string): Promise<Resultado> {
   const { actual } = await exigirAgencia({ admin: true });
   if (!UUID.test(usuarioId)) return { ok: false, error: 'Usuario no válido.' };
+  const roles = tipo === 'agencia' ? ['propietario', 'admin', 'usuario'] : tipo === 'subcuenta' ? ['admin', 'usuario'] : [];
+  if (!roles.includes(rol)) return { ok: false, error: 'Rol no válido.' };
+  if (tipo === 'subcuenta' && !UUID.test(subcuentaId ?? '')) return { ok: false, error: 'Subcuenta no válida.' };
   const supabase = await crearClienteServidor();
   const r = tipo === 'agencia'
     ? await supabase.from('agencia_miembros').update({ rol }).eq('agencia_id', actual.agencia.id).eq('usuario_id', usuarioId).select('usuario_id')

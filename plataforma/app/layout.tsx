@@ -14,7 +14,8 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
 // los formularios que lo piden explícitamente (data-reiniciar="si").
 const scriptFormularios = `document.addEventListener('reset',function(e){var f=e.target;if(f&&f.dataset&&f.dataset.reiniciar==='si'){delete f.dataset.reiniciar;return}e.preventDefault()},true);`;
 
-const scriptTema = `try{var t=localStorage.getItem('tema');if(t==='oscuro'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
+// Las páginas públicas (reservas, citas, facturas) las ve el cliente final y van siempre en claro.
+const scriptTema = `try{var t=localStorage.getItem('tema');if(/^\\/(reservar|cita|factura)\\//.test(location.pathname))t='claro';if(t==='oscuro'||((!t||t==='sistema')&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -5,7 +5,7 @@ import { borrarBloqueo, guardarBloqueo } from '@/app/subcuenta/[id]/calendarios/
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
 import { estiloInput, estilosBoton } from '@/components/ui/clases';
-import { diaEn, horaEn, sumarDias, type Dia } from '@/lib/calendario/tiempo';
+import { diaEn, horaEn, sumarMinutosHora, sumarDias, type Dia } from '@/lib/calendario/tiempo';
 import { nombrePersona, type Bloqueo, type Calendario } from '@/lib/calendario/tipos';
 import type { Usuario } from '@/lib/crm/tipos';
 
@@ -68,7 +68,7 @@ export function FormularioBloqueo({ subId, zona, bloqueo, preset, calendarios, u
           </label>
           <label className="block">
             <span className={etiqueta}>Hasta</span>
-            <input type="time" name="hora_fin" defaultValue={fin ? horaEn(fin, zona) : preset?.hora ? `${String(Math.min(23, Number(preset.hora.slice(0, 2)) + 1)).padStart(2, '0')}:${preset.hora.slice(3)}` : '10:00'} required className={estiloInput} />
+            <input type="time" name="hora_fin" defaultValue={fin ? horaEn(fin, zona) : preset?.hora ? sumarMinutosHora(preset.hora, 60) ?? '23:59' : '10:00'} required className={estiloInput} />
           </label>
         </div>
       )}

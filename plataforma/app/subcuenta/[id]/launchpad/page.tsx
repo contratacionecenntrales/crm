@@ -72,15 +72,15 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
           const Icono = p.icono;
           const soloAdmin = !soyAdmin && /configuracion/.test(p.href);
           return (
-            <li key={p.titulo} className="flex flex-wrap items-center gap-5 px-6 py-5 sm:flex-nowrap">
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primario-suave text-primario">
-                <Icono className="size-7" strokeWidth={1.75} />
+            <li key={p.titulo} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 px-4 py-5 sm:flex sm:gap-5 sm:px-6">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primario-suave text-primario sm:size-14">
+                <Icono className="size-6 sm:size-7" strokeWidth={1.75} />
               </span>
               <div className="min-w-0 flex-1 text-[15px] leading-6 text-[#344054] dark:text-texto-2">
                 <p className="font-medium text-[#101828] dark:text-texto">{p.titulo}</p>
                 <p>{p.texto}</p>
               </div>
-              <div className="flex w-[170px] shrink-0 items-center justify-center gap-1">
+              <div className="col-span-2 flex items-center justify-end gap-1 sm:w-[170px] sm:shrink-0 sm:justify-center">
                 {p.hecho ? (
                   <span className="flex size-14 items-center justify-center rounded-full bg-[#16803c] text-white" title="Completado" aria-label="Completado">
                     <Check className="size-7" strokeWidth={2.5} />

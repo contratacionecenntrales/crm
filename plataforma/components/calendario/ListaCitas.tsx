@@ -71,7 +71,7 @@ export function ListaCitas({ subId, zona, citas, calendarios, usuarios }: {
   return (
     <div className="overflow-x-auto rounded-lg border border-borde-fuerte bg-superficie">
       <table className="w-full min-w-[960px] text-left text-[13px] text-[#475467] dark:text-texto-2">
-        <thead className="bg-superficie-2 text-xs font-medium text-[#475467]">
+        <thead className="bg-superficie-2 text-xs font-medium text-[#475467] dark:text-texto-2">
           <tr>
             <th className="px-4 py-2.5 font-medium">Nombre de la cita</th>
             <th className="px-4 py-2.5 font-medium">Hora de la cita</th>

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Monitor, Moon, Sun } from 'lucide-react';
+import Link from 'next/link';
+import { LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useFueraDe } from './useFueraDe';
 
@@ -10,14 +11,14 @@ function aplicarTema(t: Tema) {
   const oscuro = t === 'oscuro' || (t === 'sistema' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', oscuro);
   try {
-    if (t === 'sistema') localStorage.removeItem('tema');
-    else localStorage.setItem('tema', t);
+    // «sistema» se guarda tal cual: así el tema por defecto de la agencia no lo pisa.
+    localStorage.setItem('tema', t);
   } catch {
     /* almacenamiento bloqueado: el tema dura lo que la pestaña */
   }
 }
 
-export function MenuUsuario({ nombre, email, logo }: { nombre: string; email: string; logo?: string | null }) {
+export function MenuUsuario({ nombre, email, logo, perfil }: { nombre: string; email: string; logo?: string | null; perfil?: string }) {
   const [abierto, setAbierto] = useState(false);
   const [tema, setTema] = useState<Tema>('sistema');
   const caja = useRef<HTMLDivElement>(null);
@@ -26,7 +27,7 @@ export function MenuUsuario({ nombre, email, logo }: { nombre: string; email: st
   useEffect(() => {
     try {
       const t = localStorage.getItem('tema');
-      if (t === 'claro' || t === 'oscuro') setTema(t);
+      if (t === 'claro' || t === 'oscuro' || t === 'sistema') setTema(t);
     } catch {
       /* sin almacenamiento */
     }
@@ -53,6 +54,11 @@ export function MenuUsuario({ nombre, email, logo }: { nombre: string; email: st
             <p className="truncate text-sm font-semibold">{nombre || email.split('@')[0]}</p>
             <p className="truncate text-xs text-tenue">{email}</p>
           </div>
+          {perfil && (
+            <Link href={perfil} onClick={() => setAbierto(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-superficie-2">
+              <UserRound className="size-4" /> Mi perfil
+            </Link>
+          )}
           <div className="my-1 border-t" />
           <p className="px-3 pt-1 text-xs font-medium text-tenue">Tema</p>
           <div className="grid grid-cols-3 gap-1 p-2">

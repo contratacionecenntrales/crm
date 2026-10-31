@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { numeroEs } from './formato.ts';
 
 const texto = (max: number) => z.string().trim().max(max, `Máximo ${max} caracteres`);
 const opcionalEmail = z
@@ -55,7 +56,7 @@ export const esquemaAgencia = z.object({
 const importe = z
   .string()
   .trim()
-  .transform((v) => Number(v.replace(',', '.')))
+  .transform((v) => numeroEs(v))
   .refine((v) => Number.isFinite(v), 'Importe no válido');
 
 export const esquemaSuscripcion = z.object({

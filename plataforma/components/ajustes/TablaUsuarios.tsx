@@ -31,6 +31,9 @@ export function TablaUsuarios({ filas, subcuentas, yo, soyPropietario }: { filas
   const [pagina, setPagina] = useState(1);
   const [dialogo, setDialogo] = useState<null | 'nuevo' | FilaUsuario>(null);
   const [aviso, setAviso] = useState<Resultado | null>(null);
+  const [avisoModal, setAvisoModal] = useState<Resultado | null>(null);
+  // Uno mismo no se edita, y a un propietario solo lo toca otro propietario.
+  const bloqueado = (f: FilaUsuario) => f.usuario_id === yo || (f.tipo === 'agencia' && f.rol === 'propietario' && !soyPropietario);
   const [pendiente, iniciar] = useTransition();
 
   const filtradas = useMemo(() => filas.filter((f) => {
@@ -90,8 +93,8 @@ export function TablaUsuarios({ filas, subcuentas, yo, soyPropietario }: { filas
                 <td className={`px-3 py-2.5 text-xs ${f.rol === 'propietario' ? 'font-medium text-[#067647]' : 'text-texto'}`}>{etiquetaTipo(f)}</td>
                 <td className="max-w-48 truncate px-3 py-2.5 text-xs text-texto">{f.subcuenta_nombre ?? '—'}</td>
                 <td className="px-3 py-2.5 text-center">
-                  <button onClick={() => setDialogo(f)} aria-label={`Editar ${f.email}`} className="rounded p-1.5 text-texto-2 hover:text-primario"><Pencil className="size-4" /></button>
-                  <button disabled={pendiente || f.usuario_id === yo} aria-label={`Quitar ${f.email}`} className="rounded p-1.5 text-texto-2 hover:text-peligro disabled:opacity-30"
+                  <button onClick={() => { setAvisoModal(null); setDialogo(f); }} aria-label={`Editar ${f.email}`} className="rounded p-1.5 text-texto-2 hover:text-primario"><Pencil className="size-4" /></button>
+                  <button disabled={pendiente || bloqueado(f)} aria-label={`Quitar ${f.email}`} className="rounded p-1.5 text-texto-2 hover:text-peligro disabled:opacity-30"
                     onClick={() => confirm(`¿Quitar el acceso de ${f.email}${f.subcuenta_nombre ? ` a ${f.subcuenta_nombre}` : ' a la agencia'}?`) &&
                       iniciar(async () => setAviso(await quitarUsuario(f.tipo, f.usuario_id, f.subcuenta_id)))}>
                     <Trash2 className="size-4" />
@@ -116,25 +119,29 @@ export function TablaUsuarios({ filas, subcuentas, yo, soyPropietario }: { filas
         <Link href="/agencia" aria-label="Inicio"><Home className="size-4" /></Link> / <span>Configuración</span> / <span className="text-primario">Usuarios</span>
       </nav>
 
-      <Modal abierto={dialogo !== null} alCerrar={() => setDialogo(null)} titulo={dialogo === 'nuevo' ? 'Añadir usuario' : 'Editar usuario'}>
+      <Modal abierto={dialogo !== null} alCerrar={() => { setDialogo(null); setAvisoModal(null); }} titulo={dialogo === 'nuevo' ? 'Añadir usuario' : 'Editar usuario'}>
         {dialogo === 'nuevo' && <NuevoUsuario subcuentas={subcuentas} soyPropietario={soyPropietario} alTerminar={() => setDialogo(null)} />}
         {dialogo && dialogo !== 'nuevo' && (
           <form className="space-y-4" onSubmit={(e) => {
             e.preventDefault();
             const nuevo = String(new FormData(e.currentTarget).get('rol'));
-            iniciar(async () => { const r = await cambiarRolUsuario(dialogo.tipo, dialogo.usuario_id, dialogo.subcuenta_id, nuevo); setAviso(r); if (r.ok) setDialogo(null); });
+            iniciar(async () => { const r = await cambiarRolUsuario(dialogo.tipo, dialogo.usuario_id, dialogo.subcuenta_id, nuevo); setAvisoModal(r.ok ? null : r); if (r.ok) setDialogo(null); });
           }}>
             <p className="text-sm"><strong>{dialogo.email}</strong>{dialogo.subcuenta_nombre ? ` · ${dialogo.subcuenta_nombre}` : ' · Agencia'}</p>
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium">Rol</span>
-              <select name="rol" defaultValue={dialogo.rol} disabled={dialogo.usuario_id === yo} className={estiloInput}>
+              <select name="rol" defaultValue={dialogo.rol} disabled={bloqueado(dialogo)} className={estiloInput}>
                 {dialogo.tipo === 'agencia' ? (
-                  <>{soyPropietario && <option value="propietario">Propietario</option>}<option value="admin">Administrador</option><option value="usuario">Usuario</option></>
+                  <>{(soyPropietario || dialogo.rol === 'propietario') && <option value="propietario">Propietario</option>}<option value="admin">Administrador</option><option value="usuario">Usuario</option></>
                 ) : (<><option value="admin">Administrador</option><option value="usuario">Usuario</option></>)}
               </select>
               {dialogo.usuario_id === yo && <span className="mt-1 block text-xs text-tenue">No puedes cambiar tu propio rol.</span>}
+              {dialogo.usuario_id !== yo && dialogo.rol === 'propietario' && !soyPropietario && (
+                <span className="mt-1 block text-xs text-tenue">Solo un propietario puede cambiar el rol de otro propietario.</span>
+              )}
             </label>
-            <div className="flex justify-end"><button disabled={pendiente || dialogo.usuario_id === yo} className={estilosBoton.primario}>Guardar</button></div>
+            {avisoModal && <Aviso estado={avisoModal} />}
+            <div className="flex justify-end"><button disabled={pendiente || bloqueado(dialogo)} className={estilosBoton.primario}>Guardar</button></div>
           </form>
         )}
       </Modal>

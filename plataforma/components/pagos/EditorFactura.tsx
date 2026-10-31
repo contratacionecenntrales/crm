@@ -112,7 +112,7 @@ export function EditorFactura({ subId, zona, factura: f, lineas: iniciales, prod
 
       <section className="overflow-x-auto rounded-lg border border-borde bg-superficie">
         <table className="w-full min-w-[760px] text-sm">
-          <thead className="bg-superficie-2 text-left text-xs text-[#475467]">
+          <thead className="bg-superficie-2 text-left text-xs text-[#475467] dark:text-texto-2">
             <tr>
               <th className="px-3 py-2.5 font-medium">Concepto</th>
               <th className="w-24 px-3 py-2.5 text-right font-medium">Cantidad</th>

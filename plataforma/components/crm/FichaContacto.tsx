@@ -235,7 +235,7 @@ export function FichaContacto(p: Props) {
 
       <Modal abierto={dialogo?.tipo === 'tarea'} alCerrar={cerrar} titulo={dialogo?.tipo === 'tarea' && dialogo.t ? 'Editar tarea' : 'Nueva tarea'}>
         {dialogo?.tipo === 'tarea' && (
-          <FormularioTarea subId={p.subId} tarea={dialogo.t} contactoFijo={c.id} asignables={p.asignables} yo={p.yo} alGuardar={cerrar} />
+          <FormularioTarea subId={p.subId} tarea={dialogo.t} contactoFijo={c.id} asignables={p.asignables} yo={p.yo} zona={p.zona} alGuardar={cerrar} />
         )}
       </Modal>
       <Modal abierto={dialogo?.tipo === 'oportunidad'} alCerrar={cerrar} titulo={dialogo?.tipo === 'oportunidad' && dialogo.o ? 'Editar oportunidad' : 'Nueva oportunidad'} ancho="max-w-2xl">

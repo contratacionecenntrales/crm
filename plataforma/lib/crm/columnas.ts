@@ -79,7 +79,8 @@ export const OPERADORES: Record<TipoColumna, { op: string; texto: string; sinVal
   ],
   booleano: [{ op: 'si', texto: 'activado', sinValor: true }, { op: 'no', texto: 'desactivado', sinValor: true }],
   personalizado: [
-    { op: 'contiene', texto: 'contiene' }, { op: 'es', texto: 'es' },
+    { op: 'contiene', texto: 'contiene' }, { op: 'no_contiene', texto: 'no contiene' },
+    { op: 'es', texto: 'es' }, { op: 'no_es', texto: 'no es' },
     { op: 'vacio', texto: 'está vacío', sinValor: true }, { op: 'no_vacio', texto: 'no está vacío', sinValor: true },
   ],
 };

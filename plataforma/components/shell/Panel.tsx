@@ -8,7 +8,7 @@ import { Campana } from './Campana';
 import { MenuUsuario } from './MenuUsuario';
 import { AccionesRapidas, Buscador } from './Herramientas';
 import { Ayuda, type DatosSoporte } from './Ayuda';
-import { Anuncios, CierreInactividad, TemaPorDefecto, type AnuncioVisible } from './Marca';
+import { Anuncios, CierreInactividad, CssAgencia, TemaPorDefecto, type AnuncioVisible } from './Marca';
 import type { SeccionAjustes } from './MarcoPanel';
 import type { ElementoNav } from './iconos';
 
@@ -25,7 +25,7 @@ interface Props {
 export async function Panel({ principal, secundario, ajustes, menuAjustes, subcuentaActual, children }: Props) {
   const usuario = await usuarioActual();
   const supabase = await crearClienteServidor();
-  const [{ actual }, subs, avisos, soporte] = await Promise.all([
+  const [{ actual, membresias }, subs, avisos, soporte] = await Promise.all([
     contextoAgencias(),
     subcuentasVisibles(),
     supabase
@@ -68,7 +68,11 @@ export async function Panel({ principal, secundario, ajustes, menuAjustes, subcu
       : null;
   const nombre = String(usuario.user_metadata?.nombre ?? usuario.user_metadata?.full_name ?? '');
   const logoAgencia = marca?.logo_url ?? null;
-  const nombreAgencia = actual?.agencia.nombre ?? datosSoporte?.agencia ?? 'Metatok';
+  // Dentro de una subcuenta manda su agencia (puede no ser la activa).
+  const nombreAgencia = (subcuentaActual ? datosSoporte?.agencia : actual?.agencia.nombre) ?? actual?.agencia.nombre ?? 'Metatok';
+  const agencias = membresias.length > 1
+    ? membresias.map((m) => ({ id: m.agencia.id, nombre: m.agencia.nombre, logo_url: m.agencia.logo_url, actual: m.agencia.id === actual?.agencia.id }))
+    : [];
 
   return (
     <MarcoPanel
@@ -77,7 +81,7 @@ export async function Panel({ principal, secundario, ajustes, menuAjustes, subcu
       ajustes={ajustes}
       menuAjustes={menuAjustes}
       logo={{ url: logoAgencia, nombre: nombreAgencia }}
-      selector={<SelectorSubcuenta subcuentas={opciones} actual={cabecera} vistaAgencia={Boolean(actual)} enAgencia={!subcuentaActual} />}
+      selector={<SelectorSubcuenta subcuentas={opciones} actual={cabecera} vistaAgencia={Boolean(actual)} enAgencia={!subcuentaActual} agencias={agencias} />}
       herramientas={
         <>
           <Buscador
@@ -92,12 +96,12 @@ export async function Panel({ principal, secundario, ajustes, menuAjustes, subcu
         <>
           <Campana usuarioId={usuario.id} iniciales={(avisos.data ?? []) as never} />
           <Ayuda datos={datosSoporte} />
-          <MenuUsuario nombre={nombre} email={usuario.email ?? ''} logo={logoAgencia} />
+          <MenuUsuario nombre={nombre} email={usuario.email ?? ''} logo={logoAgencia}
+            perfil={subcuentaActual ? `/subcuenta/${subcuentaActual.id}/configuracion/perfil` : actual ? '/agencia/configuracion/perfil' : undefined} />
         </>
       }
     >
-      {/* CSS de la agencia: se guarda sin «<», así no puede cerrar la etiqueta. */}
-      {marca?.css && <style dangerouslySetInnerHTML={{ __html: marca.css.replace(/</g, '') }} />}
+      {marca?.css && <CssAgencia css={marca.css} />}
       {marca && <TemaPorDefecto tema={marca.tema} />}
       {marca?.expiracion && <CierreInactividad minutos={marca.expiracion} />}
       <Anuncios anuncios={anuncios} />

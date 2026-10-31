@@ -21,17 +21,17 @@ export async function alternarFijada(subcuentaId: string, fijar: boolean): Promi
   return { ok: true };
 }
 
-export async function entrarEnSubcuenta(subcuentaId: string) {
-  if (!UUID.test(subcuentaId)) return;
+export async function entrarEnSubcuenta(subcuentaId: string): Promise<Resultado> {
+  if (!UUID.test(subcuentaId)) return { ok: false, error: 'Subcuenta no válida.' };
   const supabase = await crearClienteServidor();
   const { error } = await supabase.rpc('registrar_acceso_subcuenta', { p_subcuenta: subcuentaId });
-  if (error) redirect('/?error=sin-acceso');
+  if (error) return { ok: false, error: 'No tienes acceso a esta subcuenta o está suspendida.' };
   redirect(`/subcuenta/${subcuentaId}`);
 }
 
-export async function cambiarAgencia(agenciaId: string) {
+export async function cambiarAgencia(agenciaId: string): Promise<Resultado> {
   const { membresias } = await contextoAgencias();
-  if (!membresias.some((m) => m.agencia.id === agenciaId)) return;
+  if (!membresias.some((m) => m.agencia.id === agenciaId)) return { ok: false, error: 'No perteneces a esa agencia.' };
   (await cookies()).set(COOKIE_AGENCIA, agenciaId, { httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60 * 24 * 365 });
   redirect('/agencia');
 }

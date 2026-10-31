@@ -141,7 +141,7 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
                 );
               })}
               <Conector abierto={menuEn === pasos.length} alAbrir={() => setMenuEn(menuEn === pasos.length ? null : pasos.length)} alElegir={(t) => insertar(pasos.length, t)} deshabilitado={sinPermiso} />
-              <span className="rounded-full bg-[#f2f4f7] px-4 py-1 text-xs font-medium text-[#475467]">FIN</span>
+              <span className="rounded-full bg-[#f2f4f7] dark:bg-superficie-2 px-4 py-1 text-xs font-medium text-[#475467] dark:text-texto-2">FIN</span>
             </div>
           </div>
 
@@ -188,7 +188,7 @@ function Conector({ abierto, alAbrir, alElegir, deshabilitado }: { abierto: bool
       <span className="h-full w-px bg-[#98a2b3]" />
       {!deshabilitado && (
         <button type="button" onClick={alAbrir} aria-label="Añadir paso" title="Añadir paso"
-          className="absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-[#98a2b3] bg-superficie text-[#475467] hover:border-primario hover:text-primario">
+          className="absolute top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-[#98a2b3] bg-superficie text-[#475467] dark:text-texto-2 hover:border-primario hover:text-primario">
           <Plus className="size-3.5" />
         </button>
       )}
@@ -296,7 +296,7 @@ function Variables({ alInsertar }: { alInsertar: (v: string) => void }) {
     <div className="flex flex-wrap gap-1">
       {VARIABLES.map(([k, t]) => (
         <button key={k} type="button" onClick={() => alInsertar(`{{${k}}}`)} title={`{{${k}}}`}
-          className="rounded-full border border-borde-fuerte px-2 py-0.5 text-[11px] text-[#475467] hover:border-primario hover:text-primario">{t}</button>
+          className="rounded-full border border-borde-fuerte px-2 py-0.5 text-[11px] text-[#475467] dark:text-texto-2 hover:border-primario hover:text-primario">{t}</button>
       ))}
     </div>
   );

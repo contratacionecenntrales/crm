@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useOptimistic, useRef, useState, useTransition } from 'react';
-import { ChevronsUpDown, CornerUpLeft, Pin, Search, UserRound } from 'lucide-react';
-import { alternarFijada, entrarEnSubcuenta } from '@/app/acciones-panel';
+import { Building2, Check, ChevronsUpDown, CornerUpLeft, Pin, Search, UserRound } from 'lucide-react';
+import { alternarFijada, cambiarAgencia, entrarEnSubcuenta } from '@/app/acciones-panel';
 import { Avatar } from '@/components/ui/Avatar';
 import { useFueraDe } from './useFueraDe';
 import { useMenuExpandido } from './MarcoPanel';
@@ -21,9 +21,11 @@ interface Props {
   actual: { nombre: string; detalle: string; logo_url: string | null };
   vistaAgencia: boolean; // ¿puede volver a la vista de agencia?
   enAgencia: boolean;
+  agencias: { id: string; nombre: string; logo_url: string | null; actual: boolean }[]; // solo si hay más de una
 }
 
-export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia }: Props) {
+export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia, agencias }: Props) {
+  const [error, setError] = useState('');
   const [abierto, setAbierto] = useState(false);
   const expandido = useMenuExpandido();
   const [busqueda, setBusqueda] = useState('');
@@ -39,7 +41,16 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
     const r = boton.current?.getBoundingClientRect();
     if (r) setPos({ top: r.top - 4, left: Math.min(r.right + 36, Math.max(8, window.innerWidth - 8 - Math.min(448, window.innerWidth - 16))) });
     setAbierto((v) => !v);
+    setError('');
   };
+
+  // Las acciones redirigen si todo va bien; si vuelven es que falló.
+  const ejecutar = (accion: () => Promise<{ ok: boolean; error?: string }>) =>
+    iniciar(async () => {
+      setError('');
+      const r = await accion();
+      if (r && !r.ok) setError(r.error ?? 'No se pudo cambiar de cuenta.');
+    });
 
   const [lista, fijarOptimista] = useOptimistic(subcuentas, (estado, { id, fijar }: { id: string; fijar: boolean }) =>
     estado.map((s) => (s.id === id ? { ...s, fijada: fijar } : s)),
@@ -55,7 +66,8 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
   const fijar = (id: string, fijada: boolean) =>
     iniciar(async () => {
       fijarOptimista({ id, fijar: !fijada });
-      await alternarFijada(id, !fijada);
+      const r = await alternarFijada(id, !fijada);
+      if (!r.ok) setError(r.error ?? 'No se pudo fijar la subcuenta.');
     });
 
   return (
@@ -112,6 +124,35 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
             </Link>
           )}
 
+          {error && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-peligro dark:bg-red-950/40">{error}</p>}
+
+          {agencias.length > 1 && (
+            <>
+              <p className="mt-4 border-t px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-tenue">Agencias</p>
+              <ul className="mt-2 space-y-1">
+                {agencias.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      disabled={pendiente || a.actual}
+                      onClick={() => ejecutar(() => cambiarAgencia(a.id))}
+                      className="flex w-full items-center gap-3 rounded px-2 py-1.5 text-left text-sm hover:bg-fondo disabled:cursor-default disabled:hover:bg-transparent"
+                    >
+                      {a.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.logo_url} alt="" className="size-6 rounded object-cover" />
+                      ) : (
+                        <Building2 className="size-5 text-tenue" />
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-texto">{a.nombre}</span>
+                      {a.actual && <Check className="size-4 text-primario" aria-label="Agencia activa" />}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           <p className="mt-4 border-t px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-tenue">Todas las cuentas</p>
           <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto">
             {filtradas.length === 0 && <li className="px-1 py-4 text-center text-sm text-tenue">No hay subcuentas que coincidan.</li>}
@@ -120,7 +161,7 @@ export function SelectorSubcuenta({ subcuentas, actual, vistaAgencia, enAgencia 
                 <button
                   type="button"
                   disabled={pendiente || s.suspendida}
-                  onClick={() => iniciar(() => entrarEnSubcuenta(s.id))}
+                  onClick={() => ejecutar(() => entrarEnSubcuenta(s.id))}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-60"
                 >
                   <Avatar nombre={s.nombre} url={s.logo_url} tam="size-8" suave />

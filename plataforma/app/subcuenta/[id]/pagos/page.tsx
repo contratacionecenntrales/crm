@@ -65,7 +65,7 @@ export default async function PaginaFacturas({ params, searchParams }: { params:
       </div>
       <div className="overflow-x-auto rounded-lg border border-borde-fuerte bg-superficie">
         <table className="w-full min-w-[820px] text-left text-[13px] text-[#475467] dark:text-texto-2">
-          <thead className="bg-superficie-2 text-xs text-[#475467]">
+          <thead className="bg-superficie-2 text-xs text-[#475467] dark:text-texto-2">
             <tr>{['Número', 'Contacto', 'Emisión', 'Vencimiento', 'Total', 'Pendiente', 'Estado'].map((h) => <th key={h} className="px-4 py-2.5 font-medium">{h}</th>)}</tr>
           </thead>
           <tbody>

@@ -106,11 +106,11 @@ export function TablaLotes({ subId, lotes, haySiguiente, pagina, usuarios, zona,
                   <td className={`${td} whitespace-nowrap text-xs`} suppressHydrationWarning>{f(l.completado) ?? '—'}</td>
                   <td className={`${td} text-center`}>
                     {l.operacion === 'exportar' ? (
-                      <a href={urlRepetir(l)} title="Descargar de nuevo (datos actuales)" aria-label="Descargar de nuevo" className="inline-flex text-[#475467] hover:text-primario">
+                      <a href={urlRepetir(l)} title="Descargar de nuevo (datos actuales)" aria-label="Descargar de nuevo" className="inline-flex text-[#475467] dark:text-texto-2 hover:text-primario">
                         <CircleArrowDown className="size-4" />
                       </a>
                     ) : (
-                      <button onClick={() => setDetalle(l)} title="Ver estadísticas" aria-label="Ver estadísticas" className="inline-flex text-[#475467] hover:text-primario">
+                      <button onClick={() => setDetalle(l)} title="Ver estadísticas" aria-label="Ver estadísticas" className="inline-flex text-[#475467] dark:text-texto-2 hover:text-primario">
                         <BarChart3 className="size-4" />
                       </button>
                     )}
@@ -127,8 +127,8 @@ export function TablaLotes({ subId, lotes, haySiguiente, pagina, usuarios, zona,
       <div className="mt-2 flex items-center justify-between">
         <span className="text-xs text-tenue">Página {pagina}</span>
         <div className="flex gap-2">
-          <button disabled={pagina <= 1} onClick={() => poner({ p: String(pagina - 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] shadow-xs disabled:opacity-40">Anterior</button>
-          <button disabled={!haySiguiente} onClick={() => poner({ p: String(pagina + 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] shadow-xs disabled:opacity-40">Siguiente</button>
+          <button disabled={pagina <= 1} onClick={() => poner({ p: String(pagina - 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Anterior</button>
+          <button disabled={!haySiguiente} onClick={() => poner({ p: String(pagina + 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Siguiente</button>
         </div>
       </div>
 

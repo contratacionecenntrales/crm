@@ -48,7 +48,7 @@ export function ListaTareas({ subId, tareas, asignables, zona, yo, estado }: { s
         </ul>
       </div>
       <Modal abierto={editar !== null} alCerrar={cerrar} titulo={editar === 'nueva' ? 'Nueva tarea' : 'Editar tarea'}>
-        {editar !== null && <FormularioTarea subId={subId} tarea={editar === 'nueva' ? undefined : editar} asignables={asignables} yo={yo} alGuardar={cerrar} />}
+        {editar !== null && <FormularioTarea subId={subId} tarea={editar === 'nueva' ? undefined : editar} asignables={asignables} yo={yo} zona={zona} alGuardar={cerrar} />}
       </Modal>
     </div>
   );

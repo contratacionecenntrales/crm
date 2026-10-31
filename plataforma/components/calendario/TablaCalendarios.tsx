@@ -110,7 +110,7 @@ export function TablaCalendarios({ subId, calendarios, usuarios, soyAdmin, orige
           )}
         </div>
         <table className="w-full min-w-[900px] text-left text-[13px] text-[#475467] dark:text-texto-2">
-          <thead className="bg-superficie-2 text-xs text-[#475467]">
+          <thead className="bg-superficie-2 text-xs text-[#475467] dark:text-texto-2">
             <tr>
               <th className="px-4 py-2.5 font-medium">Nombre</th>
               <th className="px-4 py-2.5 font-medium">Tipo</th>

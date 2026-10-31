@@ -1,5 +1,6 @@
 import { COLUMNAS_BASE, OPERADORES, type TipoColumna } from './columnas.ts';
 import type { Filtro } from './tipos';
+import { instante } from '../calendario/tiempo.ts';
 
 // Interfaz mínima del constructor de consultas de supabase-js que usamos.
 // Así la lógica se prueba sin red, con un constructor falso.
@@ -22,6 +23,9 @@ const MAX_FILTROS = 20;
 export const escaparLike = (v: string) => v.replace(/[\\%_]/g, (c) => '\\' + c);
 
 // Literal de array de Postgres con un único elemento, entrecomillado.
+// Valor entrecomillado para usarlo dentro de .or() de PostgREST (comas, paréntesis…).
+export const citaOr = (v: string) => `"${v.replace(/["\\]/g, (c) => '\\' + c)}"`;
+
 export const arrayLiteral = (v: string) => `{"${v.replace(/["\\]/g, (c) => '\\' + c)}"}`;
 
 export function leerFiltros(crudo: string | undefined | null): Filtro[] {
@@ -53,7 +57,7 @@ const COLUMNA_SQL: Record<string, string> = { empresa: 'empresa_id' };
 export function aplicarFiltros<T extends Constructor<T>>(
   q: T,
   filtros: Filtro[],
-  opciones: { ahora?: Date; idsEmpresas?: Record<string, string[]> } = {},
+  opciones: { ahora?: Date; idsEmpresas?: Record<string, string[]>; zona?: string } = {},
 ): { consulta: T; descartados: Filtro[] } {
   const ahora = opciones.ahora ?? new Date();
   const descartados: Filtro[] = [];
@@ -74,9 +78,10 @@ export function aplicarFiltros<T extends Constructor<T>>(
       case 'texto_nulo':
       case 'personalizado': {
         if (f.op === 'contiene') q = q.ilike(col, patron);
-        else if (f.op === 'no_contiene') q = q.not(col, 'ilike', patron);
+        // Las negativas incluyen los vacíos (NULL): «no contiene X» también es quien no tiene nada.
+        else if (f.op === 'no_contiene') q = tipo === 'texto' ? q.not(col, 'ilike', patron) : q.or(`${col}.is.null,${col}.not.ilike.${citaOr(patron)}`);
         else if (f.op === 'es') q = q.ilike(col, escaparLike(valor));
-        else if (f.op === 'no_es') q = q.not(col, 'ilike', escaparLike(valor));
+        else if (f.op === 'no_es') q = tipo === 'texto' ? q.not(col, 'ilike', escaparLike(valor)) : q.or(`${col}.is.null,${col}.not.ilike.${citaOr(escaparLike(valor))}`);
         else if (f.op === 'vacio') q = tipo === 'texto' ? q.eq(col, '') : tipo === 'texto_nulo' ? q.is(col, null) : q.or(`${col}.is.null,${col}.eq.`);
         else if (f.op === 'no_vacio') q = tipo === 'texto' ? q.neq(col, '') : tipo === 'texto_nulo' ? q.not(col, 'is', 'null') : q.not(col, 'is', 'null').neq(col, '');
         break;
@@ -111,7 +116,9 @@ export function aplicarFiltros<T extends Constructor<T>>(
             descartados.push(f);
             continue;
           }
-          q = f.op === 'antes' ? q.lt(col, valor) : q.gte(col, valor);
+          // Las columnas con hora se cortan a medianoche en la zona de la subcuenta.
+          const corte = col !== 'fecha_nacimiento' && opciones.zona ? instante(valor, '00:00', opciones.zona).toISOString() : valor;
+          q = f.op === 'antes' ? q.lt(col, corte) : q.gte(col, corte);
         } else if (f.op === 'vacio') q = q.is(col, null);
         else q = q.not(col, 'is', 'null');
         break;
@@ -121,7 +128,7 @@ export function aplicarFiltros<T extends Constructor<T>>(
         else if (f.campo === 'propietario_id' && !/^[0-9a-f-]{36}$/i.test(valor)) {
           descartados.push(f);
           continue;
-        } else q = f.op === 'es' ? q.eq(col, valor) : q.neq(col, valor);
+        } else q = f.op === 'es' ? q.eq(col, valor) : q.or(`${col}.is.null,${col}.neq.${citaOr(valor)}`);
         break;
       }
       case 'booleano':

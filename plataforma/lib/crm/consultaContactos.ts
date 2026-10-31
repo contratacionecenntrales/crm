@@ -31,6 +31,9 @@ export async function consultaContactos(
     }
   }
 
+  const { data: sc } = await supabase.from('subcuentas').select('zona_horaria').eq('id', subId).maybeSingle();
+  const zona = (sc?.zona_horaria as string | undefined) ?? 'Europe/Madrid';
+
   // El constructor de supabase-js tiene tipos demasiado profundos para pasarlo
   // por una función genérica; se trata como `any` solo dentro de este bloque.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,7 +44,7 @@ export async function consultaContactos(
   const texto = opciones.busqueda.trim().toLowerCase();
   if (texto) q = q.ilike('busqueda', `%${escaparLike(texto)}%`);
   if (opciones.ids?.length) q = q.in('id', opciones.ids);
-  const consulta = aplicarFiltros(q as Constructor<typeof q>, opciones.filtros, { idsEmpresas }).consulta as typeof q;
+  const consulta = aplicarFiltros(q as Constructor<typeof q>, opciones.filtros, { idsEmpresas, zona }).consulta as typeof q;
   // OJO: el constructor es «thenable»; no se devuelve sin ejecutar desde una
   // función async (se ejecutaría antes de paginar). Se pagina y se espera aquí.
   return await consulta

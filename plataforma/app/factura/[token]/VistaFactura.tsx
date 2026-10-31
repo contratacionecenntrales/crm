@@ -66,24 +66,24 @@ export function VistaFactura({ token, f, vuelveDePagar }: { token: string; f: Fa
         </section>
         <table className="mt-8 w-full text-sm">
           <thead className="border-b border-[#d0d5dd] text-left text-xs uppercase tracking-wide text-[#667085]">
-            <tr><th className="py-2 font-medium">Concepto</th><th className="py-2 text-right font-medium">Cant.</th><th className="py-2 text-right font-medium">Precio</th><th className="hidden py-2 text-right font-medium sm:table-cell">Imp.</th><th className="py-2 text-right font-medium">Importe</th></tr>
+            <tr><th className="py-2 font-medium">Concepto</th><th className="py-2 pl-4 text-right font-medium">Cant.</th><th className="py-2 pl-4 text-right font-medium">Precio</th><th className="hidden py-2 pl-4 text-right font-medium sm:table-cell">Imp.</th><th className="py-2 pl-4 text-right font-medium">Importe</th></tr>
           </thead>
           <tbody>
             {f.lineas.map((l, i) => (
               <tr key={i} className="border-b border-[#eaecf0]">
-                <td className="py-3 pr-2">{l.descripcion}</td>
-                <td className="py-3 text-right">{Number(l.cantidad).toLocaleString('es-ES')}</td>
-                <td className="py-3 text-right">{din(l.precio)}</td>
-                <td className="hidden py-3 text-right sm:table-cell">{Number(l.impuesto)} %</td>
-                <td className="py-3 text-right">{din(Number(l.cantidad) * Number(l.precio))}</td>
+                <td className="py-3 pr-2 [overflow-wrap:anywhere]">{l.descripcion}</td>
+                <td className="whitespace-nowrap py-3 pl-4 text-right tabular-nums">{Number(l.cantidad).toLocaleString('es-ES')}</td>
+                <td className="whitespace-nowrap py-3 pl-4 text-right tabular-nums">{din(l.precio)}</td>
+                <td className="hidden whitespace-nowrap py-3 pl-4 text-right tabular-nums sm:table-cell">{Number(l.impuesto)} %</td>
+                <td className="whitespace-nowrap py-3 pl-4 text-right tabular-nums">{din(Number(l.cantidad) * Number(l.precio))}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <dl className="ml-auto mt-6 w-full max-w-xs space-y-1 text-sm">
-          <div className="flex justify-between"><dt className="text-[#667085]">Subtotal</dt><dd>{din(f.subtotal)}</dd></div>
-          <div className="flex justify-between"><dt className="text-[#667085]">Impuestos</dt><dd>{din(f.impuestos)}</dd></div>
-          <div className="flex justify-between border-t border-[#d0d5dd] pt-2 text-base font-semibold"><dt>Total</dt><dd>{din(f.total)}</dd></div>
+          <div className="flex justify-between"><dt className="text-[#667085]">Subtotal</dt><dd className="tabular-nums">{din(f.subtotal)}</dd></div>
+          <div className="flex justify-between"><dt className="text-[#667085]">Impuestos</dt><dd className="tabular-nums">{din(f.impuestos)}</dd></div>
+          <div className="flex justify-between border-t border-[#d0d5dd] pt-2 text-base font-semibold"><dt>Total</dt><dd className="tabular-nums">{din(f.total)}</dd></div>
           {Number(f.cobrado) > 0 && f.estado !== 'pagada' && (<>
             <div className="flex justify-between"><dt className="text-[#667085]">Pagado</dt><dd>−{din(f.cobrado)}</dd></div>
             <div className="flex justify-between font-semibold"><dt>Pendiente</dt><dd>{din(pendiente)}</dd></div>
