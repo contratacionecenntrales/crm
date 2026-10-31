@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { procesarAvisos } from '@/lib/calendario/procesarAvisos';
+import { procesarAutomatizaciones } from '@/lib/automatizacion/motor';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// Envía los avisos de cita vencidos. Lo llama un programador cada 5 minutos
+// Envía los avisos de cita vencidos y ejecuta los pasos de automatización que tocan. Lo llama un programador cada 5 minutos
 // (Vercel Cron, o pg_cron de Supabase) con «Authorization: Bearer <CRON_SECRET>».
 async function ejecutar(req: NextRequest) {
   const secreto = process.env.CRON_SECRET;
@@ -16,7 +17,9 @@ async function ejecutar(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
   try {
-    return NextResponse.json(await procesarAvisos(50));
+    const avisos = await procesarAvisos(50);
+    const automatizaciones = await procesarAutomatizaciones(50);
+    return NextResponse.json({ avisos, automatizaciones });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

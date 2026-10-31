@@ -64,6 +64,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 6. `NO-SUBIR-supabase/14-recordatorios.sql` — avisos de cita (confirmación, recordatorios, cambios, cancelaciones) y enlace para que el cliente cancele
 7. `NO-SUBIR-supabase/15-sso.sql` — inicio de sesión único (SAML, Google o Microsoft) por dominio de correo, obligatorio y con alta automática
 8. `NO-SUBIR-supabase/16-pagos.sql` — Pagos: productos, facturas numeradas, cobros manuales y pago con tarjeta por Stripe de cada subcuenta
+9. `NO-SUBIR-supabase/17-automatizacion.sql` — Automatización: flujos con disparador y pasos (mensajes, etiquetas, esperas, tareas, oportunidades, avisos, webhooks)
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -75,7 +76,7 @@ Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a
 
 ### Recordatorios de citas
 
-Los avisos se envían desde `/api/cron/recordatorios`, que hay que llamar **cada 5 minutos** con la cabecera
+Los avisos de citas y los pasos de Automatización se ejecutan desde `/api/cron/recordatorios`, que hay que llamar **cada 5 minutos** con la cabecera
 `Authorization: Bearer <CRON_SECRET>` (pon `CRON_SECRET` en las variables de entorno: una cadena larga al azar).
 
 - **Vercel Pro:** ya está programado en `vercel.json` (Vercel añade la cabecera solo).
@@ -157,6 +158,7 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/14-recordatorios.sql \
      -f NO-SUBIR-supabase/15-sso.sql \
      -f NO-SUBIR-supabase/16-pagos.sql \
+     -f NO-SUBIR-supabase/17-automatizacion.sql \
      -f NO-SUBIR-supabase/test-agencias.sql \
      -f NO-SUBIR-supabase/test-crm.sql \
      -f NO-SUBIR-supabase/test-configuracion.sql \
@@ -164,7 +166,8 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/test-conversaciones.sql \
      -f NO-SUBIR-supabase/test-recordatorios.sql \
      -f NO-SUBIR-supabase/test-sso.sql \
-     -f NO-SUBIR-supabase/test-pagos.sql
+     -f NO-SUBIR-supabase/test-pagos.sql \
+     -f NO-SUBIR-supabase/test-automatizacion.sql
 ```
 
 ## Estructura
