@@ -137,9 +137,9 @@ export function Bandeja(p: Props) {
   const contactoChat = p.actual?.contacto ?? (p.contacto ? { id: p.contacto.id, nombre: p.contacto.nombre, apellidos: p.contacto.apellidos, email: p.contacto.email, telefono: p.contacto.telefono } : null);
 
   return (
-    <div className="flex h-[calc(100dvh-93px)] min-h-[520px] gap-3 bg-fondo p-2 font-sans">
+    <div className="flex h-[calc(100dvh-93px)] min-h-[520px] gap-2 bg-fondo p-1 font-sans sm:gap-3 sm:p-2">
       {/* Buzones */}
-      <nav className="flex w-[52px] shrink-0 flex-col items-center gap-2 pt-2" aria-label="Buzones">
+      <nav className={`w-[52px] shrink-0 flex-col items-center gap-2 pt-2 ${contactoChat ? 'hidden md:flex' : 'flex'}`} aria-label="Buzones">
         {BUZONES.map((b, i) => {
           const on = p.buzon === b.v;
           const Icono = b.icono;

@@ -49,6 +49,8 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
   useEffect(() => {
     const a = area.current;
     if (!a) return;
+    // Vacío: altura natural de una fila (si se mide antes de tener ancho, sale enorme).
+    if (!texto) { a.style.height = ''; return; }
     a.style.height = 'auto';
     a.style.height = `${Math.min(160, a.scrollHeight)}px`;
   }, [texto]);
