@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { crearClienteAdmin } from '@/lib/supabase/admin';
+import { desdeUnidadMinima } from '@/lib/pagos/calculo';
 import { estadoDesdeStripe, importeMensualDesdeItems, verificarFirmaStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_succeeded': {
         const subcuentaId = await subcuentaDe(o);
         if (!subcuentaId) return NextResponse.json({ ignorado: 'sin subcuenta' });
-        const importe = (o.amount_paid ?? 0) / 100;
+        const importe = desdeUnidadMinima(o.amount_paid ?? 0, String(o.currency ?? 'eur'));
         if (importe === 0) break;
         const concepto = o.lines?.data?.[0]?.description || o.description || 'Suscripción';
         // referencia_externa es única: el mismo evento repetido no duplica el cobro.
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
         const subcuentaId = await subcuentaDe(o);
         if (!subcuentaId) return NextResponse.json({ ignorado: 'sin subcuenta' });
         await admin.from('suscripciones').update({ estado: 'impagada' }).eq('subcuenta_id', subcuentaId);
-        await avisarAdmins(subcuentaId, 'Pago fallido', `Stripe no ha podido cobrar ${((o.amount_due ?? 0) / 100).toFixed(2)} ${String(o.currency ?? '').toUpperCase()}.`);
+        await avisarAdmins(subcuentaId, 'Pago fallido', `Stripe no ha podido cobrar ${desdeUnidadMinima(o.amount_due ?? 0, String(o.currency ?? 'eur'))} ${String(o.currency ?? '').toUpperCase()}.`);
         break;
       }
 

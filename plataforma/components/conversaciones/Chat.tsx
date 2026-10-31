@@ -229,10 +229,10 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
         {error && <p role="alert" className="mb-2 flex items-start gap-1.5 rounded-lg bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318] dark:bg-red-950/40 dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</p>}
         {dnd && canal !== 'nota' && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708] dark:bg-amber-950/40 dark:text-amber-300">Este contacto tiene «No molestar» activado para {NOMBRE_CANAL[canal]}: el mensaje no se enviará.</p>}
         {falta && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708] dark:bg-amber-950/40 dark:text-amber-300">{falta}</p>}
-        <div className={`overflow-hidden rounded-lg border ${canal === 'nota' ? 'border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40' : 'border-borde-fuerte bg-superficie'}`}>
+        <div className={`rounded-lg border ${canal === 'nota' ? 'border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40' : 'border-borde-fuerte bg-superficie'}`}>
           {canal === 'email' && (
             <input value={asunto} onChange={(e) => setAsunto(e.target.value)} placeholder="Asunto" maxLength={300}
-              className="h-10 w-full border-b border-borde bg-transparent px-3 text-sm text-texto focus:outline-none" />
+              className="h-10 w-full rounded-t-lg border-b border-borde bg-transparent px-3 text-sm text-texto focus:outline-none" />
           )}
           <div className="flex items-end">
             <div className="relative self-stretch border-r border-borde">
@@ -271,7 +271,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
               }}
               placeholder={canal === 'nota' ? 'Escribe un comentario interno (solo lo ve el equipo)' : canal === 'email' ? 'Escribe el correo (Ctrl+Intro para enviar)' : 'Escribir un mensaje'}
               maxLength={canal === 'email' ? 20000 : 1600}
-              className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-5 text-texto placeholder:text-[#667085] focus:outline-none"
+              className="min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-5 text-texto placeholder:text-[#667085] focus:outline-none"
             />
             <div className="flex items-center gap-1 self-stretch border-l border-borde px-2">
               <div className="relative">

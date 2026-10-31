@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { desdeUnidadMinima } from './pagos/calculo.ts';
 
 // Verificación de la cabecera Stripe-Signature sin el SDK de Stripe:
 // t=<timestamp>,v1=<hmac>[,v1=...]  con  HMAC-SHA256(secreto, `${t}.${cuerpo}`).
@@ -42,7 +43,7 @@ export function estadoDesdeStripe(estado: string): EstadoLocal {
 
 interface ItemStripe {
   quantity?: number | null;
-  price?: { unit_amount?: number | null; recurring?: { interval?: string; interval_count?: number } | null } | null;
+  price?: { unit_amount?: number | null; currency?: string | null; recurring?: { interval?: string; interval_count?: number } | null } | null;
 }
 
 // Importe mensual equivalente (en unidades, no céntimos) de los items de una suscripción.
@@ -52,7 +53,8 @@ export function importeMensualDesdeItems(items: ItemStripe[]): number {
     const centimos = (it.price?.unit_amount ?? 0) * (it.quantity ?? 1);
     const intervalo = it.price?.recurring?.interval ?? 'month';
     const cada = it.price?.recurring?.interval_count || 1;
-    return suma + (centimos / 100) * ((factor[intervalo] ?? 1) / cada);
+    // Stripe da los importes en la unidad mínima de la moneda (céntimos, yenes…).
+    return suma + desdeUnidadMinima(centimos, it.price?.currency ?? 'eur') * ((factor[intervalo] ?? 1) / cada);
   }, 0);
   return Math.round(total * 100) / 100;
 }

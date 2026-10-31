@@ -65,6 +65,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 7. `NO-SUBIR-supabase/15-sso.sql` — inicio de sesión único (SAML, Google o Microsoft) por dominio de correo, obligatorio y con alta automática
 8. `NO-SUBIR-supabase/16-pagos.sql` — Pagos: productos, facturas numeradas, cobros manuales y pago con tarjeta por Stripe de cada subcuenta
 9. `NO-SUBIR-supabase/17-automatizacion.sql` — Automatización: flujos con disparador y pasos (mensajes, etiquetas, esperas, tareas, oportunidades, avisos, webhooks)
+10. `NO-SUBIR-supabase/18-correcciones.sql` — correcciones de seguridad e integridad de la auditoría (**obligatorio**: ejecútalo siempre el último, también si ya tenías instalados los anteriores)
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -73,6 +74,25 @@ Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a
 - `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_SITE_URL` (con https) son **obligatorias**: el servidor lee con ellas las claves de Twilio/Mailgun, que nadie del equipo puede leer.
 - Cada subcuenta conecta su cuenta en **Configuración → Integración telefónica** (Twilio) y **Servicios de correo** (Mailgun o SMTP). Allí aparece la URL del webhook que hay que pegar en Twilio y en la «Route» de Mailgun para recibir respuestas.
 - Los webhooks comprueban la firma de Twilio (`X-Twilio-Signature`) y de Mailgun; las peticiones falsas se rechazan.
+
+### Inicio de sesión único (SSO): verificar el dominio
+
+Un dominio no se usa para SSO hasta que la agencia demuestra que es suyo. En
+**Configuración → Empresa → SSO**, cada dominio muestra un registro DNS de tipo
+TXT que hay que crear en el proveedor del dominio:
+
+- Nombre: `_metatok-sso.tuempresa.com`
+- Valor: `metatok-sso=<código que muestra la pantalla>`
+
+Después pulsa **Verificar**. Los dominios de correo públicos (gmail.com,
+outlook.com…) no se admiten.
+
+### Pagos de las subcuentas (Stripe de cada subcuenta)
+
+Cada subcuenta pega su clave de Stripe en **Pagos → Configuración** y crea en su
+Stripe un webhook hacia la URL que aparece allí, con los eventos
+`checkout.session.completed`, `checkout.session.async_payment_succeeded` y
+`charge.refunded` (los reembolsos hechos en Stripe se reflejan en la factura).
 
 ### Recordatorios de citas
 
@@ -137,6 +157,12 @@ con los eventos `invoice.paid`, `invoice.payment_failed`,
 `customer.subscription.deleted`. Pon el *signing secret* en `STRIPE_WEBHOOK_SECRET`
 y añade `subcuenta_id` (el ID de la subcuenta) en los metadatos de la suscripción
 de Stripe de cada cliente.
+
+Este webhook es **uno para toda la plataforma** (una sola cuenta de Stripe, la
+del dueño de la plataforma): registra los cobros de las subcuentas de cualquier
+agencia según su `subcuenta_id`. Si cada agencia cobra con su propio Stripe,
+usa por ahora el registro manual de pagos en **Subcuentas → Plan y facturación**.
+Los importes en monedas sin decimales (JPY, KRW…) se convierten bien.
 
 ## Comprobaciones
 

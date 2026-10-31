@@ -129,6 +129,14 @@ set role anon;
 select pg_temp.prueba('La reserva pública sigue funcionando',
   $q$ select public.cal_reservar('consulta-fix', (select h from public.cal_huecos('consulta-fix', current_date + 2, current_date + 2) h limit 1), 'Eva', '', 'eva@x.es') $q$, false);
 reset role;
+insert into public.crm_contactos (subcuenta_id, nombre, email, telefono) values ((select id from ids where clave = 'norte'), 'Víctima', 'victima@x.es', '');
+set role anon;
+select public.cal_reservar('consulta-fix', (select h from public.cal_huecos('consulta-fix', current_date + 3, current_date + 3) h limit 1), 'Atacante', '', 'victima@x.es', '+34999000111');
+reset role;
+select pg_temp.igual('Una reserva anónima no cambia el teléfono de un contacto existente',
+  (select telefono from public.crm_contactos where email = 'victima@x.es'), '');
+select pg_temp.igual('…y lo indicado queda en las notas de la cita',
+  (select (notas like '%Atacante · +34999000111%')::text from public.cal_citas c join public.crm_contactos k on k.id = c.contacto_id where k.email = 'victima@x.es'), 'true');
 
 -- Automatización: bucle entre dos flujos y renombrado
 set role authenticated;

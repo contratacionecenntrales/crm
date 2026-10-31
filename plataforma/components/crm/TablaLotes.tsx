@@ -56,14 +56,14 @@ export function TablaLotes({ subId, lotes, haySiguiente, pagina, usuarios, zona,
   return (
     <div className="mt-4 rounded-lg border border-borde bg-superficie p-4">
       <div className="mb-2.5 flex flex-wrap items-center gap-3 pl-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-tenue">Filtros</span>
-          <div className="flex h-7 items-center rounded border border-borde-fuerte bg-superficie shadow-xs">
+          <div className="flex h-8 min-w-0 items-center rounded border border-borde-fuerte bg-superficie shadow-xs">
             <label className="flex items-center gap-1 px-1.5"><CalendarDays className="size-3.5 text-tenue" />
-              <input type="date" value={desde} max={hasta} onChange={(e) => poner({ desde: e.target.value })} aria-label="Desde" className="bg-transparent text-sm text-texto outline-none" /></label>
+              <input type="date" value={desde} max={hasta} onChange={(e) => poner({ desde: e.target.value })} aria-label="Desde" className="w-[8.5rem] min-w-0 bg-transparent text-sm text-texto outline-none" /></label>
             <span className="h-full w-px bg-borde-fuerte" />
             <label className="flex items-center gap-1 px-1.5"><CalendarDays className="size-3.5 text-tenue" />
-              <input type="date" value={hasta} min={desde} onChange={(e) => poner({ hasta: e.target.value })} aria-label="Hasta" className="bg-transparent text-sm text-texto outline-none" /></label>
+              <input type="date" value={hasta} min={desde} onChange={(e) => poner({ hasta: e.target.value })} aria-label="Hasta" className="w-[8.5rem] min-w-0 bg-transparent text-sm text-texto outline-none" /></label>
           </div>
         </div>
         {([
@@ -127,8 +127,8 @@ export function TablaLotes({ subId, lotes, haySiguiente, pagina, usuarios, zona,
       <div className="mt-2 flex items-center justify-between">
         <span className="text-xs text-tenue">Página {pagina}</span>
         <div className="flex gap-2">
-          <button disabled={pagina <= 1} onClick={() => poner({ p: String(pagina - 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Anterior</button>
-          <button disabled={!haySiguiente} onClick={() => poner({ p: String(pagina + 1) })} className="h-6 rounded border border-borde-fuerte px-1.5 text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Siguiente</button>
+          <button disabled={pagina <= 1} onClick={() => poner({ p: String(pagina - 1) })} className="h-9 rounded border border-borde-fuerte px-3 text-xs sm:h-6 sm:px-1.5 sm:text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Anterior</button>
+          <button disabled={!haySiguiente} onClick={() => poner({ p: String(pagina + 1) })} className="h-9 rounded border border-borde-fuerte px-3 text-xs sm:h-6 sm:px-1.5 sm:text-[11px] font-semibold text-[#475467] dark:text-texto-2 shadow-xs disabled:opacity-40">Siguiente</button>
         </div>
       </div>
 

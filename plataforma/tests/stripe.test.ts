@@ -39,3 +39,7 @@ test('normaliza importes a mensual', () => {
   assert.equal(importeMensualDesdeItems([{ price: { unit_amount: 3000, recurring: { interval: 'month', interval_count: 3 } } }]), 10);
   assert.equal(importeMensualDesdeItems([]), 0);
 });
+
+test('importe mensual respeta monedas sin decimales', () => {
+  assert.equal(importeMensualDesdeItems([{ quantity: 1, price: { unit_amount: 5000, currency: 'jpy', recurring: { interval: 'month' } } }]), 5000);
+});

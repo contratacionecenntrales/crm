@@ -130,7 +130,7 @@ export function AccionesRapidas({ subId }: { subId: string }) {
         <Zap className="size-3 fill-[#22c55e] text-[#22c55e]" />
       </button>
       {abierto && (
-        <div style={{ top: top - 8, left: expandido ? 244 : 60 }} className="fixed z-50 w-60 rounded-md border bg-superficie p-1 font-sans shadow-xl">
+        <div style={{ top: Math.max(8, Math.min(top - 8, (typeof window === 'undefined' ? 9999 : window.innerHeight) - 260)), left: Math.min(expandido ? 244 : 60, (typeof window === 'undefined' ? 9999 : window.innerWidth) - 248) }} className="fixed z-50 w-60 max-w-[calc(100vw-1rem)] rounded-md border bg-superficie p-1 font-sans shadow-xl">
           <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-tenue">Acciones rápidas</p>
           {acciones.map(([t, href]) => (
             <button key={t} onClick={() => { setAbierto(false); router.push(href); }} className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-superficie-2">{t}</button>

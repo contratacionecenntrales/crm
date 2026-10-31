@@ -488,3 +488,84 @@ begin
 end $$;
 revoke all on function public.sso_hook_token(jsonb) from public, anon, authenticated;
 do $$ begin grant execute on function public.sso_hook_token(jsonb) to supabase_auth_admin; exception when undefined_object then null; end $$;
+
+
+-- -----------------------------------------------------------------------------
+-- 9. Reserva pública: no modificar contactos existentes con datos no verificados
+-- -----------------------------------------------------------------------------
+create or replace function public.cal_reservar(p_slug text, p_inicio timestamptz, p_nombre text, p_apellidos text,
+                                               p_email text, p_telefono text default '', p_notas text default '')
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare
+  c public.cal_calendarios;
+  s public.subcuentas;
+  v_dia date;
+  v_libres uuid[];
+  v_persona uuid;
+  v_contacto uuid;
+  v_email text := nullif(lower(trim(coalesce(p_email, ''))), '');
+  v_tel text := regexp_replace(coalesce(p_telefono, ''), '[^0-9+]', '', 'g');
+  v_cita uuid;
+  v_fin timestamptz;
+begin
+  select cc.* into c from public.cal_calendarios cc join public.subcuentas ss on ss.id = cc.subcuenta_id
+  where cc.slug = lower(p_slug) and cc.activo and ss.estado = 'activa'
+  for update of cc; -- serializa las reservas del mismo calendario
+  if not found then
+    raise exception 'Este calendario no existe o no admite reservas.' using errcode = 'no_data_found';
+  end if;
+  select * into s from public.subcuentas where id = c.subcuenta_id;
+
+  if length(trim(coalesce(p_nombre, ''))) not between 1 and 100 then
+    raise exception 'Escribe tu nombre.' using errcode = 'check_violation';
+  end if;
+  if v_email is null or v_email !~* '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(v_email) > 200 then
+    raise exception 'Escribe un correo electrónico válido.' using errcode = 'check_violation';
+  end if;
+  if v_tel <> '' and left(v_tel, 1) <> '+' then v_tel := s.prefijo || ltrim(v_tel, '0'); end if;
+  if v_tel !~ '^\+?[0-9]{0,15}$' then
+    raise exception 'El teléfono no es válido.' using errcode = 'check_violation';
+  end if;
+  if length(coalesce(p_notas, '')) > 2000 then
+    raise exception 'El mensaje es demasiado largo.' using errcode = 'check_violation';
+  end if;
+
+  v_dia := (p_inicio at time zone c.zona_horaria)::date;
+  select h.usuarios into v_libres from public.cal_huecos_nucleo(c.id, v_dia, v_dia, true) h where h.inicio = p_inicio;
+  if not found then
+    raise exception 'Esa hora ya no está disponible. Elige otra.' using errcode = 'check_violation', hint = 'HUECO_OCUPADO';
+  end if;
+  v_persona := public.cal_elegir_persona(c.id, p_inicio, v_libres);
+  v_fin := p_inicio + make_interval(mins => c.duracion_min);
+
+  -- El contacto se reutiliza por correo; si no existe, se crea.
+  select id into v_contacto from public.crm_contactos where subcuenta_id = c.subcuenta_id and email = v_email;
+  if v_contacto is null then
+    insert into public.crm_contactos (subcuenta_id, nombre, apellidos, email, telefono, fuente, propietario_id)
+    values (c.subcuenta_id, left(trim(p_nombre), 100), left(trim(coalesce(p_apellidos, '')), 100), v_email, v_tel,
+            left('Calendario: ' || c.nombre, 100), v_persona)
+    returning id into v_contacto;
+  else
+    -- Quien reserva no ha demostrado ser el dueño de ese correo: no se toca la
+    -- ficha existente (un anónimo podría poner SU teléfono en el contacto de otro
+    -- y recibir sus mensajes). Lo que haya escrito queda en las notas de la cita.
+    select concat_ws(E'\n', nullif(trim(coalesce(p_notas, '')), ''),
+             '— Datos indicados al reservar: ' || concat_ws(' · ', nullif(trim(p_nombre || ' ' || coalesce(p_apellidos, '')), ''), nullif(v_tel, '')))
+      into p_notas;
+  end if;
+
+  if (select count(*) from public.cal_citas where contacto_id = v_contacto and calendario_id = c.id
+        and estado <> 'cancelada' and inicio > now()) >= 3 then
+    raise exception 'Ya tienes varias citas pendientes en este calendario.' using errcode = 'check_violation';
+  end if;
+
+  insert into public.cal_citas (subcuenta_id, calendario_id, contacto_id, asignado_id, titulo, inicio, fin,
+                                estado, notas, ubicacion, origen, creado_por)
+  values (c.subcuenta_id, c.id, v_contacto, v_persona,
+          left(c.nombre || ' · ' || trim(p_nombre || ' ' || coalesce(p_apellidos, '')), 200),
+          p_inicio, v_fin, 'confirmada', left(coalesce(p_notas, ''), 2300), c.ubicacion, 'reserva', null)
+  returning id into v_cita;
+
+  return jsonb_build_object('cita_id', v_cita, 'inicio', p_inicio, 'fin', v_fin,
+                            'zona_horaria', c.zona_horaria, 'confirmacion', c.confirmacion, 'ubicacion', c.ubicacion);
+end $$;

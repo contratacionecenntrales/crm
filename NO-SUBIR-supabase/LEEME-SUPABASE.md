@@ -27,6 +27,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 15 | `15-sso.sql` | Inicio de sesión único de la agencia (SAML, Google o Microsoft) por dominio. Para que «obligatorio» se cumpla, activar el hook `public.sso_hook_token` en Authentication → Hooks. Requiere el 11 |
 | 16 | `16-pagos.sql` | Pagos de cada subcuenta: productos, facturas con numeración automática, cobros y pago con tarjeta (Stripe Checkout con la cuenta de la subcuenta). Requiere el 13 |
 | 17 | `17-automatizacion.sql` | Automatización: flujos «si pasa X, haz Y» conectados a contactos, etiquetas, citas, mensajes, oportunidades y facturas. Se ejecutan con la misma tarea programada de los recordatorios. Requiere el 16 |
+| 18 | `18-correcciones.sql` | Correcciones de seguridad e integridad de la auditoría (banderas internas a prueba de manipulación, facturas, reservas, automatizaciones, SSO con dominios verificados por DNS). **Obligatorio**, siempre el último. Requiere el 17 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.
@@ -34,7 +35,7 @@ Los demás son para los módulos correspondientes.
 Si el 01 da error, **párate ahí**: los demás dependen de las tablas que crea, y
 seguir solo acumula errores encima del primero.
 
-> Los archivos `_stub-auth.sql`, `test-esquema.sql`, `test-firma.sql`, `test-agencias.sql` y `test-crm.sql` **no se
+> Los archivos `_stub-auth.sql` y todos los `test-*.sql` **no se
 > ejecutan en Supabase**. Son las pruebas que corren contra un PostgreSQL local.
 
 ---
