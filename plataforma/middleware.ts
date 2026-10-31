@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const RUTAS_PUBLICAS = ['/login', '/recuperar', '/auth', '/api/webhooks', '/api/cron', '/reservar', '/cita'];
+const RUTAS_PUBLICAS = ['/login', '/recuperar', '/auth', '/api/webhooks', '/api/cron', '/reservar', '/cita', '/factura'];
 
 // Refresca la sesión de Supabase en cada petición y manda a /login a quien
 // entra sin sesión en una ruta privada.

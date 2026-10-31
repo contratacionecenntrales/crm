@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import {
-  BookUser, CalendarCheck2, CalendarDays, Check, Building2, Mail, MessageSquare, Network, Users,
+  BookUser, CalendarCheck2, CalendarDays, Check, Building2, CreditCard, Mail, MessageSquare, Network, Users,
 } from 'lucide-react';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { subcuentaVisible } from '@/lib/sesion';
@@ -19,7 +19,7 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
     if (f) q = f(q);
     return q.then((r: { count: number | null }) => r.count ?? 0);
   };
-  const [equipo, contactos, calendarios, oportunidades, reservas, ajustes, secretos, primerCal, h] = await Promise.all([
+  const [equipo, contactos, calendarios, oportunidades, reservas, ajustes, secretos, primerCal, h, stripe] = await Promise.all([
     cuenta('subcuenta_miembros'),
     cuenta('crm_contactos'),
     cuenta('cal_calendarios', (q) => q.eq('activo', true)),
@@ -29,6 +29,7 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
     supabase.rpc('conv_estado_secretos', { p_subcuenta: id }),
     supabase.from('cal_calendarios').select('slug').eq('subcuenta_id', id).eq('activo', true).order('creado').limit(1).maybeSingle(),
     headers(),
+    supabase.rpc('pag_estado_secretos', { p_subcuenta: id }),
   ]);
   const a = ajustes.data;
   const s = (secretos.data ?? {}) as Record<string, boolean>;
@@ -53,6 +54,8 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
       hecho: reservas > 0, href: primerCal.data ? `/reservar/${primerCal.data.slug}` : `${base}/calendarios/configuracion`,
       boton: primerCal.data ? 'Abrir página' : 'Crear calendario', externo: Boolean(primerCal.data),
       copiar: primerCal.data ? `${web}/reservar/${primerCal.data.slug}` : null },
+    { icono: CreditCard, titulo: 'Conecte su cuenta de Stripe para empezar a aceptar pagos', texto: 'Tus clientes pagarán las facturas con tarjeta y el dinero llega a tu cuenta.',
+      hecho: Boolean((stripe.data as { stripe_secreta?: boolean } | null)?.stripe_secreta), href: `${base}/pagos/configuracion`, boton: 'Conectar' },
     { icono: Network, titulo: 'Crea tu primera oportunidad', texto: 'Sigue cada venta en tu embudo, de nuevo lead a cerrado.',
       hecho: oportunidades > 0, href: `${base}/oportunidades?nueva=1`, boton: 'Crear' },
   ];

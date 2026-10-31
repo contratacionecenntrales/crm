@@ -25,6 +25,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 13 | `13-conversaciones.sql` | Conversaciones: SMS/WhatsApp (Twilio), correo (Mailgun/SMTP), notas internas, fragmentos y analítica. Las claves de los proveedores solo las lee el servidor. Requiere el 12 |
 | 14 | `14-recordatorios.sql` | Avisos de cita (confirmación, recordatorios, cambios y cancelaciones) por correo/SMS/WhatsApp y cancelación por el cliente con enlace. Requiere el 13 |
 | 15 | `15-sso.sql` | Inicio de sesión único de la agencia (SAML, Google o Microsoft) por dominio. Para que «obligatorio» se cumpla, activar el hook `public.sso_hook_token` en Authentication → Hooks. Requiere el 11 |
+| 16 | `16-pagos.sql` | Pagos de cada subcuenta: productos, facturas con numeración automática, cobros y pago con tarjeta (Stripe Checkout con la cuenta de la subcuenta). Requiere el 13 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

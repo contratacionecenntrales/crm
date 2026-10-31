@@ -272,6 +272,7 @@ function textoEvento(e: Evento, moneda: string, zona: string): string {
     case 'cita_creada': return `Cita ${d.origen === 'reserva' ? 'reservada online' : 'creada'}: ${d.titulo ?? ''} (${fechaCita(d.inicio)}) en ${d.calendario ?? ''}`;
     case 'cita_movida': return `Cita movida: ${d.titulo ?? ''} → ${fechaCita(d.inicio)}`;
     case 'cita_estado': return `Cita «${d.titulo ?? ''}» marcada como ${ESTADO_TEXTO[String(d.estado)] ?? d.estado}`;
+    case 'factura_pagada': return `Factura ${d.numero ?? ''} pagada (${dinero(Number(d.total ?? 0), String(d.moneda ?? moneda))})`;
     case 'oportunidad_estado': return `Oportunidad «${d.nombre}» marcada como ${d.estado}`;
     default: return e.tipo;
   }

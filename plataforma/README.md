@@ -63,6 +63,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 5. `NO-SUBIR-supabase/13-conversaciones.sql` — bandeja de Conversaciones (SMS, WhatsApp, correo y notas internas), fragmentos y ajustes de Twilio / Mailgun / SMTP
 6. `NO-SUBIR-supabase/14-recordatorios.sql` — avisos de cita (confirmación, recordatorios, cambios, cancelaciones) y enlace para que el cliente cancele
 7. `NO-SUBIR-supabase/15-sso.sql` — inicio de sesión único (SAML, Google o Microsoft) por dominio de correo, obligatorio y con alta automática
+8. `NO-SUBIR-supabase/16-pagos.sql` — Pagos: productos, facturas numeradas, cobros manuales y pago con tarjeta por Stripe de cada subcuenta
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -155,13 +156,15 @@ psql -d prueba -f NO-SUBIR-supabase/_stub-auth.sql \
      -f NO-SUBIR-supabase/13-conversaciones.sql \
      -f NO-SUBIR-supabase/14-recordatorios.sql \
      -f NO-SUBIR-supabase/15-sso.sql \
+     -f NO-SUBIR-supabase/16-pagos.sql \
      -f NO-SUBIR-supabase/test-agencias.sql \
      -f NO-SUBIR-supabase/test-crm.sql \
      -f NO-SUBIR-supabase/test-configuracion.sql \
      -f NO-SUBIR-supabase/test-calendarios.sql \
      -f NO-SUBIR-supabase/test-conversaciones.sql \
      -f NO-SUBIR-supabase/test-recordatorios.sql \
-     -f NO-SUBIR-supabase/test-sso.sql
+     -f NO-SUBIR-supabase/test-sso.sql \
+     -f NO-SUBIR-supabase/test-pagos.sql
 ```
 
 ## Estructura
