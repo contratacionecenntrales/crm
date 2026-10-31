@@ -27,7 +27,7 @@ export function FormularioBloqueo({ subId, zona, bloqueo, preset, calendarios, u
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (estado?.ok) alGuardar();
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
 
   const ini = bloqueo ? new Date(bloqueo.inicio) : null;
   const fin = bloqueo ? new Date(bloqueo.fin) : null;

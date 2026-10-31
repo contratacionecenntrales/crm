@@ -44,7 +44,7 @@ export function AjustesPago({ subId, ajustes: a, estado: s, soyAdmin, web }: {
             <span className={etiqueta}>URL del webhook</span>
             <div className="flex items-center gap-1"><input readOnly value={`${web}/api/webhooks/stripe-pagos/${subId}`} onFocus={(e) => e.target.select()} className={`${estiloInput} font-mono text-xs`} />
               <BotonCopiar texto={`${web}/api/webhooks/stripe-pagos/${subId}`} etiqueta="Copiar URL" /></div>
-            <span className="mt-1 block text-xs text-tenue">En Stripe → Desarrolladores → Webhooks, crea un destino con esta URL y los eventos «checkout.session.completed» y «checkout.session.async_payment_succeeded».</span>
+            <span className="mt-1 block text-xs text-tenue">En Stripe → Desarrolladores → Webhooks, crea un destino con esta URL y los eventos «checkout.session.completed», «checkout.session.async_payment_succeeded» y «charge.refunded».</span>
           </div>
           <label className="block"><span className={etiqueta}>Secreto de firma del webhook</span>
             <input type="password" name="stripe_webhook" autoComplete="new-password" disabled={off} placeholder={s.stripe_webhook ? '•••••••• guardado' : 'whsec_…'} className={estiloInput} />

@@ -107,23 +107,32 @@ export async function enviarFactura(subId: string, facturaId: string, canal: 'em
   }
 }
 
-export async function cambiarEstadoFactura(subId: string, facturaId: string, estado: 'anulada' | 'borrador'): Promise<Resultado> {
-  validar(facturaId);
-  const supabase = await contexto(subId);
-  const { error } = await supabase.from('pag_facturas').update({ estado }).eq('id', facturaId).eq('subcuenta_id', subId);
-  if (error) return { ok: false, error: mensajeDeError(error) };
-  refrescar(subId);
-  return { ok: true };
+export async function cambiarEstadoFactura(subId: string, facturaId: string, estado: 'anulada'): Promise<Resultado> {
+  try {
+    validar(facturaId);
+    if (estado !== 'anulada') return { ok: false, error: 'Una factura emitida solo se puede anular.' };
+    const supabase = await contexto(subId);
+    const { error } = await supabase.from('pag_facturas').update({ estado }).eq('id', facturaId).eq('subcuenta_id', subId);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarFactura(subId: string, facturaId: string): Promise<Resultado> {
-  validar(facturaId);
-  const supabase = await contexto(subId);
-  const r = await supabase.from('pag_facturas').delete().eq('id', facturaId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo se pueden borrar borradores. Las facturas emitidas se anulan.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(facturaId);
+    const supabase = await contexto(subId);
+    const r = await supabase.from('pag_facturas').delete().eq('id', facturaId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo se pueden borrar borradores. Las facturas emitidas se anulan.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // --- Cobros -----------------------------------------------------------------------
@@ -141,9 +150,12 @@ export async function registrarCobro(subId: string, facturaId: string | null, _:
     let contacto: string | null = String(fd.get('contacto_id') ?? '') || null;
     validar(contacto);
     if (facturaId) {
-      const { data: f } = await supabase.from('pag_facturas').select('moneda, contacto_id, estado').eq('id', facturaId).single();
+      const { data: f } = await supabase.from('pag_facturas').select('moneda, contacto_id, estado, total, cobrado').eq('id', facturaId).single();
       if (!f) return { ok: false, error: 'La factura ya no existe.' };
       if (f.estado === 'anulada') return { ok: false, error: 'No se cobra una factura anulada.' };
+      if (f.estado === 'pagada') return { ok: false, error: 'La factura ya está pagada.' };
+      const pendiente = Math.round((Number(f.total) - Number(f.cobrado)) * 100) / 100;
+      if (importe > pendiente + 0.005) return { ok: false, error: `El importe supera lo pendiente (${pendiente.toFixed(2)}).` };
       moneda = f.moneda as string;
       contacto = (f.contacto_id as string) ?? contacto;
     } else {
@@ -164,68 +176,84 @@ export async function registrarCobro(subId: string, facturaId: string | null, _:
 }
 
 export async function reembolsarCobro(subId: string, txId: string): Promise<Resultado> {
-  validar(txId);
-  const supabase = await contexto(subId);
-  const r = await supabase.from('pag_transacciones').update({ estado: 'reembolsada' }).eq('id', txId).eq('subcuenta_id', subId).select('id, metodo');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede marcar reembolsos.' };
-  refrescar(subId);
-  return { ok: true, mensaje: r.data[0].metodo === 'stripe' ? 'Marcado como reembolsado. Recuerda hacer el reembolso también en Stripe.' : 'Marcado como reembolsado.' };
+  try {
+    validar(txId);
+    const supabase = await contexto(subId);
+    const r = await supabase.from('pag_transacciones').update({ estado: 'reembolsada' }).eq('id', txId).eq('subcuenta_id', subId).select('id, metodo');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede marcar reembolsos.' };
+    refrescar(subId);
+    return { ok: true, mensaje: r.data[0].metodo === 'stripe' ? 'Marcado como reembolsado. Recuerda hacer el reembolso también en Stripe.' : 'Marcado como reembolsado.' };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // --- Productos ----------------------------------------------------------------------
 
 export async function guardarProducto(subId: string, prodId: string | null, _: Resultado | null, fd: FormData): Promise<Resultado> {
-  validar(prodId);
-  const nombre = String(fd.get('nombre') ?? '').trim();
-  const precio = Number(String(fd.get('precio') ?? '').replace(',', '.'));
-  const impuesto = Number(String(fd.get('impuesto') ?? '0').replace(',', '.'));
-  if (!nombre || nombre.length > 200) return { ok: false, error: 'Ponle un nombre al producto.' };
-  if (!(precio >= 0) || precio > 1e10) return { ok: false, error: 'Precio no válido.' };
-  if (!(impuesto >= 0 && impuesto <= 100)) return { ok: false, error: 'El impuesto va de 0 a 100 %.' };
-  const fila = { nombre, precio: Math.round(precio * 100) / 100, impuesto, descripcion: String(fd.get('descripcion') ?? '').trim().slice(0, 2000), activo: fd.getAll('activo').includes('on') };
-  const supabase = await contexto(subId);
-  const r = prodId
-    ? await supabase.from('pag_productos').update(fila).eq('id', prodId).eq('subcuenta_id', subId)
-    : await supabase.from('pag_productos').insert({ ...fila, subcuenta_id: subId });
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true, mensaje: 'Producto guardado.' };
+  try {
+    validar(prodId);
+    const nombre = String(fd.get('nombre') ?? '').trim();
+    const precio = Number(String(fd.get('precio') ?? '').replace(',', '.'));
+    const impuesto = Number(String(fd.get('impuesto') ?? '0').replace(',', '.'));
+    if (!nombre || nombre.length > 200) return { ok: false, error: 'Ponle un nombre al producto.' };
+    if (!(precio >= 0) || precio > 1e10) return { ok: false, error: 'Precio no válido.' };
+    if (!(impuesto >= 0 && impuesto <= 100)) return { ok: false, error: 'El impuesto va de 0 a 100 %.' };
+    const fila = { nombre, precio: Math.round(precio * 100) / 100, impuesto, descripcion: String(fd.get('descripcion') ?? '').trim().slice(0, 2000), activo: fd.getAll('activo').includes('on') };
+    const supabase = await contexto(subId);
+    const r = prodId
+      ? await supabase.from('pag_productos').update(fila).eq('id', prodId).eq('subcuenta_id', subId)
+      : await supabase.from('pag_productos').insert({ ...fila, subcuenta_id: subId });
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true, mensaje: 'Producto guardado.' };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarProducto(subId: string, prodId: string): Promise<Resultado> {
-  validar(prodId);
-  const supabase = await contexto(subId);
-  const { error } = await supabase.from('pag_productos').delete().eq('id', prodId).eq('subcuenta_id', subId);
-  if (error) return { ok: false, error: mensajeDeError(error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(prodId);
+    const supabase = await contexto(subId);
+    const { error } = await supabase.from('pag_productos').delete().eq('id', prodId).eq('subcuenta_id', subId);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // --- Configuración ----------------------------------------------------------------------
 
 export async function guardarAjustesPago(subId: string, _: Resultado | null, fd: FormData): Promise<Resultado> {
-  const moneda = String(fd.get('moneda') ?? 'EUR').trim().toUpperCase();
-  const prefijo = String(fd.get('prefijo') ?? '').trim();
-  const siguiente = Number(fd.get('siguiente_numero'));
-  const impuesto = Number(String(fd.get('impuesto_defecto') ?? '0').replace(',', '.'));
-  if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, error: 'Moneda en formato ISO de 3 letras (EUR, USD…).' };
-  if (!/^[A-Za-z0-9/_-]{0,12}$/.test(prefijo)) return { ok: false, error: 'El prefijo admite letras, números, guiones y barras (máx. 12).' };
-  if (!Number.isInteger(siguiente) || siguiente < 1) return { ok: false, error: 'El siguiente número tiene que ser un entero mayor que 0.' };
-  if (!(impuesto >= 0 && impuesto <= 100)) return { ok: false, error: 'El impuesto va de 0 a 100 %.' };
-  const supabase = await contexto(subId);
-  const a = await supabase.from('pag_ajustes').upsert({
-    subcuenta_id: subId, moneda, prefijo, siguiente_numero: siguiente, impuesto_defecto: impuesto, pie: String(fd.get('pie') ?? '').trim().slice(0, 2000),
-  }, { onConflict: 'subcuenta_id' });
-  if (a.error) return { ok: false, error: mensajeDeError(a.error) };
-  const s = await supabase.rpc('pag_guardar_secretos', {
-    p_subcuenta: subId,
-    p_secreta: fd.get('borrar_stripe') === 'on' ? null : String(fd.get('stripe_secreta') ?? '').trim(),
-    p_webhook: fd.get('borrar_stripe') === 'on' ? null : String(fd.get('stripe_webhook') ?? '').trim(),
-  });
-  if (s.error) return { ok: false, error: mensajeDeError(s.error) };
-  refrescar(subId);
-  return { ok: true, mensaje: 'Configuración de pagos guardada.' };
+  try {
+    const moneda = String(fd.get('moneda') ?? 'EUR').trim().toUpperCase();
+    const prefijo = String(fd.get('prefijo') ?? '').trim();
+    const siguiente = Number(fd.get('siguiente_numero'));
+    const impuesto = Number(String(fd.get('impuesto_defecto') ?? '0').replace(',', '.'));
+    if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, error: 'Moneda en formato ISO de 3 letras (EUR, USD…).' };
+    if (!/^[A-Za-z0-9/_-]{0,12}$/.test(prefijo)) return { ok: false, error: 'El prefijo admite letras, números, guiones y barras (máx. 12).' };
+    if (!Number.isInteger(siguiente) || siguiente < 1) return { ok: false, error: 'El siguiente número tiene que ser un entero mayor que 0.' };
+    if (!(impuesto >= 0 && impuesto <= 100)) return { ok: false, error: 'El impuesto va de 0 a 100 %.' };
+    const supabase = await contexto(subId);
+    const a = await supabase.from('pag_ajustes').upsert({
+      subcuenta_id: subId, moneda, prefijo, siguiente_numero: siguiente, impuesto_defecto: impuesto, pie: String(fd.get('pie') ?? '').trim().slice(0, 2000),
+    }, { onConflict: 'subcuenta_id' });
+    if (a.error) return { ok: false, error: mensajeDeError(a.error) };
+    const s = await supabase.rpc('pag_guardar_secretos', {
+      p_subcuenta: subId,
+      p_secreta: fd.get('borrar_stripe') === 'on' ? null : String(fd.get('stripe_secreta') ?? '').trim(),
+      p_webhook: fd.get('borrar_stripe') === 'on' ? null : String(fd.get('stripe_webhook') ?? '').trim(),
+    });
+    if (s.error) return { ok: false, error: mensajeDeError(s.error) };
+    refrescar(subId);
+    return { ok: true, mensaje: 'Configuración de pagos guardada.' };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function comprobarConexionStripe(subId: string): Promise<Resultado> {

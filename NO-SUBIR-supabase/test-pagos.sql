@@ -132,12 +132,25 @@ select pg_temp.igual('…el cobro sigue completado', (select estado from public.
 select pg_temp.entra_como('duena@pag.test');
 select pg_temp.prueba('La dueña marca el efectivo como reembolsado', $q$ update public.pag_transacciones set estado = 'reembolsada' where metodo = 'efectivo' $q$, false);
 select pg_temp.igual('La factura vuelve a pendiente', (select estado || ' ' || cobrado from public.pag_facturas where numero = 'FAC-2026-0001'), 'enviada 105.70');
+select pg_temp.prueba('Una factura emitida no vuelve a borrador', $q$ update public.pag_facturas set estado = 'borrador' where numero = 'FAC-2026-0001' $q$, true);
+select pg_temp.prueba('El contador no retrocede', $q$ update public.pag_ajustes set siguiente_numero = 1 $q$, true);
 select pg_temp.prueba('Borrar el borrador FAC-2026-0002', $q$ delete from public.pag_facturas where numero = 'FAC-2026-0002' $q$, false);
 select pg_temp.prueba('Anular la 0001', $q$ update public.pag_facturas set estado = 'anulada' where numero = 'FAC-2026-0001' $q$, false);
 select pg_temp.prueba('Una anulada no se reabre', $q$ update public.pag_facturas set estado = 'enviada' where numero = 'FAC-2026-0001' $q$, true);
 select pg_temp.prueba('Nueva factura: el número no reutiliza el borrado',
   $q$ insert into public.pag_facturas (subcuenta_id) values ((select id from ids where clave = 'norte')) $q$, false);
 select pg_temp.igual('…es la 0003', (select max(numero) from public.pag_facturas), 'FAC-2026-0003');
+reset role;
+set role service_role;
+select pg_temp.prueba('Stripe cobra la factura anulada: se registra igualmente',
+  $q$ select public.pag_registrar_pago_stripe((select id from ids where clave = 'norte'), (select id from tk where numero = 'FAC-2026-0001'), 10, 'eur', 'pi_anulada') $q$, false);
+reset role;
+select pg_temp.igual('…y avisa para revisarlo', (select count(*)::text from public.notificaciones where titulo like 'Revisar cobro%'), '1');
+set role service_role;
+select pg_temp.igual('Reembolso desde Stripe marca la transacción', (select public.pag_reembolso_stripe((select id from ids where clave = 'norte'), 'pi_123')::text), '1');
+reset role;
+set role authenticated;
+select pg_temp.entra_como('duena@pag.test');
 
 select pg_temp.entra_como('otro@pag.test');
 select pg_temp.igual('Una persona ajena no ve facturas', (select count(*)::text from public.pag_facturas), '0');

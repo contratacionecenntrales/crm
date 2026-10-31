@@ -7,7 +7,7 @@ import { SelectorContacto } from '@/components/crm/SelectorContacto';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
 import { estiloArea, estiloInput, estilosBoton } from '@/components/ui/clases';
-import { diaEn, horaEn, sumarMinutosHora, type Dia } from '@/lib/calendario/tiempo';
+import { diaEn, horaEn, horaMasMinutos, type Dia } from '@/lib/calendario/tiempo';
 import { ESTADOS_CITA, nombrePersona, type Aviso as AvisoCita, type Calendario, type Cita } from '@/lib/calendario/tipos';
 import type { Usuario } from '@/lib/crm/tipos';
 
@@ -34,7 +34,7 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
   const [modo, setModo] = useState<'libre' | 'manual'>(cita || preset?.hora ? 'manual' : 'libre');
   const [inicio, setInicio] = useState(cita ? horaEn(new Date(cita.inicio), zona) : preset?.hora ?? '');
   const [fin, setFin] = useState(cita ? horaEn(new Date(cita.fin), zona)
-    : preset?.hora ? sumarMinutosHora(preset.hora, cal?.duracion_min ?? 30) ?? '23:59' : '');
+    : preset?.hora ? horaMasMinutos(preset.hora, cal?.duracion_min ?? 30) : '');
   const porDefecto = cal?.equipo.length ? (cal.equipo.includes(yo) ? yo : cal.equipo[0]) : yo;
   const [asignado, setAsignado] = useState(cita ? cita.asignado_id ?? '' : porDefecto);
   const [huecos, setHuecos] = useState<{ hora: string; usuarios: string[] }[] | null>(null);
@@ -44,7 +44,7 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
 
   useEffect(() => {
     if (estado?.ok && estado.id) alGuardar(estado.id);
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
 
   useEffect(() => {
     if (!calId || !fecha) return;
@@ -58,7 +58,7 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
 
   const elegirHueco = (h: string) => {
     setInicio(h);
-    setFin(sumarMinutosHora(h, cal?.duracion_min ?? 30) ?? '23:59');
+    setFin(horaMasMinutos(h, cal?.duracion_min ?? 30));
     const libres = huecos?.find((x) => x.hora === h)?.usuarios ?? [];
     if (libres.length && !libres.includes(asignado)) setAsignado(libres[0]);
   };
@@ -133,18 +133,19 @@ export function FormularioCita({ subId, zona, cita, preset, calendarios, usuario
               ))}
             </div>
           )}
-          {inicio && <p className="mt-2 text-xs text-tenue">De {inicio} a {fin}</p>}
+          {inicio && <p className="mt-2 text-xs text-tenue">De {inicio} a {fin}{fin && fin <= inicio ? ' (día siguiente)' : ''}</p>}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
             <span className={etiqueta}>Desde</span>
             <input type="time" value={inicio} required className={estiloInput}
-              onChange={(e) => { const v = e.target.value; setInicio(v); if (v && (!fin || fin <= v)) setFin(sumarMinutosHora(v, cal?.duracion_min ?? 30) ?? '23:59'); }} />
+              onChange={(e) => { const v = e.target.value; setInicio(v); if (v && !fin) setFin(horaMasMinutos(v, cal?.duracion_min ?? 30)); }} />
           </label>
           <label className="block">
             <span className={etiqueta}>Hasta</span>
             <input type="time" value={fin} required onChange={(e) => setFin(e.target.value)} className={estiloInput} />
+            {fin && inicio && fin <= inicio && <span className="mt-1 block text-xs text-tenue">Termina al día siguiente</span>}
           </label>
         </div>
       )}

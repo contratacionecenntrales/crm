@@ -51,16 +51,26 @@ export function desfaseMin(fecha: Date, zona: string): number {
   return Math.round((local - Math.floor(fecha.getTime() / 1000) * 1000) / 60000);
 }
 
-// Instante que corresponde a un día y una hora "de pared" en la zona.
+// Instante que corresponde a un día y una hora "de pared" en la zona. Igual
+// que Postgres: si la hora se repite (otoño), la primera; si no existe
+// (primavera), se avanza el salto (02:30 → 03:30).
 export function instante(dia: Dia, hhmm: string, zona: string): Date {
   const [y, m, d] = dia.split('-').map(Number);
   const [h, mi] = hhmm.split(':').map(Number);
   const pared = Date.UTC(y, m - 1, d, h, mi);
-  const d1 = desfaseMin(new Date(pared), zona);
-  let t = pared - d1 * 60000;
-  const d2 = desfaseMin(new Date(t), zona);
-  if (d2 !== d1) t = pared - d2 * 60000;
-  return new Date(t);
+  const antes = desfaseMin(new Date(pared - 864e5), zona);
+  const despues = desfaseMin(new Date(pared + 864e5), zona);
+  const validos = [...new Set([antes, despues])]
+    .map((o) => pared - o * 60000)
+    .filter((t) => desfaseMin(new Date(t), zona) * 60000 === pared - t);
+  if (validos.length) return new Date(Math.min(...validos));
+  // Hora inexistente: se interpreta con el desfase de antes del salto.
+  return new Date(pared - antes * 60000);
+}
+
+// Minutos «de pared» desde la medianoche del día dado (para pintar en la rejilla).
+export function minutosDePared(t: number, dia: Dia, zona: string): number {
+  return (t + desfaseMin(new Date(t), zona) * 60000 - Date.parse(dia + 'T00:00:00Z')) / 60000;
 }
 
 export function minutosDelDia(fecha: Date, zona: string): number {
@@ -193,5 +203,12 @@ export function sumarMinutosHora(hhmm: string, min: number): string | null {
   const [h, m] = hhmm.split(':').map(Number);
   const t = h * 60 + m + min;
   if (t >= 24 * 60 || t < 0) return null;
+  return `${dos(Math.floor(t / 60))}:${dos(t % 60)}`;
+}
+
+// "23:30" + 60 → "00:30" (da la vuelta a medianoche).
+export function horaMasMinutos(hhmm: string, min: number): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const t = (((h * 60 + m + min) % 1440) + 1440) % 1440;
   return `${dos(Math.floor(t / 60))}:${dos(t % 60)}`;
 }

@@ -190,7 +190,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
                     {!sale && <AvatarContacto c={contacto} tam={28} />}
                     <div className={`flex max-w-[75%] flex-col ${sale ? 'items-end' : 'items-start'}`}>
                       <div className={`rounded-lg px-3 py-2 text-[14px] leading-[21px] text-[#101828] ${
-                        nota ? 'border border-[#fedf89] bg-[#fffaeb]' : sale ? 'bg-[#eff4ff] dark:bg-primario-suave dark:text-texto' : 'bg-[#f2f4f7] dark:bg-superficie-2 dark:text-texto'}`}>
+                        nota ? 'border border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-50' : sale ? 'bg-[#eff4ff] dark:bg-primario-suave dark:text-texto' : 'bg-[#f2f4f7] dark:bg-superficie-2 dark:text-texto'}`}>
                         {nota && <p className="mb-1 flex items-center gap-1 text-xs font-medium text-[#b54708]"><StickyNote className="size-3.5" /> Comentario interno</p>}
                         {m.canal === 'email' && m.asunto && <p className="mb-1 font-semibold">{m.asunto}</p>}
                         <p className="whitespace-pre-wrap break-words">{m.cuerpo}</p>
@@ -229,7 +229,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
         {error && <p role="alert" className="mb-2 flex items-start gap-1.5 rounded-lg bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318]"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</p>}
         {dnd && canal !== 'nota' && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708]">Este contacto tiene «No molestar» activado para {NOMBRE_CANAL[canal]}: el mensaje no se enviará.</p>}
         {falta && <p className="mb-2 rounded-lg bg-[#fffaeb] px-3 py-2 text-sm text-[#b54708]">{falta}</p>}
-        <div className={`overflow-hidden rounded-lg border ${canal === 'nota' ? 'border-[#fedf89] bg-[#fffaeb]' : 'border-borde-fuerte bg-superficie'}`}>
+        <div className={`overflow-hidden rounded-lg border ${canal === 'nota' ? 'border-[#fedf89] bg-[#fffaeb] dark:border-amber-700 dark:bg-amber-950/40' : 'border-borde-fuerte bg-superficie'}`}>
           {canal === 'email' && (
             <input value={asunto} onChange={(e) => setAsunto(e.target.value)} placeholder="Asunto" maxLength={300}
               className="h-10 w-full border-b border-borde bg-transparent px-3 text-sm text-texto focus:outline-none" />

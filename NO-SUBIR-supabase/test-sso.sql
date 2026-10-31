@@ -66,6 +66,14 @@ select pg_temp.prueba('Dominio mal escrito se rechaza',
 select pg_temp.prueba('La dueña activa SAML para empresa-sso.com (obligatorio y alta automática)',
   $q$ select public.sso_guardar((select id from ids where clave = 'ag1'), true, 'saml', '{" Empresa-SSO.com ",empresa-sso.com}', true, true) $q$, false);
 select pg_temp.igual('El dominio se guarda una vez y en minúsculas', (select string_agg(dominio, ',') from public.sso_dominios), 'empresa-sso.com');
+select pg_temp.prueba('gmail.com no se puede usar',
+  $q$ select public.sso_guardar((select id from ids where clave = 'ag1'), true, 'saml', '{empresa-sso.com,gmail.com}', true, true) $q$, true);
+reset role;
+select pg_temp.igual('Sin verificar, el dominio no cuenta', (select public.sso_para_email('pepa@empresa-sso.com')::text), null);
+update public.sso_dominios set verificado = true;
+set role authenticated;
+select pg_temp.entra_como('duena@sso.test');
+select pg_temp.prueba('La dueña no puede marcar su dominio como verificado', $q$ update public.sso_dominios set verificado = true $q$, true);
 select pg_temp.prueba('La dueña no puede tocar el SSO de otra agencia',
   $q$ select public.sso_guardar((select id from ids where clave = 'ag2'), false, 'saml', '{}', false, false) $q$, true);
 select pg_temp.entra_como('otra@sso.test');
@@ -84,9 +92,9 @@ select pg_temp.prueba('Anónimo no puede usar el hook', $q$ select public.sso_ho
 reset role;
 
 select pg_temp.igual('Hook: contraseña bloqueada para empresa-sso.com',
-  (select public.sso_hook_token(jsonb_build_object('user_id', (select id from ids where clave = 'pepa'), 'authentication_method', 'password', 'claims', '{}'::jsonb)) -> 'error' ->> 'http_code'), '403');
+  (select public.sso_hook_token(jsonb_build_object('user_id', (select id from ids where clave = 'pepa'), 'authentication_method', 'password', 'claims', '{"amr":[{"method":"password"}]}'::jsonb)) -> 'error' ->> 'http_code'), '403');
 select pg_temp.igual('Hook: entrar por SAML sí deja',
-  (select public.sso_hook_token(jsonb_build_object('user_id', (select id from ids where clave = 'pepa'), 'authentication_method', 'sso/saml', 'claims', '{"a":1}'::jsonb)) -> 'claims' ->> 'a'), '1');
+  (select public.sso_hook_token(jsonb_build_object('user_id', (select id from ids where clave = 'pepa'), 'authentication_method', 'sso/saml', 'claims', '{"a":1,"amr":[{"method":"sso/saml"}]}'::jsonb)) -> 'claims' ->> 'a'), '1');
 select pg_temp.igual('Hook: otros dominios entran con contraseña',
   (select (public.sso_hook_token(jsonb_build_object('user_id', (select id from ids where clave = 'duena'), 'authentication_method', 'password', 'claims', '{}'::jsonb)) ? 'error')::text), 'false');
 
@@ -94,6 +102,7 @@ set role authenticated;
 select pg_temp.entra_como('pepa@empresa-sso.com');
 select pg_temp.igual('Con contraseña no hay alta automática', (select public.sso_unirse()::text), null);
 reset role;
+update auth.users set email_confirmed_at = now() where email = 'pepa@empresa-sso.com';
 insert into auth._jwt values ('{"amr":[{"method":"sso/saml","timestamp":1}]}');
 set role authenticated;
 select pg_temp.igual('Entrando por SAML se une a la agencia',

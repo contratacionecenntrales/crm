@@ -8,7 +8,7 @@ import { useFueraDe } from '@/components/shell/useFueraDe';
 import { Modal } from '@/components/ui/Modal';
 import { estiloInput, estilosBoton } from '@/components/ui/clases';
 import {
-  DIAS_CORTOS, columnas, desplazar, diaEn, diasDeVista, etiquetaGmt, horaEn, instante, minutosDelDia, sumarDias,
+  DIAS_CORTOS, columnas, desplazar, minutosDePared, diaEn, diasDeVista, etiquetaGmt, horaEn, instante, minutosDelDia, sumarDias,
   tituloRango, type Dia, type Vista,
 } from '@/lib/calendario/tiempo';
 import { fondoSuave, nombrePersona, type Bloqueo, type Calendario, type Cita } from '@/lib/calendario/tipos';
@@ -339,7 +339,9 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
     const tramo = (a: string, b: string) => {
       const x = Math.max(Date.parse(a), t0);
       const y = Math.min(Date.parse(b), t1);
-      return y > x ? { ini: (x - t0) / 60000, fin: (y - t0) / 60000 } : null;
+      if (y <= x) return null;
+      // Minutos «de pared»: los días de cambio de hora la rejilla sigue teniendo 24 filas.
+      return { ini: Math.max(0, minutosDePared(x, d, zona)), fin: y === t1 ? 1440 : Math.min(1440, minutosDePared(y, d, zona)) };
     };
     const piezas: Pieza[] = [];
     for (const c of citas) { const r = tramo(c.inicio, c.fin); if (r) piezas.push({ ...r, tipo: 'cita', cita: c }); }
@@ -454,6 +456,7 @@ function RejillaHoras({ dias, hoy, zona, ahora, citas, bloqueos, porCal, usuario
                       style={{ ...estilo, background: fondoSuave(cal?.color ?? '#155eef', c.estado === 'cancelada' ? 0.06 : 0.14), borderLeftColor: cal?.color ?? '#155eef' }}
                       className={`absolute z-[2] touch-none overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-4 text-[#101828] shadow-xs hover:z-[3] hover:shadow-md dark:text-texto ${c.estado === 'cancelada' ? 'opacity-60' : 'cursor-grab'}`}
                       title={`${c.titulo} · ${horaEn(new Date(c.inicio), zona)} – ${horaEn(new Date(c.fin), zona)}`}
+                      onClick={(e) => { if (e.detail === 0) alCita(c); }}
                       onPointerDown={(e) => {
                         if (e.button !== 0) return;
                         const r = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();

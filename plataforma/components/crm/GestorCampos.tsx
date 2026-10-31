@@ -66,7 +66,7 @@ function FormularioCampo({ subId, campo, carpetas, alGuardar }: { subId: string;
   const [tipo, setTipo] = useState(campo?.tipo ?? 'texto');
   useEffect(() => {
     if (estado?.ok) alGuardar();
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <CampoUI etiqueta="Nombre del campo" name="nombre" defaultValue={campo?.nombre} required maxLength={80} />

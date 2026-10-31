@@ -435,7 +435,7 @@ function Historial({ subId, zona, ejecuciones, pasos }: { subId: string; zona: s
                           <span className="ml-auto text-xs text-tenue">{f(r.ts)}</span></p>
                       ))}
                       {e.registro.length === 0 && <p className="text-tenue">Aún no se ha ejecutado ningún paso.</p>}
-                      {['pendiente', 'esperando'].includes(e.estado) && (
+                      {['pendiente', 'esperando', 'procesando'].includes(e.estado) && (
                         <button type="button" className="text-sm font-medium text-peligro hover:underline"
                           onClick={() => iniciar(async () => { const r = await pararEjecucion(subId, e.id); if (!r.ok) alert(r.error); })}>Sacar del flujo</button>
                       )}

@@ -27,7 +27,7 @@ export function FormularioOportunidad({ subId, embudos, asignables, oportunidad:
   const etapas = embudos.find((e) => e.id === embudo)?.etapas ?? [];
   useEffect(() => {
     if (estado?.ok) alGuardar();
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
 
   return (
     <form action={accion} className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -21,7 +21,7 @@ export function FormularioContacto({ accion, campos, asignables, contacto: c, al
   const [estado, enviar] = useActionState(accion, null);
   useEffect(() => {
     if (estado?.ok) alGuardar?.(estado);
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
 
   const carpetas = useMemo(() => {
     const m = new Map<string, Campo[]>();

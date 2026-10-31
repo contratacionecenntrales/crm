@@ -1,5 +1,6 @@
 import 'server-only';
 import nodemailer from 'nodemailer';
+import { resolverPublico } from '@/lib/red/seguro';
 
 const TIEMPO = 15_000;
 
@@ -70,18 +71,19 @@ export async function comprobarMailgun(g: Mailgun): Promise<string> {
 
 export interface Smtp { host: string; puerto: number; seguro: boolean; usuario: string; clave: string }
 
-const transporte = (s: Smtp) => nodemailer.createTransport({
-  host: s.host, port: s.puerto, secure: s.seguro,
+// Se conecta a la IP ya comprobada (no interna) y valida el certificado con el nombre original.
+const transporte = async (s: Smtp) => nodemailer.createTransport({
+  host: await resolverPublico(s.host), port: s.puerto, secure: s.seguro, tls: { servername: s.host },
   auth: s.usuario ? { user: s.usuario, pass: s.clave } : undefined,
   connectionTimeout: TIEMPO, greetingTimeout: TIEMPO, socketTimeout: TIEMPO,
 });
 
 export async function enviarSmtp(s: Smtp, c: Correo): Promise<string> {
-  const info = await transporte(s).sendMail({ from: c.de, to: c.a, subject: c.asunto, text: c.texto, replyTo: c.responderA });
+  const info = await (await transporte(s)).sendMail({ from: c.de, to: c.a, subject: c.asunto, text: c.texto, replyTo: c.responderA });
   return String(info.messageId ?? '');
 }
 
 export async function comprobarSmtp(s: Smtp): Promise<string> {
-  await transporte(s).verify();
+  await (await transporte(s)).verify();
   return `Conectado a ${s.host}:${s.puerto}.`;
 }

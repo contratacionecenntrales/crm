@@ -26,7 +26,7 @@ export function FormularioTarea({ subId, tarea, contactoFijo, asignables, yo, al
   useEffect(() => setZona(String(new Date().getTimezoneOffset())), []);
   useEffect(() => {
     if (estado?.ok) alGuardar();
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <input type="hidden" name="zona" value={zona} />

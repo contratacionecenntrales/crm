@@ -107,18 +107,4 @@ export function resumenPaso(p: Paso): string {
   }
 }
 
-// Evita que un webhook apunte a la red interna del servidor.
-export function urlPublica(url: string): boolean {
-  let h: string;
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'https:') return false;
-    h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  } catch {
-    return false;
-  }
-  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return false;
-  if (/^(127\.|10\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/.test(h)) return false;
-  if (h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80') || h === '::') return false;
-  return true;
-}
+export { urlPublica } from '../red/ip.ts';

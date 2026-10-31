@@ -12,7 +12,7 @@ const etiqueta = 'mb-1.5 block text-sm font-medium text-[#344054] dark:text-text
 
 function Formulario({ subId, p, impuesto, alGuardar }: { subId: string; p: Producto | null; impuesto: number; alGuardar: () => void }) {
   const [estado, accion] = useActionState(guardarProducto.bind(null, subId, p?.id ?? null), null);
-  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado, alGuardar]);
+  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <label className="block"><span className={etiqueta}>Nombre</span><input name="nombre" required maxLength={200} defaultValue={p?.nombre} className={estiloInput} /></label>

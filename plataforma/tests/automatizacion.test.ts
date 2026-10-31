@@ -26,5 +26,8 @@ test('esperas y resúmenes', () => {
 test('webhooks: solo direcciones públicas por https', () => {
   assert.ok(urlPublica('https://hooks.zapier.com/x'));
   for (const u of ['http://ejemplo.com', 'https://localhost/x', 'https://127.0.0.1/', 'https://10.0.0.5/', 'https://192.168.1.1', 'https://172.20.0.1',
-    'https://169.254.169.254/latest', 'https://[::1]/', 'https://db.internal/', 'nada']) assert.ok(!urlPublica(u), u);
+    'https://169.254.169.254/latest', 'https://[::1]/', 'https://db.internal/', 'nada', 'https://[::ffff:127.0.0.1]/', 'https://[::ffff:a9fe:a9fe]/',
+    'https://[::127.0.0.1]/', 'https://[64:ff9b::7f00:1]/', 'https://localhost./', 'https://metadata.google.internal./', 'https://198.18.0.1/',
+    'https://usuario:clave@ejemplo.com/']) assert.ok(!urlPublica(u), u);
+  for (const u of ['https://fcbarcelona.com/', 'https://fdroid.org/', 'https://[2606:4700::1111]/']) assert.ok(urlPublica(u), u);
 });

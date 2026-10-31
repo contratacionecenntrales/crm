@@ -380,3 +380,117 @@ begin
 end $$;
 revoke all on function public.pag_guardar_lineas(uuid, jsonb) from public, anon;
 grant execute on function public.pag_guardar_lineas(uuid, jsonb) to authenticated;
+
+-- =============================================================================
+-- CORRECCIONES DE LA AUDITORÍA
+-- =============================================================================
+alter table public.pag_facturas
+  add column if not exists checkout_id text,
+  add column if not exists checkout_url text,
+  add column if not exists checkout_expira timestamptz;
+
+-- Una factura emitida no vuelve a borrador (se anula), y no se marca pagada sin cobro.
+create or replace function public.pag_estado_factura()
+returns trigger language plpgsql as $$
+begin
+  if new.estado is distinct from old.estado then
+    if old.estado = 'anulada' then
+      raise exception 'Una factura anulada no se puede reabrir.' using errcode = 'check_violation';
+    end if;
+    if new.estado = 'borrador' then
+      raise exception 'Una factura emitida no vuelve a borrador; anúlala y crea otra.' using errcode = 'check_violation';
+    end if;
+    if old.estado = 'pagada' and new.estado <> 'anulada' and new.cobrado >= new.total and new.total > 0 then
+      raise exception 'La factura ya está pagada.' using errcode = 'check_violation';
+    end if;
+    if new.estado = 'pagada' and (new.total <= 0 or new.cobrado < new.total) then
+      raise exception 'Registra el cobro para marcar la factura como pagada.' using errcode = 'check_violation';
+    end if;
+    if new.estado = 'enviada' and new.enviada_en is null then new.enviada_en := now(); end if;
+    if new.estado = 'pagada' and new.pagada_en is null then new.pagada_en := now(); end if;
+  end if;
+  return new;
+end $$;
+
+-- Al cambiar las líneas, si lo cobrado ya cubre el nuevo total, queda pagada.
+create or replace function public.pag_recalcular()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_factura uuid := coalesce(new.factura_id, old.factura_id);
+  v_estado text;
+begin
+  if tg_op = 'DELETE' and pg_trigger_depth() > 1 then return null; end if;
+  select estado into v_estado from public.pag_facturas where id = v_factura;
+  if v_estado in ('pagada', 'anulada') then
+    raise exception 'No se pueden cambiar las líneas de una factura %.', v_estado using errcode = 'check_violation';
+  end if;
+  update public.pag_facturas f set
+    subtotal = coalesce(s.sub, 0), impuestos = coalesce(s.imp, 0), total = coalesce(s.sub, 0) + coalesce(s.imp, 0)
+  from (select round(sum(cantidad * precio), 2) as sub, round(sum(round(cantidad * precio * impuesto / 100, 2)), 2) as imp
+        from public.pag_lineas where factura_id = v_factura) s
+  where f.id = v_factura;
+  update public.pag_facturas set estado = 'pagada'
+  where id = v_factura and estado = 'enviada' and total > 0 and cobrado >= total;
+  return null;
+end $$;
+
+-- El contador de facturas no retrocede (evita números repetidos).
+create or replace function public.pag_contador_no_retrocede()
+returns trigger language plpgsql as $$
+begin
+  if new.siguiente_numero < old.siguiente_numero then
+    raise exception 'El siguiente número no puede ser menor que el actual (%).', old.siguiente_numero using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+drop trigger if exists pag_ajustes_contador on public.pag_ajustes;
+create trigger pag_ajustes_contador before update of siguiente_numero on public.pag_ajustes
+  for each row execute function public.pag_contador_no_retrocede();
+
+-- Cobro de Stripe: se registra siempre (el dinero ya está cobrado), pero si
+-- la factura estaba anulada o ya pagada, o el importe excede lo pendiente,
+-- se avisa a quien la creó y a los administradores para revisarlo.
+create or replace function public.pag_registrar_pago_stripe(p_subcuenta uuid, p_factura uuid, p_importe numeric, p_moneda text, p_referencia text)
+returns uuid language plpgsql volatile security definer set search_path = public as $$
+declare
+  f public.pag_facturas;
+  v uuid;
+  v_raro boolean;
+begin
+  select id into v from public.pag_transacciones where subcuenta_id = p_subcuenta and metodo = 'stripe' and referencia = p_referencia;
+  if v is not null then return v; end if;
+  select * into f from public.pag_facturas where id = p_factura and subcuenta_id = p_subcuenta for update;
+  if not found then raise exception 'Factura no encontrada.' using errcode = 'no_data_found'; end if;
+  v_raro := f.estado in ('pagada', 'anulada') or p_importe > f.total - f.cobrado + 0.005;
+  insert into public.pag_transacciones (subcuenta_id, factura_id, contacto_id, importe, moneda, metodo, referencia, creado_por, notas)
+  values (p_subcuenta, f.id, f.contacto_id, p_importe, upper(p_moneda), 'stripe', p_referencia, null,
+          case when v_raro then 'Revisar: cobro sobre una factura ' || f.estado || ' o por encima de lo pendiente.' else '' end)
+  returning id into v;
+  update public.pag_facturas set checkout_id = null, checkout_url = null, checkout_expira = null where id = f.id;
+  if v_raro then
+    insert into public.notificaciones (usuario_id, agencia_id, subcuenta_id, tipo, categoria, titulo, cuerpo, enlace)
+    select distinct u, s.agencia_id, s.id, 'alerta', 'Pagos', 'Revisar cobro de la factura ' || f.numero,
+           'Stripe cobró ' || p_importe || ' ' || upper(p_moneda) || ' con la factura en estado «' || f.estado || '». Puede que haya que reembolsarlo.',
+           '/subcuenta/' || s.id || '/pagos/facturas/' || f.id
+    from public.subcuentas s,
+         lateral (select f.creado_por as u union select sm.usuario_id from public.subcuenta_miembros sm where sm.subcuenta_id = s.id and sm.rol = 'admin') x
+    where s.id = f.subcuenta_id and u is not null;
+  end if;
+  return v;
+end $$;
+
+-- Reembolso hecho en el panel de Stripe (lo llama el webhook).
+create or replace function public.pag_reembolso_stripe(p_subcuenta uuid, p_referencia text)
+returns int language plpgsql volatile security definer set search_path = public as $$
+declare v_n int;
+begin
+  update public.pag_transacciones set estado = 'reembolsada'
+  where subcuenta_id = p_subcuenta and metodo = 'stripe' and referencia = p_referencia and estado = 'completada';
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+revoke all on function public.pag_reembolso_stripe(uuid, text) from public, anon, authenticated;
+grant execute on function public.pag_reembolso_stripe(uuid, text) to service_role;
+
+-- Las columnas de la sesión de pago solo las escribe el servidor.
+revoke update (checkout_id, checkout_url, checkout_expira) on public.pag_facturas from authenticated;

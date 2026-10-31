@@ -97,7 +97,7 @@ export function GestorEmbudos({ subId, embudos, porEtapa, inicial, soyAdmin }: {
                 e.preventDefault();
                 const f = e.currentTarget;
                 const v = String(new FormData(f).get('etapa') ?? '');
-                ejecutar(async () => { const r = await guardarEtapa(subId, embudo.id, null, v); if (r.ok) f.reset(); return r; });
+                ejecutar(async () => { const r = await guardarEtapa(subId, embudo.id, null, v); if (r.ok) { f.dataset.reiniciar = 'si'; f.reset(); } return r; });
               }}>
                 <input name="etapa" required maxLength={80} placeholder="Nueva etapa" className={estiloInput} />
                 <button disabled={pendiente} className={estilosBoton.secundario}><Plus className="size-4" /> Añadir</button>

@@ -60,7 +60,8 @@ export async function guardarCita(subId: string, citaId: string | null, _: Resul
       asignado_id: d.asignado_id,
       titulo: titulo.slice(0, 200),
       inicio: instante(d.fecha, d.hora_inicio, zona).toISOString(),
-      fin: instante(d.fecha, d.hora_fin, zona).toISOString(),
+      // Si la hora de fin es menor, la cita acaba al día siguiente (p. ej. 23:30–00:00).
+      fin: instante(d.hora_fin <= d.hora_inicio ? sumarDias(d.fecha, 1) : d.fecha, d.hora_fin, zona).toISOString(),
       ubicacion: d.ubicacion,
       estado: d.estado,
       notas: d.notas,
@@ -79,39 +80,51 @@ export async function guardarCita(subId: string, citaId: string | null, _: Resul
 
 // Arrastrar una cita: conserva la duración.
 export async function moverCita(subId: string, citaId: string, inicioIso: string): Promise<Resultado> {
-  validarIds(citaId);
-  const nuevo = new Date(inicioIso);
-  if (Number.isNaN(nuevo.getTime())) return { ok: false, error: 'Hora no válida.' };
-  const { supabase } = await contexto(subId);
-  const { data: c, error } = await supabase.from('cal_citas').select('inicio, fin').eq('id', citaId).eq('subcuenta_id', subId).maybeSingle();
-  if (error || !c) return { ok: false, error: 'La cita ya no existe.' };
-  const duracion = Date.parse(c.fin as string) - Date.parse(c.inicio as string);
-  const r = await supabase.from('cal_citas')
-    .update({ inicio: nuevo.toISOString(), fin: new Date(nuevo.getTime() + duracion).toISOString() })
-    .eq('id', citaId).eq('subcuenta_id', subId);
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(citaId);
+    const nuevo = new Date(inicioIso);
+    if (Number.isNaN(nuevo.getTime())) return { ok: false, error: 'Hora no válida.' };
+    const { supabase } = await contexto(subId);
+    const { data: c, error } = await supabase.from('cal_citas').select('inicio, fin').eq('id', citaId).eq('subcuenta_id', subId).maybeSingle();
+    if (error || !c) return { ok: false, error: 'La cita ya no existe.' };
+    const duracion = Date.parse(c.fin as string) - Date.parse(c.inicio as string);
+    const r = await supabase.from('cal_citas')
+      .update({ inicio: nuevo.toISOString(), fin: new Date(nuevo.getTime() + duracion).toISOString() })
+      .eq('id', citaId).eq('subcuenta_id', subId);
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function estadoCita(subId: string, citaId: string, estado: EstadoCita): Promise<Resultado> {
-  validarIds(citaId);
-  if (!['nueva', 'confirmada', 'cancelada', 'presentado', 'no_presentado'].includes(estado)) return { ok: false, error: 'Estado no válido.' };
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('cal_citas').update({ estado }).eq('id', citaId).eq('subcuenta_id', subId);
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(citaId);
+    if (!['nueva', 'confirmada', 'cancelada', 'presentado', 'no_presentado'].includes(estado)) return { ok: false, error: 'Estado no válido.' };
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('cal_citas').update({ estado }).eq('id', citaId).eq('subcuenta_id', subId);
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarCita(subId: string, citaId: string): Promise<Resultado> {
-  validarIds(citaId);
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('cal_citas').delete().eq('id', citaId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo quien creó la cita o un administrador puede borrarla. Puedes cancelarla.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(citaId);
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('cal_citas').delete().eq('id', citaId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo quien creó la cita o un administrador puede borrarla. Puedes cancelarla.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // Horas libres de un calendario en un día (para el formulario de cita).
@@ -168,13 +181,17 @@ export async function guardarBloqueo(subId: string, bloqueoId: string | null, _:
 }
 
 export async function borrarBloqueo(subId: string, bloqueoId: string): Promise<Resultado> {
-  validarIds(bloqueoId);
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('cal_bloqueos').delete().eq('id', bloqueoId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo quien la creó o un administrador puede borrarla.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(bloqueoId);
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('cal_bloqueos').delete().eq('id', bloqueoId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo quien la creó o un administrador puede borrarla.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // --- Calendarios ------------------------------------------------------------------
@@ -232,41 +249,53 @@ export async function guardarCalendario(subId: string, calId: string | null, _: 
 }
 
 export async function crearCalendarioRapido(subId: string, nombre: string): Promise<ResultadoId> {
-  const n = nombre.trim().slice(0, 120);
-  if (!n) return { ok: false, error: 'Ponle un nombre al calendario.' };
-  const { supabase, usuario } = await contexto(subId);
-  const sufijo = Math.random().toString(36).slice(2, 6);
-  const zona = await zonaDe(supabase, subId);
-  const r = await supabase.from('cal_calendarios')
-    .insert({ subcuenta_id: subId, nombre: n, slug: slugCalendario(n, sufijo), zona_horaria: zona, equipo: [usuario.id] })
-    .select('id').single();
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  const id = r.data.id as string;
-  // Horario por defecto: de lunes a viernes, de 9:00 a 17:00.
-  await supabase.rpc('cal_guardar_horario', {
-    p_cal: id, p_franjas: [1, 2, 3, 4, 5].map((dia) => ({ dia, inicio: '09:00', fin: '17:00' })),
-  });
-  refrescar(subId);
-  return { ok: true, id };
+  try {
+    const n = nombre.trim().slice(0, 120);
+    if (!n) return { ok: false, error: 'Ponle un nombre al calendario.' };
+    const { supabase, usuario } = await contexto(subId);
+    const sufijo = Math.random().toString(36).slice(2, 6);
+    const zona = await zonaDe(supabase, subId);
+    const r = await supabase.from('cal_calendarios')
+      .insert({ subcuenta_id: subId, nombre: n, slug: slugCalendario(n, sufijo), zona_horaria: zona, equipo: [usuario.id] })
+      .select('id').single();
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    const id = r.data.id as string;
+    // Horario por defecto: de lunes a viernes, de 9:00 a 17:00.
+    await supabase.rpc('cal_guardar_horario', {
+      p_cal: id, p_franjas: [1, 2, 3, 4, 5].map((dia) => ({ dia, inicio: '09:00', fin: '17:00' })),
+    });
+    refrescar(subId);
+    return { ok: true, id };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function alternarCalendario(subId: string, calId: string, activo: boolean): Promise<Resultado> {
-  validarIds(calId);
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('cal_calendarios').update({ activo }).eq('id', calId).eq('subcuenta_id', subId);
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(calId);
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('cal_calendarios').update({ activo }).eq('id', calId).eq('subcuenta_id', subId);
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarCalendario(subId: string, calId: string): Promise<Resultado> {
-  validarIds(calId);
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('cal_calendarios').delete().eq('id', calId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'No tienes permiso para borrar este calendario.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validarIds(calId);
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('cal_calendarios').delete().eq('id', calId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'No tienes permiso para borrar este calendario.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // Avisos programados o enviados de una cita (para el formulario).

@@ -1,11 +1,12 @@
 'use client';
-import { useActionState, useState } from 'react';
-import { guardarSso } from '@/app/agencia/configuracion/acciones';
+import { useActionState, useState, useTransition } from 'react';
+import { Loader2 } from 'lucide-react';
+import { guardarSso, verificarDominioSso } from '@/app/agencia/configuracion/acciones';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
-import { estiloArea } from '@/components/ui/clases';
+import { estiloArea, estilosBoton } from '@/components/ui/clases';
 import { BotonCopiar } from '@/components/calendario/TablaCalendarios';
-import type { Agencia } from '@/lib/tipos';
+import type { Agencia, Resultado } from '@/lib/tipos';
 import { Interruptor, SeccionAjuste } from './Piezas';
 
 const PROVEEDORES = [
@@ -26,7 +27,35 @@ function Dato({ texto, valor }: { texto: string; valor: string }) {
   );
 }
 
-export function AjustesSso({ agencia: a, dominios, supabase, web }: { agencia: Agencia; dominios: string[]; supabase: string; web: string }) {
+function FilaDominio({ d }: { d: { dominio: string; verificado: boolean; token: string } }) {
+  const [r, setR] = useState<Resultado | null>(null);
+  const [pendiente, iniciar] = useTransition();
+  return (
+    <li className="space-y-2 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-texto">{d.dominio}</span>
+        {d.verificado
+          ? <span className="rounded-full bg-[#dcfae6] px-2 py-0.5 text-xs font-medium text-[#067647] dark:bg-emerald-950 dark:text-emerald-300">Verificado</span>
+          : <span className="rounded-full bg-[#fef0c7] px-2 py-0.5 text-xs font-medium text-[#93370d] dark:bg-amber-950 dark:text-amber-300">Sin verificar</span>}
+        {!d.verificado && (
+          <button type="button" disabled={pendiente} onClick={() => iniciar(async () => setR(await verificarDominioSso(d.dominio)))} className={`${estilosBoton.secundario} ml-auto h-8`}>
+            {pendiente && <Loader2 className="size-4 animate-spin" />} Verificar
+          </button>
+        )}
+      </div>
+      {!d.verificado && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Dato texto="Registro TXT (nombre)" valor={`_metatok-sso.${d.dominio}`} />
+          <Dato texto="Valor" valor={`metatok-sso=${d.token}`} />
+        </div>
+      )}
+      <Aviso estado={r} />
+    </li>
+  );
+}
+
+export function AjustesSso({ agencia: a, dominios: filas, supabase, web }: { agencia: Agencia; dominios: { dominio: string; verificado: boolean; token: string }[]; supabase: string; web: string }) {
+  const dominios = filas.map((f) => f.dominio);
   const [estado, accion] = useActionState(guardarSso, null);
   const [proveedor, setProveedor] = useState(a.sso_proveedor ?? 'saml');
   const [activo, setActivo] = useState(Boolean(a.sso_activo));
@@ -59,8 +88,15 @@ export function AjustesSso({ agencia: a, dominios, supabase, web }: { agencia: A
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-[#344054] dark:text-texto-2">Dominios de correo</span>
             <textarea name="sso_dominios" rows={2} defaultValue={dominios.join(', ')} placeholder="tuempresa.com, tuempresa.es" className={estiloArea} />
-            <span className="mt-1 block text-xs text-tenue">Separados por comas. Un dominio solo puede estar en una agencia.</span>
+            <span className="mt-1 block text-xs text-tenue">Separados por comas. No se admiten correos públicos (gmail.com, outlook.com…).</span>
           </label>
+          {filas.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-texto">Verificación</p>
+              <p className="text-xs text-tenue">Para demostrar que el dominio es tuyo, publica este registro TXT en su DNS y pulsa «Verificar». Hasta entonces el SSO no se aplica a ese dominio.</p>
+              <ul className="divide-y divide-borde">{filas.map((f) => <FilaDominio key={f.dominio} d={f} />)}</ul>
+            </div>
+          )}
         </div>
       </SeccionAjuste>
       <SeccionAjuste titulo="Conexión con el proveedor" descripcion="Pasos que se hacen una vez en Supabase y en tu proveedor de identidad.">

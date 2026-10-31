@@ -29,9 +29,11 @@ export async function comprobarStripe(secreta: string): Promise<string> {
 export async function crearCheckout(o: {
   secreta: string; subId: string; facturaId: string; numero: string; empresa: string; pendiente: number; moneda: string;
   email: string | null; volver: string;
-}): Promise<string> {
+}): Promise<{ id: string; url: string; expira: string }> {
   const p = new URLSearchParams({
     mode: 'payment',
+    // Sesión corta (el mínimo de Stripe): una factura no queda con pagos abiertos días.
+    expires_at: String(Math.floor(Date.now() / 1000) + 31 * 60),
     success_url: `${o.volver}?pagado=1`,
     cancel_url: o.volver,
     'line_items[0][quantity]': '1',
@@ -46,5 +48,14 @@ export async function crearCheckout(o: {
   });
   if (o.email) p.set('customer_email', o.email);
   const s = await llamar(o.secreta, 'checkout/sessions', p);
-  return String(s.url);
+  return { id: String(s.id), url: String(s.url), expira: new Date(Number(s.expires_at) * 1000).toISOString() };
+}
+
+// Caduca una sesión anterior para que no se pueda pagar dos veces.
+export async function caducarCheckout(secreta: string, id: string): Promise<void> {
+  try {
+    await llamar(secreta, `checkout/sessions/${encodeURIComponent(id)}/expire`, new URLSearchParams());
+  } catch {
+    /* ya caducada o completada */
+  }
 }

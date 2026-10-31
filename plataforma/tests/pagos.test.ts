@@ -15,6 +15,10 @@ test('unidades mínimas de Stripe', () => {
   assert.equal(aUnidadMinima(0.29, 'usd'), 29);
   assert.equal(aUnidadMinima(1500, 'JPY'), 1500);
   assert.equal(desdeUnidadMinima(15570, 'EUR'), 155.7);
+  assert.equal(aUnidadMinima(10, 'KWD'), 10000);
+  assert.equal(desdeUnidadMinima(10000, 'KWD'), 10);
+  assert.equal(aUnidadMinima(1000, 'ISK'), 100000);
+  assert.equal(aUnidadMinima(500, 'XPF'), 500);
 });
 
 test('estado visible', () => {

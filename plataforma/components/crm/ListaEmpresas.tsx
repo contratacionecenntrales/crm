@@ -83,7 +83,7 @@ function FormularioEmpresa({ subId, empresa: e, alGuardar }: { subId: string; em
   const [estado, accion] = useActionState(guardarEmpresa.bind(null, subId, e?.id ?? null), null);
   useEffect(() => {
     if (estado?.ok) alGuardar();
-  }, [estado, alGuardar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Campo className="sm:col-span-2" etiqueta="Nombre" name="nombre" defaultValue={e?.nombre} required maxLength={160} />

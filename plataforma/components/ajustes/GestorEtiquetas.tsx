@@ -116,7 +116,7 @@ export function GestorEtiquetas({ subId, etiquetas, soyAdmin, pestana }: { subId
 
 function FormEtiqueta({ subId, etiqueta: e, categorias, alTerminar }: { subId: string; etiqueta?: FilaEtiqueta; categorias: string[]; alTerminar: () => void }) {
   const [estado, accion] = useActionState(guardarEtiqueta.bind(null, subId, e?.nombre ?? null), null);
-  useEffect(() => { if (estado?.ok) alTerminar(); }, [estado, alTerminar]);
+  useEffect(() => { if (estado?.ok) alTerminar(); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <Campo etiqueta="Nombre" name="nombre" defaultValue={e?.nombre} required maxLength={60} ayuda={e ? `Al renombrarla se cambia en sus ${e.contactos} contactos.` : undefined} />

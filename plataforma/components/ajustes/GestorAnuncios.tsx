@@ -86,7 +86,7 @@ export function GestorAnuncios({ anuncios, subcuentas }: { anuncios: Anuncio[]; 
 function FormAnuncio({ anuncio: a, subcuentas, alTerminar }: { anuncio?: Anuncio; subcuentas: { id: string; nombre: string }[]; alTerminar: () => void }) {
   const [estado, accion] = useActionState(guardarAnuncio.bind(null, a?.id ?? null), null);
   const [todas, setTodas] = useState(!a || a.subcuentas.length === 0);
-  useEffect(() => { if (estado?.ok) alTerminar(); }, [estado, alTerminar]);
+  useEffect(() => { if (estado?.ok) alTerminar(); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <Campo etiqueta="Título" name="titulo" defaultValue={a?.titulo} required maxLength={160} />

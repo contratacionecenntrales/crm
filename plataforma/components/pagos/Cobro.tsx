@@ -11,7 +11,7 @@ const etiqueta = 'mb-1.5 block text-sm font-medium text-[#344054] dark:text-text
 
 export function FormularioCobro({ subId, facturaId, pendiente, alGuardar }: { subId: string; facturaId: string | null; pendiente?: number; alGuardar: () => void }) {
   const [estado, accion] = useActionState(registrarCobro.bind(null, subId, facturaId), null);
-  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado, alGuardar]);
+  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   const hoy = new Date().toISOString().slice(0, 10);
   return (
     <form action={accion} className="space-y-4">

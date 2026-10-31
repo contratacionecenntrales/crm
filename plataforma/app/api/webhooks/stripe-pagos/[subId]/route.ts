@@ -34,6 +34,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
       p_subcuenta: subId, p_factura: facturaId, p_importe: desdeUnidadMinima(Number(s.amount_total ?? 0), moneda),
       p_moneda: moneda, p_referencia: String(s.payment_intent ?? s.id),
     });
+    // Factura borrada: no tiene sentido que Stripe reintente durante días.
+    if (error && error.code === 'P0002') return NextResponse.json({ ignorado: 'factura no encontrada' });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  // Reembolso completo hecho en el panel de Stripe.
+  if (evento.type === 'charge.refunded' && s.refunded === true && typeof s.payment_intent === 'string') {
+    const { error } = await admin.rpc('pag_reembolso_stripe', { p_subcuenta: subId, p_referencia: s.payment_intent });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({ recibido: true });

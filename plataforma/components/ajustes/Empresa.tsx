@@ -19,7 +19,7 @@ const CATEGORIAS = ['Agencia de marketing', 'Consultoría', 'Desarrollo de softw
 function Botones() {
   return (
     <div className="flex justify-end gap-2">
-      <button type="reset" className={estilosBoton.secundario}>Cancelar</button>
+      <button type="reset" onClick={(e) => { if (e.currentTarget.form) e.currentTarget.form.dataset.reiniciar = 'si'; }} className={estilosBoton.secundario}>Cancelar</button>
       <BotonEnvio>Guardar cambios</BotonEnvio>
     </div>
   );

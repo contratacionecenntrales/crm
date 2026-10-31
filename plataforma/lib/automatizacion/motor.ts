@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { adminObligatorio, enviarGuardado } from '@/lib/conversaciones/envio';
 import { diaEn, fechaLarga, horaEn } from '@/lib/calendario/tiempo';
 import { esperaEnMinutos, esquemaPaso, rellenarVariables, urlPublica, type Paso } from './tipos';
+import { postJsonSeguro } from '@/lib/red/seguro';
 
 interface Ejecucion {
   id: string; subcuenta_id: string; flujo_id: string; contacto_id: string; paso: number; pasos: unknown[]; datos: Record<string, unknown>;
@@ -16,8 +17,18 @@ export async function procesarAutomatizaciones(limite = 50, solo?: string) {
   const admin = adminObligatorio();
   const { data, error } = await admin.rpc('aut_tomar', { p_limite: limite, p_solo: solo ?? null });
   if (error) throw new Error(error.message);
-  const resumen = { tomadas: 0, pasos: 0, completadas: 0, errores: 0 };
-  for (const e of (data ?? []) as Ejecucion[]) {
+  const resumen = { tomadas: 0, pasos: 0, completadas: 0, errores: 0, aplazadas: 0 };
+  const lista = (data ?? []) as Ejecucion[];
+  // La función del servidor tiene un tiempo máximo: a los 40 s se devuelven a
+  // la cola las ejecuciones que no se han empezado (siguen en la próxima vuelta).
+  const limiteTiempo = Date.now() + 40_000;
+  for (const [n, e] of lista.entries()) {
+    if (Date.now() > limiteTiempo) {
+      const resto = lista.slice(n).map((x) => x.id);
+      await admin.from('aut_ejecuciones').update({ estado: 'pendiente', tomado_en: null }).in('id', resto).eq('estado', 'procesando');
+      resumen.aplazadas = resto.length;
+      break;
+    }
     resumen.tomadas++;
     const r = await ejecutar(admin, e);
     resumen.pasos += r.pasos;
@@ -30,11 +41,14 @@ export async function procesarAutomatizaciones(limite = 50, solo?: string) {
 async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: string; pasos: number }> {
   const anotar = (paso: number, tipo: string, ok: boolean, detalle: string) =>
     admin.from('aut_registro').insert({ subcuenta_id: e.subcuenta_id, ejecucion_id: e.id, paso, tipo, ok, detalle: detalle.slice(0, 2000) });
-  const cerrar = (cambios: Record<string, unknown>) => admin.from('aut_ejecuciones').update(cambios).eq('id', e.id);
+  // Solo cierra si sigue «procesando»: si alguien la sacó del flujo, no se pisa.
+  const cerrar = (cambios: Record<string, unknown>) => admin.from('aut_ejecuciones').update(cambios).eq('id', e.id).eq('estado', 'procesando');
 
-  // Alguien la paró mientras esperaba.
-  const { data: actual } = await admin.from('aut_ejecuciones').select('estado').eq('id', e.id).single();
-  if (actual?.estado === 'terminada') return { estado: 'terminada', pasos: 0 };
+  // ¿Alguien la sacó del flujo mientras se ejecutaba?
+  const parada = async () => {
+    const { data } = await admin.from('aut_ejecuciones').select('estado').eq('id', e.id).single();
+    return data?.estado === 'terminada';
+  };
 
   const [{ data: k }, { data: sub }] = await Promise.all([
     admin.from('crm_contactos').select('id, nombre, apellidos, email, telefono, etiquetas, propietario_id').eq('id', e.contacto_id).maybeSingle(),
@@ -71,6 +85,7 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
       continue;
     }
     const p: Paso = parsed.data;
+    if (hechos > 0 && await parada()) return { estado: 'terminada', pasos: hechos };
     hechos++;
     if (p.tipo === 'esperar') {
       const hasta = new Date(Date.now() + esperaEnMinutos(p) * 60_000).toISOString();
@@ -90,6 +105,9 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
       await anotar(i, p.tipo, false, (err as Error).message || 'Error');
     }
     i++;
+    // Avance guardado tras cada paso: si el proceso se corta, al recuperarla
+    // no se repiten los mensajes ya enviados.
+    await admin.from('aut_ejecuciones').update({ paso: i, tomado_en: new Date().toISOString() }).eq('id', e.id).eq('estado', 'procesando');
   }
   if (i < e.pasos.length) {
     // Demasiados pasos seguidos: sigue en la próxima vuelta.
@@ -162,6 +180,8 @@ async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso,
     case 'notificar': {
       const destino = p.usuario_id || c.propietario_id;
       if (!destino) return { ok: false, detalle: 'El contacto no tiene propietario a quien avisar.' };
+      const { data: puede } = await admin.rpc('usuario_ve_subcuenta', { p_usuario: destino, p_subcuenta: sub });
+      if (!puede) return { ok: false, detalle: 'La persona elegida no tiene acceso a esta subcuenta.' };
       const { data: s } = await admin.from('subcuentas').select('agencia_id').eq('id', sub).single();
       const { error } = await admin.from('notificaciones').insert({
         usuario_id: destino, agencia_id: s?.agencia_id, subcuenta_id: sub, tipo: 'alerta', categoria: 'Automatización',
@@ -180,9 +200,8 @@ async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso,
       if (!urlPublica(p.url)) return { ok: false, detalle: 'La URL apunta a una dirección interna; no se llama.' };
       const cuerpo = { evento: e.datos.evento, flujo_id: e.flujo_id, ejecucion_id: e.id, subcuenta_id: sub, datos: e.datos,
         contacto: { id: c.id, nombre: c.nombre, apellidos: c.apellidos, email: c.email, telefono: c.telefono, etiquetas: c.etiquetas } };
-      const r = await fetch(p.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'Metatok-Automatizacion/1.0' },
-        body: JSON.stringify(cuerpo), signal: AbortSignal.timeout(10_000), redirect: 'error' });
-      return r.ok ? { ok: true, detalle: `Webhook respondió ${r.status}.` } : { ok: false, detalle: `El webhook respondió ${r.status}.` };
+      const r = await postJsonSeguro(p.url, cuerpo);
+      return r.status >= 200 && r.status < 300 ? { ok: true, detalle: `Webhook respondió ${r.status}.` } : { ok: false, detalle: `El webhook respondió ${r.status}.` };
     }
     case 'esperar':
       return { ok: true, detalle: '' };

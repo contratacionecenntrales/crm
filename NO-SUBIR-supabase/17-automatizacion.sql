@@ -170,6 +170,10 @@ begin
   if not exists (select 1 from public.crm_contactos where id = p_contacto and subcuenta_id = f.subcuenta_id) then
     raise exception 'El contacto no es de esta subcuenta.' using errcode = 'check_violation';
   end if;
+  if (select count(*) from public.aut_ejecuciones e where e.flujo_id = f.id and e.contacto_id = p_contacto
+      and e.creado > now() - interval '1 hour') >= 10 then
+    raise exception 'Este contacto ya ha entrado 10 veces en la última hora en este flujo.' using errcode = 'check_violation';
+  end if;
   insert into public.aut_ejecuciones (subcuenta_id, flujo_id, contacto_id, pasos, datos)
   values (f.subcuenta_id, f.id, p_contacto, f.pasos, jsonb_build_object('evento', 'manual', 'por', auth.uid()))
   returning id into v;

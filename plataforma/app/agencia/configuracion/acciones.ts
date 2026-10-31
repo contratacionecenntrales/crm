@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { exigirAgencia } from '@/lib/sesion';
 import { supabaseUrl } from '@/lib/env';
+import { resolveTxt } from 'node:dns/promises';
+import { crearClienteAdmin } from '@/lib/supabase/admin';
 import { mensajeDeError } from '@/lib/errores';
 import { invitarPorCorreo } from '@/lib/invitar';
 import { esquemaAgencia, leerFormulario, primerError } from '@/lib/validacion';
@@ -216,4 +218,34 @@ export async function guardarSso(_: Resultado | null, fd: FormData): Promise<Res
   if (error) return { ok: false, error: mensajeDeError(error) };
   revalidatePath('/agencia/configuracion', 'layout');
   return { ok: true, mensaje: 'Inicio de sesión único guardado.' };
+}
+
+// Comprueba el registro DNS TXT «_metatok-sso.<dominio>» = «metatok-sso=<token>»
+// y, si está, marca el dominio como verificado (con la clave de servicio: la
+// agencia no puede marcarlo por su cuenta).
+export async function verificarDominioSso(dominio: string): Promise<Resultado> {
+  try {
+    const { actual } = await exigirAgencia({ admin: true });
+    const d = dominio.trim().toLowerCase();
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(d)) return { ok: false, error: 'Dominio no válido.' };
+    const supabase = await crearClienteServidor();
+    const { data: fila } = await supabase.from('sso_dominios').select('token, verificado').eq('dominio', d).eq('agencia_id', actual.agencia.id).maybeSingle();
+    if (!fila) return { ok: false, error: 'Guarda antes el dominio.' };
+    if (fila.verificado) return { ok: true, mensaje: 'El dominio ya está verificado.' };
+    let registros: string[] = [];
+    try {
+      registros = (await resolveTxt(`_metatok-sso.${d}`)).map((r) => r.join(''));
+    } catch {
+      return { ok: false, error: `No se encuentra el registro TXT en _metatok-sso.${d}. Los cambios de DNS pueden tardar hasta unas horas.` };
+    }
+    if (!registros.includes(`metatok-sso=${fila.token}`)) return { ok: false, error: 'El registro TXT existe pero su valor no coincide.' };
+    const admin = crearClienteAdmin();
+    if (!admin) return { ok: false, error: 'Falta SUPABASE_SERVICE_ROLE_KEY en el servidor.' };
+    const { error } = await admin.from('sso_dominios').update({ verificado: true }).eq('dominio', d).eq('agencia_id', actual.agencia.id);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    revalidatePath('/agencia/configuracion', 'layout');
+    return { ok: true, mensaje: `Dominio ${d} verificado.` };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
 }

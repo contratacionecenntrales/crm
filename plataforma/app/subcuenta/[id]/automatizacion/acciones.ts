@@ -54,14 +54,18 @@ const PLANTILLAS: Record<string, { disparador: Disparador; filtro: Record<string
 };
 
 export async function crearFlujo(subId: string, nombre: string, plantilla: string): Promise<ResultadoId> {
-  const n = nombre.trim().slice(0, 120);
-  if (!n) return { ok: false, error: 'Ponle un nombre al flujo.' };
-  const p = PLANTILLAS[plantilla] ?? PLANTILLAS.vacio;
-  const supabase = await contexto(subId);
-  const r = await supabase.from('aut_flujos').insert({ subcuenta_id: subId, nombre: n, disparador: p.disparador, filtro: p.filtro, pasos: p.pasos }).select('id').single();
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true, id: r.data.id as string };
+  try {
+    const n = nombre.trim().slice(0, 120);
+    if (!n) return { ok: false, error: 'Ponle un nombre al flujo.' };
+    const p = PLANTILLAS[plantilla] ?? PLANTILLAS.vacio;
+    const supabase = await contexto(subId);
+    const r = await supabase.from('aut_flujos').insert({ subcuenta_id: subId, nombre: n, disparador: p.disparador, filtro: p.filtro, pasos: p.pasos }).select('id').single();
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true, id: r.data.id as string };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function guardarFlujo(subId: string, flujoId: string, d: {
@@ -99,38 +103,50 @@ export async function guardarFlujo(subId: string, flujoId: string, d: {
 }
 
 export async function publicarFlujo(subId: string, flujoId: string, activo: boolean): Promise<Resultado> {
-  validar(flujoId);
-  const supabase = await contexto(subId);
-  if (activo) {
-    const { data } = await supabase.from('aut_flujos').select('pasos').eq('id', flujoId).single();
-    if (!data || !(data.pasos as unknown[]).length) return { ok: false, error: 'Añade al menos un paso antes de publicar.' };
+  try {
+    validar(flujoId);
+    const supabase = await contexto(subId);
+    if (activo) {
+      const { data } = await supabase.from('aut_flujos').select('pasos').eq('id', flujoId).single();
+      if (!data || !(data.pasos as unknown[]).length) return { ok: false, error: 'Añade al menos un paso antes de publicar.' };
+    }
+    const r = await supabase.from('aut_flujos').update({ activo }).eq('id', flujoId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede publicar flujos.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
   }
-  const r = await supabase.from('aut_flujos').update({ activo }).eq('id', flujoId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede publicar flujos.' };
-  refrescar(subId);
-  return { ok: true };
 }
 
 export async function duplicarFlujo(subId: string, flujoId: string): Promise<ResultadoId> {
-  validar(flujoId);
-  const supabase = await contexto(subId);
-  const { data: f } = await supabase.from('aut_flujos').select('nombre, disparador, filtro, pasos, permitir_reentrada').eq('id', flujoId).single();
-  if (!f) return { ok: false, error: 'El flujo ya no existe.' };
-  const r = await supabase.from('aut_flujos').insert({ ...f, subcuenta_id: subId, nombre: `${f.nombre} (copia)`.slice(0, 120), activo: false }).select('id').single();
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true, id: r.data.id as string };
+  try {
+    validar(flujoId);
+    const supabase = await contexto(subId);
+    const { data: f } = await supabase.from('aut_flujos').select('nombre, disparador, filtro, pasos, permitir_reentrada').eq('id', flujoId).single();
+    if (!f) return { ok: false, error: 'El flujo ya no existe.' };
+    const r = await supabase.from('aut_flujos').insert({ ...f, subcuenta_id: subId, nombre: `${f.nombre} (copia)`.slice(0, 120), activo: false }).select('id').single();
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true, id: r.data.id as string };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarFlujo(subId: string, flujoId: string): Promise<Resultado> {
-  validar(flujoId);
-  const supabase = await contexto(subId);
-  const r = await supabase.from('aut_flujos').delete().eq('id', flujoId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede borrar flujos.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(flujoId);
+    const supabase = await contexto(subId);
+    const r = await supabase.from('aut_flujos').delete().eq('id', flujoId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede borrar flujos.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // «Probar»: mete al contacto en el flujo y ejecuta ya los pasos hasta la
@@ -150,12 +166,16 @@ export async function probarFlujo(subId: string, flujoId: string, contactoId: st
 }
 
 export async function pararEjecucion(subId: string, ejecId: string): Promise<Resultado> {
-  validar(ejecId);
-  const supabase = await contexto(subId);
-  const r = await supabase.from('aut_ejecuciones').update({ estado: 'terminada', motivo: 'Parada a mano', terminado: new Date().toISOString() })
-    .eq('id', ejecId).eq('subcuenta_id', subId).in('estado', ['pendiente', 'esperando']).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Esta ejecución ya no está en marcha.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(ejecId);
+    const supabase = await contexto(subId);
+    const r = await supabase.from('aut_ejecuciones').update({ estado: 'terminada', motivo: 'Parada a mano', terminado: new Date().toISOString() })
+      .eq('id', ejecId).eq('subcuenta_id', subId).in('estado', ['pendiente', 'esperando', 'procesando']).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Esta ejecución ya no está en marcha.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }

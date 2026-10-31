@@ -145,7 +145,7 @@ export function TablaUsuarios({ filas, subcuentas, yo, soyPropietario }: { filas
 function NuevoUsuario({ subcuentas, soyPropietario, alTerminar }: { subcuentas: { id: string; nombre: string }[]; soyPropietario: boolean; alTerminar: () => void }) {
   const [estado, accion] = useActionState(anadirUsuario, null);
   const [tipo, setTipo] = useState<'agencia' | 'subcuenta'>('subcuenta');
-  useEffect(() => { if (estado?.ok) setTimeout(alTerminar, 900); }, [estado, alTerminar]);
+  useEffect(() => { if (estado?.ok) setTimeout(alTerminar, 900); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <Campo etiqueta="Correo electrónico" name="email" type="email" required />

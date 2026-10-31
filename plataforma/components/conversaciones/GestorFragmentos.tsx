@@ -10,7 +10,7 @@ import type { Fragmento } from '@/lib/conversaciones/tipos';
 
 function Formulario({ subId, f, alGuardar }: { subId: string; f: Fragmento | null; alGuardar: () => void }) {
   const [estado, accion] = useActionState(guardarFragmento.bind(null, subId, f?.id ?? null), null);
-  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado, alGuardar]);
+  useEffect(() => { if (estado?.ok) alGuardar(); }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
   return (
     <form action={accion} className="space-y-4">
       <label className="block">

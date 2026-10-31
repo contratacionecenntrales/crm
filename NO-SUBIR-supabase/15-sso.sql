@@ -52,6 +52,9 @@ begin
     raise exception 'Proveedor no válido.' using errcode = 'check_violation';
   end if;
   v_dom := coalesce((select array_agg(distinct lower(trim(d))) from unnest(p_dominios) d where trim(d) <> ''), '{}');
+  if exists (select 1 from unnest(v_dom) d where public.sso_dominio_publico(d)) then
+    raise exception 'No se puede usar un dominio de correo público (gmail.com, outlook.com…).' using errcode = 'check_violation';
+  end if;
   if cardinality(v_dom) > 20 then
     raise exception 'Máximo 20 dominios.' using errcode = 'check_violation';
   end if;
@@ -132,3 +135,67 @@ do $$ begin
   grant execute on function public.sso_hook_token(jsonb) to supabase_auth_admin;
   grant select on public.sso_dominios, public.agencias to supabase_auth_admin;
 exception when undefined_object then null; end $$;
+
+-- =============================================================================
+-- VERIFICACIÓN DE DOMINIOS (corrección de la auditoría)
+-- Un dominio solo cuenta para el SSO cuando la agencia demuestra que es suyo
+-- publicando un registro DNS TXT. Lo marca el servidor tras comprobarlo.
+-- Los dominios de correo público no se pueden usar.
+-- =============================================================================
+alter table public.sso_dominios
+  add column if not exists verificado boolean not null default false,
+  add column if not exists token text not null default encode(extensions.gen_random_bytes(12), 'hex');
+
+create or replace function public.sso_dominio_publico(p_dominio text) returns boolean language sql immutable as $$
+  select p_dominio = any(array['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'live.com',
+    'msn.com', 'yahoo.com', 'yahoo.es', 'icloud.com', 'me.com', 'mac.com', 'aol.com', 'proton.me', 'protonmail.com', 'gmx.com',
+    'gmx.es', 'mail.com', 'yandex.com', 'zoho.com', 'telefonica.net', 'movistar.es'])
+$$;
+do $$ begin
+  alter table public.sso_dominios add constraint sso_dominios_no_publico check (not public.sso_dominio_publico(dominio));
+exception when duplicate_object then null; end $$;
+
+create or replace function public.sso_para_email(p_email text)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('dominio', d.dominio, 'proveedor', a.sso_proveedor, 'obligatorio', a.sso_obligatorio)
+  from public.sso_dominios d join public.agencias a on a.id = d.agencia_id
+  where a.sso_activo and d.verificado and d.dominio = lower(split_part(trim(p_email), '@', 2));
+$$;
+
+create or replace function public.sso_unirse()
+returns uuid language plpgsql volatile security definer set search_path = public, auth as $$
+declare
+  v_email text;
+  v_agencia uuid;
+  v_metodos text[];
+begin
+  if auth.uid() is null then return null; end if;
+  select array_agg(m ->> 'method') into v_metodos from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) m;
+  if not (coalesce(v_metodos, '{}') && array['sso/saml', 'oauth']) then return null; end if;
+  -- Solo correos confirmados por el proveedor.
+  select email into v_email from auth.users where id = auth.uid() and email_confirmed_at is not null;
+  if v_email is null then return null; end if;
+  select a.id into v_agencia from public.sso_dominios d join public.agencias a on a.id = d.agencia_id
+  where a.sso_activo and a.sso_autoalta and d.verificado and d.dominio = lower(split_part(v_email, '@', 2));
+  if v_agencia is null then return null; end if;
+  insert into public.agencia_miembros (agencia_id, usuario_id, rol) values (v_agencia, auth.uid(), 'usuario')
+  on conflict do nothing;
+  return v_agencia;
+end $$;
+
+create or replace function public.sso_hook_token(event jsonb)
+returns jsonb language plpgsql stable security definer set search_path = public, auth as $$
+declare
+  v_email text;
+  v_metodo text := event ->> 'authentication_method';
+begin
+  if v_metodo in ('password', 'otp', 'magiclink', 'email/signup', 'invite', 'recovery') then
+    select email into v_email from auth.users where id = (event ->> 'user_id')::uuid;
+    if exists (select 1 from public.sso_dominios d join public.agencias a on a.id = d.agencia_id
+               where a.sso_activo and a.sso_obligatorio and d.verificado and d.dominio = lower(split_part(v_email, '@', 2))) then
+      return jsonb_build_object('error', jsonb_build_object('http_code', 403,
+        'message', 'Tu empresa exige entrar con inicio de sesión único (SSO).'));
+    end if;
+  end if;
+  return jsonb_build_object('claims', event -> 'claims');
+end $$;

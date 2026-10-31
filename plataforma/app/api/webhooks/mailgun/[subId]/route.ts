@@ -21,12 +21,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
     return new NextResponse('Firma no válida', { status: 406 }); // 406: Mailgun no reintenta
   }
 
+  // Respuestas automáticas (vacaciones, «no-reply»…): no se registran, así un
+  // flujo que contesta correos no entra en bucle con un autorespondedor.
+  let cabeceras: [string, string][] = [];
+  try { cabeceras = JSON.parse(campo('message-headers') || '[]'); } catch { /* sin cabeceras */ }
+  const automatico = cabeceras.some(([k, v]) => (/^auto-submitted$/i.test(k) && !/^no$/i.test(String(v).trim()))
+    || (/^precedence$/i.test(k) && /bulk|junk|list|auto_reply/i.test(String(v))) || /^x-auto(reply|-response-suppress)$/i.test(k));
+  if (automatico) return NextResponse.json({ ignorado: 'respuesta automática' });
+
   const { nombre, email } = separarRemitente(campo('from') || campo('sender'));
   const cuerpo = campo('stripped-text') || campo('body-plain') || '(correo sin texto)';
   const { error } = await adminObligatorio().rpc('conv_registrar_entrante', {
     p_subcuenta: subId, p_canal: 'email', p_de: email || campo('sender'), p_cuerpo: cuerpo.slice(0, 20000),
     p_asunto: campo('subject').slice(0, 300), p_proveedor_id: campo('Message-Id') || null, p_nombre: nombre,
   });
-  if (error) return new NextResponse(error.message, { status: 406 });
+  // Datos no válidos: 406 (Mailgun no reintenta). Fallo del servidor: 500 (reintenta).
+  if (error) return new NextResponse(error.message, { status: error.code === '23514' || error.code === '22P02' ? 406 : 500 });
   return NextResponse.json({ ok: true });
 }

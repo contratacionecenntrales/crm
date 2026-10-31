@@ -60,24 +60,32 @@ export async function enviarMensaje(subId: string, contactoId: string, canal: Ca
 }
 
 export async function reintentarMensaje(subId: string, mensajeId: string): Promise<Resultado> {
-  validar(mensajeId);
-  const { supabase } = await contexto(subId);
-  // Comprueba con los permisos de la persona que el mensaje es de su subcuenta.
-  const { data } = await supabase.from('conv_mensajes').select('id, estado').eq('id', mensajeId).eq('subcuenta_id', subId).maybeSingle();
-  if (!data) return { ok: false, error: 'El mensaje ya no existe.' };
-  if (data.estado !== 'fallido') return { ok: true };
-  const error = await enviarGuardado(subId, mensajeId);
-  refrescar(subId);
-  return error ? { ok: false, error } : { ok: true };
+  try {
+    validar(mensajeId);
+    const { supabase } = await contexto(subId);
+    // Comprueba con los permisos de la persona que el mensaje es de su subcuenta.
+    const { data } = await supabase.from('conv_mensajes').select('id, estado').eq('id', mensajeId).eq('subcuenta_id', subId).maybeSingle();
+    if (!data) return { ok: false, error: 'El mensaje ya no existe.' };
+    if (data.estado !== 'fallido') return { ok: true };
+    const error = await enviarGuardado(subId, mensajeId);
+    refrescar(subId);
+    return error ? { ok: false, error } : { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 async function cambiarConversacion(subId: string, convId: string, cambios: Record<string, unknown>): Promise<Resultado> {
-  validar(convId);
-  const { supabase } = await contexto(subId);
-  const { error } = await supabase.from('conv_conversaciones').update(cambios).eq('id', convId).eq('subcuenta_id', subId);
-  if (error) return { ok: false, error: mensajeDeError(error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(convId);
+    const { supabase } = await contexto(subId);
+    const { error } = await supabase.from('conv_conversaciones').update(cambios).eq('id', convId).eq('subcuenta_id', subId);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
 }
 
 export const marcarLeida = async (subId: string, convId: string, leida: boolean) =>
@@ -93,49 +101,65 @@ export async function asignarConversacion(subId: string, convId: string, usuario
 
 // Acciones sobre varias conversaciones marcadas en la lista.
 export async function conversacionesLote(subId: string, ids: string[], accion: 'leidas' | 'no_leidas' | 'cerrar' | 'abrir'): Promise<Resultado> {
-  if (!ids.length || ids.length > 500) return { ok: false, error: 'Selección no válida.' };
-  validar(...ids);
-  const cambios = { leidas: { no_leidos: 0 }, no_leidas: { no_leidos: 1 }, cerrar: { estado: 'cerrada' }, abrir: { estado: 'abierta' } }[accion];
-  if (!cambios) return { ok: false, error: 'Acción no válida.' };
-  const { supabase } = await contexto(subId);
-  const { error } = await supabase.from('conv_conversaciones').update(cambios).in('id', ids).eq('subcuenta_id', subId);
-  if (error) return { ok: false, error: mensajeDeError(error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    if (!ids.length || ids.length > 500) return { ok: false, error: 'Selección no válida.' };
+    validar(...ids);
+    const cambios = { leidas: { no_leidos: 0 }, no_leidas: { no_leidos: 1 }, cerrar: { estado: 'cerrada' }, abrir: { estado: 'abierta' } }[accion];
+    if (!cambios) return { ok: false, error: 'Acción no válida.' };
+    const { supabase } = await contexto(subId);
+    const { error } = await supabase.from('conv_conversaciones').update(cambios).in('id', ids).eq('subcuenta_id', subId);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarConversacion(subId: string, convId: string): Promise<Resultado> {
-  validar(convId);
-  const { supabase } = await contexto(subId);
-  const r = await supabase.from('conv_conversaciones').delete().eq('id', convId).eq('subcuenta_id', subId).select('id');
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede borrar conversaciones.' };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(convId);
+    const { supabase } = await contexto(subId);
+    const r = await supabase.from('conv_conversaciones').delete().eq('id', convId).eq('subcuenta_id', subId).select('id');
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    if (!r.data?.length) return { ok: false, error: 'Solo un administrador puede borrar conversaciones.' };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 // --- Fragmentos (respuestas guardadas) ------------------------------------------
 
 export async function guardarFragmento(subId: string, fragId: string | null, _: Resultado | null, fd: FormData): Promise<Resultado> {
-  validar(fragId);
-  const nombre = String(fd.get('nombre') ?? '').trim();
-  const cuerpo = String(fd.get('cuerpo') ?? '').trim();
-  if (!nombre || nombre.length > 120) return { ok: false, error: 'El nombre tiene que tener entre 1 y 120 caracteres.' };
-  if (!cuerpo || cuerpo.length > 5000) return { ok: false, error: 'El texto tiene que tener entre 1 y 5000 caracteres.' };
-  const { supabase } = await contexto(subId);
-  const r = fragId
-    ? await supabase.from('conv_fragmentos').update({ nombre, cuerpo }).eq('id', fragId).eq('subcuenta_id', subId)
-    : await supabase.from('conv_fragmentos').insert({ subcuenta_id: subId, nombre, cuerpo });
-  if (r.error) return { ok: false, error: mensajeDeError(r.error) };
-  refrescar(subId);
-  return { ok: true, mensaje: 'Fragmento guardado.' };
+  try {
+    validar(fragId);
+    const nombre = String(fd.get('nombre') ?? '').trim();
+    const cuerpo = String(fd.get('cuerpo') ?? '').trim();
+    if (!nombre || nombre.length > 120) return { ok: false, error: 'El nombre tiene que tener entre 1 y 120 caracteres.' };
+    if (!cuerpo || cuerpo.length > 5000) return { ok: false, error: 'El texto tiene que tener entre 1 y 5000 caracteres.' };
+    const { supabase } = await contexto(subId);
+    const r = fragId
+      ? await supabase.from('conv_fragmentos').update({ nombre, cuerpo }).eq('id', fragId).eq('subcuenta_id', subId)
+      : await supabase.from('conv_fragmentos').insert({ subcuenta_id: subId, nombre, cuerpo });
+    if (r.error) return { ok: false, error: mensajeDeError(r.error) };
+    refrescar(subId);
+    return { ok: true, mensaje: 'Fragmento guardado.' };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }
 
 export async function borrarFragmento(subId: string, fragId: string): Promise<Resultado> {
-  validar(fragId);
-  const { supabase } = await contexto(subId);
-  const { error } = await supabase.from('conv_fragmentos').delete().eq('id', fragId).eq('subcuenta_id', subId);
-  if (error) return { ok: false, error: mensajeDeError(error) };
-  refrescar(subId);
-  return { ok: true };
+  try {
+    validar(fragId);
+    const { supabase } = await contexto(subId);
+    const { error } = await supabase.from('conv_fragmentos').delete().eq('id', fragId).eq('subcuenta_id', subId);
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    refrescar(subId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
+  }
 }

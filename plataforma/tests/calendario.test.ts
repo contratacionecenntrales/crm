@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   columnas, desfaseMin, desplazar, diaEn, diasDeVista, duracionTexto, esDia, esHora, etiquetaGmt, horaEn, inicioSemana,
-  instante, minutosDelDia, sumarDias, sumarMeses, tituloRango,
+  instante, minutosDelDia, minutosDePared, sumarDias, sumarMeses, tituloRango,
 } from '../lib/calendario/tiempo.ts';
 
 const M = 'Europe/Madrid';
@@ -114,4 +114,19 @@ test('avisos: antelación legible', () => {
   assert.equal(antelacionTexto(60), '1 hora antes');
   assert.equal(antelacionTexto(120), '2 horas antes');
   assert.equal(antelacionTexto(90), '90 minutos antes');
+});
+
+test('instante: horas que no existen o se repiten, como Postgres', () => {
+  assert.equal(instante('2026-09-06', '00:00', 'America/Santiago').toISOString(), '2026-09-06T04:00:00.000Z'); // 00:00 no existe → 01:00 -03
+  assert.equal(diaEn(instante('2026-09-06', '00:00', 'America/Santiago'), 'America/Santiago'), '2026-09-06');
+  assert.equal(instante('2026-03-08', '02:30', 'America/New_York').toISOString(), '2026-03-08T07:30:00.000Z'); // → 03:30 EDT
+  assert.equal(instante('2026-03-29', '02:30', 'Europe/Madrid').toISOString(), '2026-03-29T01:30:00.000Z'); // → 03:30 CEST
+  assert.equal(instante('2026-10-25', '02:30', 'Europe/Madrid').toISOString(), '2026-10-25T00:30:00.000Z'); // primera de las dos 02:30
+});
+
+test('minutos de pared en días de cambio de hora', () => {
+  const t = instante('2026-03-29', '10:00', 'Europe/Madrid').getTime();
+  assert.equal(minutosDePared(t, '2026-03-29', 'Europe/Madrid'), 600);
+  const u = instante('2026-10-25', '23:00', 'Europe/Madrid').getTime();
+  assert.equal(minutosDePared(u, '2026-10-25', 'Europe/Madrid'), 1380);
 });

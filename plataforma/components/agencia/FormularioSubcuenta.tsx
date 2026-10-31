@@ -19,7 +19,7 @@ export function FormularioSubcuenta({ subcuenta, alTerminar, guardar, conEtapa =
   const [estado, accion] = useActionState(guardar ?? (subcuenta ? actualizarSubcuenta : crearSubcuenta), null);
   useEffect(() => {
     if (estado?.ok) alTerminar?.();
-  }, [estado, alTerminar]);
+  }, [estado]); // solo al cambiar el resultado: el callback puede cambiar en cada render
 
   const s = subcuenta;
   return (

@@ -15,11 +15,15 @@ export function totales(lineas: { cantidad: number; precio: number; impuesto: nu
   return { subtotal, impuestos, total: r2(subtotal + impuestos) };
 }
 
-// Importe en la unidad mínima de Stripe (céntimos; sin decimales para JPY, KRW…).
-const SIN_DECIMALES = new Set(['JPY', 'KRW', 'CLP', 'VND', 'PYG', 'ISK', 'HUF', 'XOF', 'XAF', 'UGX']);
+// Importe en la unidad mínima de Stripe: sin decimales (JPY, KRW…), con tres
+// (KWD, BHD…) o con dos (el resto, incluidos ISK y HUF, que Stripe trata así).
+const CERO = new Set(['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF']);
+const TRES = new Set(['BHD', 'JOD', 'KWD', 'OMR', 'TND']);
 export function aUnidadMinima(importe: number, moneda: string): number {
-  return SIN_DECIMALES.has(moneda.toUpperCase()) ? Math.round(importe) : Math.round(importe * 100);
+  const m = moneda.toUpperCase();
+  return CERO.has(m) ? Math.round(importe) : TRES.has(m) ? Math.round(importe * 100) * 10 : Math.round(importe * 100);
 }
 export function desdeUnidadMinima(n: number, moneda: string): number {
-  return SIN_DECIMALES.has(moneda.toUpperCase()) ? n : n / 100;
+  const m = moneda.toUpperCase();
+  return CERO.has(m) ? n : TRES.has(m) ? n / 1000 : n / 100;
 }

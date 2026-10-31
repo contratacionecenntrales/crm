@@ -20,7 +20,7 @@ export const esquemaCita = z.object({
   ubicacion: z.string().trim().max(500),
   estado: z.enum(['nueva', 'confirmada', 'cancelada', 'presentado', 'no_presentado']),
   notas: z.string().trim().max(5000, 'Notas demasiado largas'),
-}).refine((c) => c.hora_fin > c.hora_inicio, { message: 'La hora de fin tiene que ser posterior a la de inicio' });
+}).refine((c) => c.hora_fin !== c.hora_inicio, { message: 'La hora de fin tiene que ser distinta de la de inicio' });
 
 export const esquemaBloqueo = z.object({
   titulo: z.string().trim().max(200).transform((v) => v || 'Bloqueado'),

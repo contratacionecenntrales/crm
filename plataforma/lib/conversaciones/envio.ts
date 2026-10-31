@@ -34,6 +34,11 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
     .eq('id', mensajeId).eq('subcuenta_id', subId).maybeSingle();
   if (!m) return 'El mensaje ya no existe.';
   if (m.direccion !== 'saliente' || m.canal === 'nota' || !['pendiente', 'fallido'].includes(m.estado as string)) return null;
+  // Reserva atómica: si dos personas (o un doble clic) intentan enviarlo a la
+  // vez, solo uno lo envía. «error = enviando» marca el que está en curso.
+  const { data: tomado } = await admin.from('conv_mensajes').update({ estado: 'pendiente', error: 'enviando' })
+    .eq('id', mensajeId).or('estado.eq.fallido,and(estado.eq.pendiente,error.eq.)').select('id').maybeSingle();
+  if (!tomado) return null;
 
   const contacto = (m.conversacion as unknown as { contacto: { nombre: string; apellidos: string; email: string | null; telefono: string; dnd: boolean; dnd_canales: string[] } }).contacto;
   const anotar = (cambios: Record<string, unknown>) => admin.from('conv_mensajes').update(cambios).eq('id', mensajeId);

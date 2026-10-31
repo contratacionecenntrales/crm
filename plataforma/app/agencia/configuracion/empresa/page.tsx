@@ -43,8 +43,8 @@ export default async function PaginaEmpresa({ searchParams }: { searchParams: Pr
   );
 }
 
-async function dominiosSso(agenciaId: string): Promise<string[]> {
+async function dominiosSso(agenciaId: string): Promise<{ dominio: string; verificado: boolean; token: string }[]> {
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.from('sso_dominios').select('dominio').eq('agencia_id', agenciaId).order('dominio');
-  return (data ?? []).map((d) => d.dominio as string);
+  const { data } = await supabase.from('sso_dominios').select('dominio, verificado, token').eq('agencia_id', agenciaId).order('dominio');
+  return (data ?? []) as { dominio: string; verificado: boolean; token: string }[];
 }

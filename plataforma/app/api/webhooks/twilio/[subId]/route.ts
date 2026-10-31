@@ -3,6 +3,12 @@ import { siteUrl } from '@/lib/env';
 import { credenciales, adminObligatorio } from '@/lib/conversaciones/envio';
 import { estadoTwilio, firmaTwilioValida } from '@/lib/conversaciones/firmas';
 
+const ESTADOS_PREVIOS: Record<string, string[]> = {
+  enviado: ['pendiente'],
+  entregado: ['pendiente', 'enviado', 'fallido'],
+  leido: ['pendiente', 'enviado', 'entregado', 'fallido'],
+  fallido: ['pendiente', 'enviado'],
+};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const vacia = () => new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
 
@@ -35,7 +41,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
       await admin.from('conv_mensajes').update({
         estado,
         ...(estado === 'fallido' ? { error: `Twilio: ${datos.ErrorMessage || 'no entregado'}${datos.ErrorCode ? ` (código ${datos.ErrorCode})` : ''}` } : {}),
-      }).eq('subcuenta_id', subId).eq('proveedor_id', sid).neq('estado', 'leido');
+      // Los avisos pueden llegar desordenados: solo se avanza, nunca se retrocede.
+      }).eq('subcuenta_id', subId).eq('proveedor_id', sid).in('estado', ESTADOS_PREVIOS[estado]);
     }
     return vacia();
   }
