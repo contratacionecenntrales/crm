@@ -65,7 +65,8 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 7. `NO-SUBIR-supabase/15-sso.sql` — inicio de sesión único (SAML, Google o Microsoft) por dominio de correo, obligatorio y con alta automática
 8. `NO-SUBIR-supabase/16-pagos.sql` — Pagos: productos, facturas numeradas, cobros manuales y pago con tarjeta por Stripe de cada subcuenta
 9. `NO-SUBIR-supabase/17-automatizacion.sql` — Automatización: flujos con disparador y pasos (mensajes, etiquetas, esperas, tareas, oportunidades, avisos, webhooks)
-10. `NO-SUBIR-supabase/18-correcciones.sql` — correcciones de seguridad e integridad de la auditoría (**obligatorio**: ejecútalo siempre el último, también si ya tenías instalados los anteriores)
+10. `NO-SUBIR-supabase/18-correcciones.sql` — correcciones de seguridad e integridad de la auditoría (**obligatorio**, también si ya tenías instalados los anteriores)
+11. `NO-SUBIR-supabase/19-chat-web.sql` — chat web: globo para la web del cliente conectado a Conversaciones
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -93,6 +94,21 @@ Cada subcuenta pega su clave de Stripe en **Pagos → Configuración** y crea en
 Stripe un webhook hacia la URL que aparece allí, con los eventos
 `checkout.session.completed`, `checkout.session.async_payment_succeeded` y
 `charge.refunded` (los reembolsos hechos en Stripe se reflejan en la factura).
+
+### Chat web
+
+Cada subcuenta lo activa en **Configuración → Chat web** (título, colores,
+bienvenida, webs autorizadas) y pega en su web el código que aparece allí:
+
+```html
+<script src="https://TU-DOMINIO/chat-web.js" data-clave="…" async></script>
+```
+
+El visitante deja nombre y correo y escribe; el mensaje entra en
+**Conversaciones** con el canal «Chat web» y el equipo responde desde la misma
+bandeja. El visitante solo ve su propia conversación (se identifica con un código
+aleatorio guardado en su navegador), nunca el historial del contacto, y no puede
+cambiar datos de contactos existentes. «Renovar código» invalida el anterior.
 
 ### Recordatorios de citas
 

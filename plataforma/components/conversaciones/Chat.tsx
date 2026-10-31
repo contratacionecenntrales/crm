@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import {
   AlertTriangle, ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronDown, EllipsisVertical, FileText, Loader2, Mail, MailOpen,
-  MessageCircle, MessageSquare, PanelRight, RotateCw, Send, StickyNote, Trash2, UserPlus,
+  MessageCircle, MessageSquare, MessagesSquare, PanelRight, RotateCw, Send, StickyNote, Trash2, UserPlus,
 } from 'lucide-react';
 import {
   asignarConversacion, borrarConversacion, cerrarConversacion, enviarMensaje, marcarLeida, reintentarMensaje,
@@ -13,7 +13,7 @@ import { NOMBRE_CANAL, segmentosSms, type Canal, type Conversacion, type Fragmen
 import { nombreContacto, type Contacto, type Usuario } from '@/lib/crm/tipos';
 import { AvatarContacto } from './Bandeja';
 
-const ICONO_CANAL: Record<Canal, typeof Mail> = { sms: MessageSquare, whatsapp: MessageCircle, email: Mail, nota: StickyNote };
+const ICONO_CANAL: Record<Canal, typeof Mail> = { sms: MessageSquare, whatsapp: MessageCircle, email: Mail, nota: StickyNote, chat: MessagesSquare };
 const ESTADO: Record<string, string> = { pendiente: 'Enviando…', enviado: 'Enviado', entregado: 'Entregado', leido: 'Leído', fallido: 'No enviado', recibido: '' };
 
 export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contactoCompleto, mensajes, fragmentos, asignables, canales, volver, panelAbierto, alPanel, alCreada }: {
@@ -28,7 +28,9 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
 
   // Canal por defecto: el del último mensaje del cliente; si no, el primero disponible.
   const ultimoEntrante = [...mensajes].reverse().find((m) => m.direccion === 'entrante')?.canal;
-  const inicial: Canal = ultimoEntrante && ultimoEntrante !== 'nota' && canales[ultimoEntrante] ? ultimoEntrante
+  const chatAbierto = Boolean(conversacion?.chat_visitante_id);
+  const inicial: Canal = ultimoEntrante === 'chat' && chatAbierto ? 'chat'
+    : ultimoEntrante && ultimoEntrante !== 'nota' && ultimoEntrante !== 'chat' && canales[ultimoEntrante] ? ultimoEntrante
     : contacto.telefono && canales.sms ? 'sms' : contacto.email && canales.email ? 'email' : canales.whatsapp && contacto.telefono ? 'whatsapp' : 'nota';
   const [canal, setCanal] = useState<Canal>(inicial);
   const ultimoAsunto = [...mensajes].reverse().find((m) => m.canal === 'email' && m.asunto)?.asunto;
@@ -55,9 +57,9 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
     a.style.height = `${Math.min(160, a.scrollHeight)}px`;
   }, [texto]);
 
-  const dnd = contactoCompleto && (contactoCompleto.dnd || contactoCompleto.dnd_canales.includes(canal === 'email' ? 'email' : canal === 'whatsapp' ? 'whatsapp' : 'sms'));
+  const dnd = canal !== 'chat' && contactoCompleto && (contactoCompleto.dnd || contactoCompleto.dnd_canales.includes(canal === 'email' ? 'email' : canal === 'whatsapp' ? 'whatsapp' : 'sms'));
   const falta = canal === 'email' ? (!contacto.email ? 'El contacto no tiene correo.' : null)
-    : canal === 'nota' ? null : !contacto.telefono ? 'El contacto no tiene teléfono.' : null;
+    : canal === 'nota' ? null : canal === 'chat' ? (chatAbierto ? null : 'Este contacto no tiene un chat web abierto.') : !contacto.telefono ? 'El contacto no tiene teléfono.' : null;
 
   const enviar = () => {
     const cuerpo = texto.trim();
@@ -244,9 +246,9 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
               </button>
               {menu === 'canal' && (
                 <div className="absolute bottom-full left-0 z-30 mb-1 w-64 rounded-lg border bg-superficie p-1 shadow-lg">
-                  {(['sms', 'whatsapp', 'email', 'nota'] as Canal[]).map((c) => {
+                  {(['sms', 'whatsapp', 'email', ...(chatAbierto ? ['chat'] : []), 'nota'] as Canal[]).map((c) => {
                     const Ic = ICONO_CANAL[c];
-                    const listo = c === 'nota' || canales[c as 'sms' | 'whatsapp' | 'email'];
+                    const listo = c === 'nota' || c === 'chat' || canales[c as 'sms' | 'whatsapp' | 'email'];
                     return (
                       <button key={c} type="button" disabled={!listo} className={`${opcion} ${c === canal ? 'font-semibold text-primario-texto' : ''}`}
                         onClick={() => { setCanal(c); cerrarMenu(); area.current?.focus(); }}>

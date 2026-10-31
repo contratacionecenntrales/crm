@@ -43,3 +43,13 @@ test('segmentos de SMS', () => {
   assert.equal(segmentosSms('Hola 😀').max, 70);
   assert.equal(segmentosSms('ó'.repeat(71)).n, 2); // «ó» no es GSM
 });
+
+test('chat web: webs autorizadas y código de inserción', async () => {
+  const { origenPermitido, codigoInsercion } = await import('../lib/chat/tipos.ts');
+  assert.equal(origenPermitido([], 'cualquiera.com'), true);
+  assert.equal(origenPermitido(['tuweb.com'], 'tuweb.com'), true);
+  assert.equal(origenPermitido(['tuweb.com'], 'www.tuweb.com'), true);
+  assert.equal(origenPermitido(['tuweb.com'], 'eviltuweb.com'), false);
+  assert.equal(origenPermitido(['tuweb.com'], 'tuweb.com.evil.io'), false);
+  assert.equal(codigoInsercion('https://app.x.com', 'ab'), '<script src="https://app.x.com/chat-web.js" data-clave="ab" async></script>');
+});

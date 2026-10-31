@@ -27,7 +27,8 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 15 | `15-sso.sql` | Inicio de sesión único de la agencia (SAML, Google o Microsoft) por dominio. Para que «obligatorio» se cumpla, activar el hook `public.sso_hook_token` en Authentication → Hooks. Requiere el 11 |
 | 16 | `16-pagos.sql` | Pagos de cada subcuenta: productos, facturas con numeración automática, cobros y pago con tarjeta (Stripe Checkout con la cuenta de la subcuenta). Requiere el 13 |
 | 17 | `17-automatizacion.sql` | Automatización: flujos «si pasa X, haz Y» conectados a contactos, etiquetas, citas, mensajes, oportunidades y facturas. Se ejecutan con la misma tarea programada de los recordatorios. Requiere el 16 |
-| 18 | `18-correcciones.sql` | Correcciones de seguridad e integridad de la auditoría (banderas internas a prueba de manipulación, facturas, reservas, automatizaciones, SSO con dominios verificados por DNS). **Obligatorio**, siempre el último. Requiere el 17 |
+| 18 | `18-correcciones.sql` | Correcciones de seguridad e integridad de la auditoría (banderas internas a prueba de manipulación, facturas, reservas, automatizaciones, SSO con dominios verificados por DNS). **Obligatorio**. Requiere el 17 |
+| 19 | `19-chat-web.sql` | Chat web: globo para la web de cada subcuenta; los mensajes entran en Conversaciones como canal «chat». Requiere el 18 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

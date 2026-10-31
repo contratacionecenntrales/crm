@@ -221,7 +221,7 @@ function resumenFiltro(d: Disparador, f: Record<string, string | boolean>, o: Op
     case 'cita_reservada': return `${cal ? `Calendario «${cal}»` : 'Cualquier calendario'}${f.solo_online ? ' · solo reservas online' : ''}`;
     case 'cita_cancelada': return cal ? `Calendario «${cal}»` : 'Cualquier calendario';
     case 'cita_estado': return `${f.estado ? { confirmada: 'Confirmada', presentado: 'Se presentó', no_presentado: 'No se presentó', nueva: 'Sin confirmar' }[String(f.estado)] : 'Cualquier estado'}${cal ? ` · «${cal}»` : ''}`;
-    case 'mensaje_recibido': return `${f.canal ? String(f.canal).toUpperCase() : 'Cualquier canal'}${f.palabra ? ` · contiene «${f.palabra}»` : ''}`;
+    case 'mensaje_recibido': return `${f.canal ? (f.canal === 'chat' ? 'Chat web' : String(f.canal).toUpperCase()) : 'Cualquier canal'}${f.palabra ? ` · contiene «${f.palabra}»` : ''}`;
     case 'oportunidad_etapa': return etapa ? `Etapa «${etapa}»` : 'Cualquier etapa';
     case 'manual': return 'Se añade a los contactos a mano';
     default: return 'Sin filtros';
@@ -266,7 +266,7 @@ function PanelDisparador({ disparador, filtro, opciones, reentrada, alCambiar, a
       {disparador === 'mensaje_recibido' && (<>
         <label className="block"><span className={etiqueta}>Canal</span>
           <select value={String(filtro.canal ?? '')} onChange={(e) => f('canal', e.target.value)} className={estiloInput}>
-            <option value="">Cualquiera</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">Correo</option>
+            <option value="">Cualquiera</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">Correo</option><option value="chat">Chat web</option>
           </select></label>
         <label className="block"><span className={etiqueta}>Contiene la palabra</span>
           <input value={String(filtro.palabra ?? '')} onChange={(e) => f('palabra', e.target.value)} maxLength={100} placeholder="Ej. precio (opcional)" className={estiloInput} /></label>

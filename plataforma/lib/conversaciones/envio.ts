@@ -40,6 +40,12 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
     .eq('id', mensajeId).or('estado.eq.fallido,and(estado.eq.pendiente,error.eq.)').select('id').maybeSingle();
   if (!tomado) return null;
 
+  // Chat web: no hay proveedor; el visitante lo recoge desde el globo.
+  if (m.canal === 'chat') {
+    await admin.from('conv_mensajes').update({ estado: 'enviado', error: '' }).eq('id', mensajeId).eq('estado', 'pendiente');
+    return null;
+  }
+
   const contacto = (m.conversacion as unknown as { contacto: { nombre: string; apellidos: string; email: string | null; telefono: string; dnd: boolean; dnd_canales: string[] } }).contacto;
   const anotar = (cambios: Record<string, unknown>) => admin.from('conv_mensajes').update(cambios).eq('id', mensajeId);
   const fallar = async (error: string) => {

@@ -9,7 +9,7 @@ export const DISPARADORES: { valor: Disparador; texto: string; ayuda: string }[]
   { valor: 'cita_reservada', texto: 'Cita reservada', ayuda: 'Cuando se crea una cita (también las reservas online).' },
   { valor: 'cita_cancelada', texto: 'Cita cancelada', ayuda: 'Cuando una cita pasa a cancelada.' },
   { valor: 'cita_estado', texto: 'Estado de la cita', ayuda: 'Cuando una cita se marca como presentada, no presentada o confirmada.' },
-  { valor: 'mensaje_recibido', texto: 'Respuesta del cliente', ayuda: 'Cuando llega un SMS, WhatsApp o correo.' },
+  { valor: 'mensaje_recibido', texto: 'Respuesta del cliente', ayuda: 'Cuando llega un SMS, WhatsApp, correo o mensaje del chat web.' },
   { valor: 'oportunidad_etapa', texto: 'Oportunidad cambia de etapa', ayuda: 'Cuando una oportunidad se crea o se mueve de etapa.' },
   { valor: 'factura_pagada', texto: 'Factura pagada', ayuda: 'Cuando una factura queda pagada.' },
   { valor: 'manual', texto: 'Solo a mano', ayuda: 'El contacto entra cuando lo añades tú desde el flujo.' },

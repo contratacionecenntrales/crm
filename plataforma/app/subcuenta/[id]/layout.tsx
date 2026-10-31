@@ -32,6 +32,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
       { titulo: 'Servicios empresariales', elementos: [
         { href: `${c}/telefonia`, etiqueta: 'Integración telefónica' },
         { href: `${c}/correo`, etiqueta: 'Servicios de correo' },
+        { href: `${c}/chat-web`, etiqueta: 'Chat web', nueva: true },
       ] },
       { titulo: 'Otros ajustes', elementos: [
         { href: `${c}/campos`, etiqueta: 'Campos personalizados' },

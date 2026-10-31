@@ -8,7 +8,7 @@ import type { Resultado } from '@/lib/tipos';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import type { Canal } from '@/lib/conversaciones/tipos';
-const CANALES: Canal[] = ['sms', 'whatsapp', 'email', 'nota'];
+const CANALES: Canal[] = ['sms', 'whatsapp', 'email', 'nota', 'chat'];
 
 function validar(...ids: (string | null | undefined)[]) {
   if (ids.some((i) => i != null && !UUID.test(i))) throw new Error('Identificador no válido.');

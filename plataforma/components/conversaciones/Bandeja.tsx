@@ -232,7 +232,7 @@ export function Bandeja(p: Props) {
                       <span className="relative mt-0.5">
                         <AvatarContacto c={c.contacto} />
                         <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-superficie text-primario">
-                          {c.ultimo_canal === 'email' ? <Mail className="size-3" /> : <MessageSquare className="size-3" />}
+                          {c.ultimo_canal === 'email' ? <Mail className="size-3" /> : c.ultimo_canal === 'chat' ? <MessagesSquare className="size-3" /> : <MessageSquare className="size-3" />}
                         </span>
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

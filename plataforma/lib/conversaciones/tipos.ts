@@ -20,8 +20,8 @@ export const AJUSTES_VACIOS: Ajustes = {
 };
 
 
-export type Canal = 'sms' | 'whatsapp' | 'email' | 'nota';
-export const NOMBRE_CANAL: Record<Canal, string> = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'Correo', nota: 'Comentario interno' };
+export type Canal = 'sms' | 'whatsapp' | 'email' | 'nota' | 'chat';
+export const NOMBRE_CANAL: Record<Canal, string> = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'Correo', nota: 'Comentario interno', chat: 'Chat web' };
 
 export interface ContactoConv { id: string; nombre: string; apellidos: string; email: string | null; telefono: string }
 
@@ -36,11 +36,12 @@ export interface Conversacion {
   ultimo_extracto: string;
   ultimo_canal: Canal | null;
   ultima_direccion: 'entrante' | 'saliente' | null;
+  chat_visitante_id: string | null; // hay un visitante del chat web al que responder
   contacto: ContactoConv;
 }
 
 export const COLUMNAS_CONVERSACION =
-  'id, contacto_id, asignado_id, estado, destacada, no_leidos, ultimo_mensaje_en, ultimo_extracto, ultimo_canal, ultima_direccion, contacto:crm_contactos!inner(id, nombre, apellidos, email, telefono)';
+  'id, contacto_id, asignado_id, estado, destacada, no_leidos, ultimo_mensaje_en, ultimo_extracto, ultimo_canal, ultima_direccion, chat_visitante_id, contacto:crm_contactos!inner(id, nombre, apellidos, email, telefono)';
 
 export interface Mensaje {
   id: string;

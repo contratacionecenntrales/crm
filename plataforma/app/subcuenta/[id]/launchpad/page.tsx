@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import {
-  BookUser, CalendarCheck2, CalendarDays, Check, Building2, CreditCard, Mail, MessageSquare, Network, Users,
+  BookUser, CalendarCheck2, CalendarDays, Check, Building2, CreditCard, Mail, MessageSquare, MessagesSquare, Network, Users,
 } from 'lucide-react';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { subcuentaVisible } from '@/lib/sesion';
@@ -19,7 +19,7 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
     if (f) q = f(q);
     return q.then((r: { count: number | null }) => r.count ?? 0);
   };
-  const [equipo, contactos, calendarios, oportunidades, reservas, ajustes, secretos, primerCal, h, stripe] = await Promise.all([
+  const [equipo, contactos, calendarios, oportunidades, reservas, ajustes, secretos, primerCal, h, stripe, chat] = await Promise.all([
     cuenta('subcuenta_miembros'),
     cuenta('crm_contactos'),
     cuenta('cal_calendarios', (q) => q.eq('activo', true)),
@@ -30,6 +30,7 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
     supabase.from('cal_calendarios').select('slug').eq('subcuenta_id', id).eq('activo', true).order('creado').limit(1).maybeSingle(),
     headers(),
     supabase.rpc('pag_estado_secretos', { p_subcuenta: id }),
+    supabase.from('chat_widgets').select('activo').eq('subcuenta_id', id).maybeSingle(),
   ]);
   const a = ajustes.data;
   const s = (secretos.data ?? {}) as Record<string, boolean>;
@@ -48,6 +49,8 @@ export default async function Launchpad({ params }: { params: Promise<{ id: stri
       hecho: Boolean(a?.twilio_sid && a?.twilio_numero_sms && s.twilio_token), href: `${base}/configuracion/telefonia`, boton: 'Conectar' },
     { icono: Mail, titulo: 'Configura el correo', texto: 'Mailgun o SMTP para enviar correos, confirmaciones y recordatorios.',
       hecho: correoListo, href: `${base}/configuracion/correo`, boton: 'Conectar' },
+    { icono: MessagesSquare, titulo: 'Pon el chat en tu web', texto: 'Los visitantes de tu web te escriben y respondes desde Conversaciones.',
+      hecho: Boolean(chat.data?.activo), href: `${base}/configuracion/chat-web`, boton: 'Configurar' },
     { icono: CalendarDays, titulo: 'Crea tu calendario', texto: 'Define tu horario y comparte el enlace para que te reserven citas.',
       hecho: calendarios > 0, href: `${base}/calendarios/configuracion`, boton: 'Crear' },
     { icono: CalendarCheck2, titulo: 'Recibe tu primera reserva online', texto: 'Comparte tu página de reserva en tu web, redes o WhatsApp.',
