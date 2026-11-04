@@ -91,3 +91,71 @@ select pg_temp.igual('Ana no lee la tabla directamente', (select count(*)::text 
 select pg_temp.entra_como('otro@aj.test');
 select pg_temp.igual('Otra agencia no ve los enlaces de esta', (select count(*)::text from public.enlaces_menu((select id from ids where clave = 'ag'), null)), '0');
 reset role;
+
+-- 2 · Claves de API
+create temp table tk (quien text, token text, id uuid); grant all on tk to authenticated, anon, service_role;
+set role authenticated;
+select pg_temp.entra_como('ana@aj.test');
+select pg_temp.prueba('Un usuario de subcuenta no puede crear claves',
+  $q$ select public.api_crear_clave((select id from ids where clave = 'ag'), 'X', array['contactos.leer']) $q$, true);
+select pg_temp.entra_como('duena@aj.test');
+insert into tk select 'norte', r ->> 'token', (r ->> 'id')::uuid from (select public.api_crear_clave((select id from ids where clave = 'ag'), 'Zapier', array['contactos.leer', 'contactos.escribir'], array[(select id from ids where clave = 'norte')]) r) x;
+select pg_temp.prueba('Un permiso inventado se rechaza',
+  $q$ select public.api_crear_clave((select id from ids where clave = 'ag'), 'X', array['todo']) $q$, true);
+select pg_temp.prueba('La huella no se puede leer desde la app', $q$ select huella from public.api_claves $q$, true);
+select pg_temp.igual('Se ve el prefijo para reconocerla', (select (prefijo = left((select token from tk), 12))::text from public.api_claves), 'true');
+reset role;
+select pg_temp.igual('El token no se guarda en claro', (select count(*)::text from public.api_claves where huella = (select token from tk)), '0');
+
+set role service_role;
+select pg_temp.prueba('La clave sirve para leer contactos de Norte',
+  $q$ select public.api_autenticar((select token from tk), (select id from ids where clave = 'norte'), 'contactos.leer') $q$, false);
+select pg_temp.prueba('…pero no para Sur (no está en su lista)',
+  $q$ select public.api_autenticar((select token from tk), (select id from ids where clave = 'sur'), 'contactos.leer') $q$, true);
+select pg_temp.prueba('…ni para un permiso que no tiene',
+  $q$ select public.api_autenticar((select token from tk), (select id from ids where clave = 'norte'), 'oportunidades.leer') $q$, true);
+select pg_temp.prueba('Un token inventado no entra',
+  $q$ select public.api_autenticar('mtk_' || repeat('0', 48), (select id from ids where clave = 'norte'), 'contactos.leer') $q$, true);
+reset role;
+set role anon;
+select pg_temp.prueba('El anónimo no puede llamar a la validación', $q$ select public.api_autenticar('x', null, 'x') $q$, true);
+reset role;
+
+set role authenticated;
+select pg_temp.entra_como('duena@aj.test');
+update public.api_claves set revocada_en = now();
+select pg_temp.prueba('Una clave revocada no se reactiva', $q$ update public.api_claves set revocada_en = null $q$, true);
+reset role;
+set role service_role;
+select pg_temp.prueba('Revocada ya no sirve',
+  $q$ select public.api_autenticar((select token from tk), (select id from ids where clave = 'norte'), 'contactos.leer') $q$, true);
+reset role;
+-- límite por minuto
+set role authenticated;
+select pg_temp.entra_como('duena@aj.test');
+insert into tk select 'todas', r ->> 'token', (r ->> 'id')::uuid from (select public.api_crear_clave((select id from ids where clave = 'ag'), 'Todas', array['contactos.leer']) r) x;
+reset role;
+set role service_role;
+do $$ begin for i in 1..120 loop perform public.api_autenticar((select token from tk where quien = 'todas'), (select id from ids where clave = 'sur'), 'contactos.leer'); end loop; end $$;
+select pg_temp.prueba('La petición 121 del minuto se frena',
+  $q$ select public.api_autenticar((select token from tk where quien = 'todas'), (select id from ids where clave = 'sur'), 'contactos.leer') $q$, true);
+reset role;
+
+-- 3 · Reclamar envío
+insert into public.crm_contactos (subcuenta_id, nombre, telefono) values ((select id from ids where clave = 'norte'), 'Envío', '+34600000001');
+insert into public.conv_conversaciones (subcuenta_id, contacto_id) select subcuenta_id, id from public.crm_contactos where nombre = 'Envío';
+insert into public.conv_mensajes (subcuenta_id, conversacion_id, direccion, canal, cuerpo, estado)
+  select c.subcuenta_id, c.id, 'saliente', 'sms', 'Reclamo', 'pendiente' from public.conv_conversaciones c join public.crm_contactos k on k.id = c.contacto_id where k.nombre = 'Envío';
+set role service_role;
+select pg_temp.igual('El primero que reclama el mensaje lo consigue',
+  (select public.conv_reclamar_envio((select id from public.conv_mensajes where cuerpo = 'Reclamo'), (select id from ids where clave = 'norte'))::text), 'true');
+select pg_temp.igual('…el segundo no (no se envía dos veces)',
+  (select public.conv_reclamar_envio((select id from public.conv_mensajes where cuerpo = 'Reclamo'), (select id from ids where clave = 'norte'))::text), 'false');
+select pg_temp.igual('Con otra subcuenta no se reclama',
+  (select public.conv_reclamar_envio((select id from public.conv_mensajes where cuerpo = 'Reclamo'), (select id from ids where clave = 'sur'))::text), 'false');
+reset role;
+set role authenticated;
+select pg_temp.prueba('Un usuario no puede llamarla', $q$ select public.conv_reclamar_envio(gen_random_uuid(), gen_random_uuid()) $q$, true);
+reset role;
+delete from public.agencias where nombre in ('Agencia Aj', 'Ajena');
+delete from auth.users where email like '%@aj.test';
