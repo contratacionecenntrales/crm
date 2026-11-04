@@ -25,6 +25,7 @@ export default async function LayoutAgencia({ children }: { children: React.Reac
         { href: `${c}/stripe`, etiqueta: 'Stripe' },
         { href: `${c}/claves-api`, etiqueta: 'Claves de API' },
         { href: `${c}/auditoria`, etiqueta: 'Registros de auditoría' },
+        { href: `${c}/multimedia`, etiqueta: 'Uso de contenido multimedia' },
       ],
     }],
   };

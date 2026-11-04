@@ -65,11 +65,11 @@ export function MarcoPanel({ principal, secundario, ajustes, menuAjustes, logo, 
     setTip({ texto, top: r.top + r.height / 2 });
   };
 
-  const item = (e: ElementoNav) => {
+  const item = (e: ElementoNav, i: number) => {
     const Icono = ICONOS[e.icono];
     const on = activo(e);
     return (
-      <li key={e.href} className={expandido ? 'px-2' : ''}>
+      <li key={`${i}-${e.href}`} className={expandido ? 'px-2' : ''}>
         <Link
           href={e.href}
           {...(e.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
@@ -155,11 +155,11 @@ export function MarcoPanel({ principal, secundario, ajustes, menuAjustes, logo, 
               {secundario && secundario.length > 0 && (
                 <>
                   {separador}
-                  {secundario.map(item)}
+                  {secundario.map((e, i) => item(e, 100 + i))}
                 </>
               )}
             </ul>
-            {ajustes && <ul className="pt-2">{item(ajustes)}</ul>}
+            {ajustes && <ul className="pt-2">{item(ajustes, 0)}</ul>}
           </nav>
         )}
 

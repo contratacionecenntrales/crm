@@ -428,3 +428,16 @@ end $$;
 drop trigger if exists subcuentas_zz_datos_muestra on public.subcuentas;
 create trigger subcuentas_zz_datos_muestra after insert on public.subcuentas
   for each row execute function public.subcuenta_datos_muestra();
+
+-- -----------------------------------------------------------------------------
+-- 6 · CORRECCIÓN: subir el logo de la agencia.
+-- Storage vuelve a leer el objeto tras insertarlo: sin política de lectura la
+-- subida falla con «new row violates row-level security policy». El bucket es
+-- público (los logos se ven sin sesión), así que leerlo no expone nada.
+-- -----------------------------------------------------------------------------
+do $do$ begin
+  if exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'objects') then
+    execute $p$drop policy if exists marcas_lee on storage.objects$p$;
+    execute $p$create policy marcas_lee on storage.objects for select to anon, authenticated using (bucket_id = 'marcas')$p$;
+  end if;
+end $do$;

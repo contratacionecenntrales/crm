@@ -154,6 +154,10 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
     return null;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    const causa = (e as { cause?: { code?: string } })?.cause?.code ?? '';
+    if (msg === 'fetch failed' || /ECONNRESET|ETIMEDOUT|UND_ERR/.test(causa)) {
+      return fallar(`No se pudo conectar con el proveedor${causa ? ` (${causa})` : ''}. Puede ser un corte momentáneo: vuelve a intentarlo en unos minutos.`);
+    }
     if (/ENOTFOUND|EAI_AGAIN/.test(msg)) return fallar(`No se encontró el servidor del proveedor (${msg.split(' ').pop()}). Revisa el nombre del servidor en Servicios de correo.`);
     if (/ECONNREFUSED/.test(msg)) return fallar('El servidor del proveedor rechazó la conexión. Revisa el servidor y el puerto.');
     return fallar(msg.includes('timeout') || msg.includes('aborted') ? 'El proveedor no respondió a tiempo.' : msg);

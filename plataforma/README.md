@@ -67,7 +67,8 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 9. `NO-SUBIR-supabase/17-automatizacion.sql` — Automatización: flujos con disparador y pasos (mensajes, etiquetas, esperas, tareas, oportunidades, avisos, webhooks)
 10. `NO-SUBIR-supabase/18-correcciones.sql` — correcciones de seguridad e integridad de la auditoría (**obligatorio**, también si ya tenías instalados los anteriores)
 11. `NO-SUBIR-supabase/19-chat-web.sql` — chat web: globo para la web del cliente conectado a Conversaciones
-12. `NO-SUBIR-supabase/20-ajustes-agencia.sql` — enlaces de menú personalizados, claves de API, correo y Twilio por defecto de la agencia, datos de muestra y JS personalizado
+12. `NO-SUBIR-supabase/20-ajustes-agencia.sql` — enlaces de menú personalizados, claves de API, correo y Twilio por defecto de la agencia, datos de muestra y JS personalizado (incluye además dos correcciones: envío de mensajes y subida del logo)
+13. `NO-SUBIR-supabase/21-medios.sql` — biblioteca de medios de cada subcuenta (bucket «medios» de Storage, 5 GB por subcuenta) y uso por subcuenta para la agencia
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -122,6 +123,15 @@ agencia pone su proveedor por defecto: las subcuentas sin configuración propia
 envían con él (en el caso de Twilio, con sus propios números de esa cuenta).
 La verificación de correos comprueba antes de enviar que el dominio del
 destinatario existe.
+
+### Medios
+
+Cada subcuenta tiene **Medios** en el menú: sube imágenes, PDF, vídeo, audio y
+documentos (hasta 25 MB cada uno, 5 GB por subcuenta), organízalos en carpetas
+y copia su enlace público. El archivo va directo del navegador a Supabase Storage
+y el tamaño que se cuenta es el real de Storage. La agencia ve el espacio usado
+por cada subcuenta en **Configuración → Uso de contenido multimedia**. La tarea
+programada borra los archivos que se quedaron a medio subir.
 
 ### Chat web
 

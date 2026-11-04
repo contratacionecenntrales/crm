@@ -27,7 +27,14 @@ async function ejecutar(req: NextRequest) {
     }
     const avisos = await procesarAvisos(50);
     const automatizaciones = await procesarAutomatizaciones(50);
-    return NextResponse.json({ avisos, automatizaciones });
+    // Archivos de Medios subidos a medias (sin registrar) hace más de una hora.
+    let medios = 0;
+    if (admin) {
+      const { data: huerfanos } = await admin.rpc('medios_huerfanos', { p_limite: 200 });
+      const rutas = (huerfanos ?? []) as string[];
+      if (rutas.length && !(await admin.storage.from('medios').remove(rutas)).error) medios = rutas.length;
+    }
+    return NextResponse.json({ avisos, automatizaciones, medios_huerfanos_borrados: medios });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
