@@ -2,6 +2,7 @@
 import { useActionState, useState, useTransition } from 'react';
 import { CheckCircle2, Loader2, PlugZap } from 'lucide-react';
 import { comprobarCanal, guardarCorreo, guardarTwilio } from '@/app/subcuenta/[id]/configuracion/acciones-canales';
+import { comprobarCanalAgencia, guardarCorreoAgencia, guardarTwilioAgencia } from '@/app/agencia/configuracion/acciones-servicios';
 import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
 import { estiloInput, estilosBoton } from '@/components/ui/clases';
@@ -25,12 +26,12 @@ function Secreto({ name, texto, puesto, nota, deshabilitado }: { name: string; t
   );
 }
 
-function Comprobar({ subId, que }: { subId: string; que: 'twilio' | 'correo' }) {
+function Comprobar({ subId, que }: { subId: string | null; que: 'twilio' | 'correo' }) {
   const [r, setR] = useState<Resultado | null>(null);
   const [pendiente, iniciar] = useTransition();
   return (
     <div className="space-y-2">
-      <button type="button" disabled={pendiente} onClick={() => iniciar(async () => setR(await comprobarCanal(subId, que)))} className={estilosBoton.secundario}>
+      <button type="button" disabled={pendiente} onClick={() => iniciar(async () => setR(subId ? await comprobarCanal(subId, que) : await comprobarCanalAgencia(que)))} className={estilosBoton.secundario}>
         {pendiente ? <Loader2 className="size-4 animate-spin" /> : <PlugZap className="size-4" />} Comprobar conexión
       </button>
       <Aviso estado={r} />
@@ -50,8 +51,9 @@ function UrlWebhook({ url, texto }: { url: string; texto: string }) {
   );
 }
 
-export function AjustesTwilio({ subId, ajustes: a, tokenPuesto, soyAdmin, web }: { subId: string; ajustes: Ajustes; tokenPuesto: boolean; soyAdmin: boolean; web: string }) {
-  const [estado, accion] = useActionState(guardarTwilio.bind(null, subId), null);
+// subId nulo = ajustes por defecto de la agencia (sin números ni webhook propios).
+export function AjustesTwilio({ subId, ajustes: a, tokenPuesto, soyAdmin, web }: { subId: string | null; ajustes: Ajustes; tokenPuesto: boolean; soyAdmin: boolean; web: string }) {
+  const [estado, accion] = useActionState(subId ? guardarTwilio.bind(null, subId) : guardarTwilioAgencia, null);
   const off = !soyAdmin;
   return (
     <>
@@ -65,7 +67,7 @@ export function AjustesTwilio({ subId, ajustes: a, tokenPuesto, soyAdmin, web }:
           {tokenPuesto && soyAdmin && (
             <label className="flex items-center gap-2 text-sm text-tenue"><input type="checkbox" name="borrar_token" className="size-4" /> Borrar el token guardado</label>
           )}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {subId && <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className={etiqueta}>Número para SMS</span>
               <input name="twilio_numero_sms" defaultValue={a.twilio_numero_sms} disabled={off} placeholder="+34 600 000 000" className={estiloInput} />
@@ -75,26 +77,33 @@ export function AjustesTwilio({ subId, ajustes: a, tokenPuesto, soyAdmin, web }:
               <input name="twilio_numero_wa" defaultValue={a.twilio_numero_wa} disabled={off} placeholder="+34 600 000 000" className={estiloInput} />
               <span className={ayuda}>El remitente de WhatsApp aprobado en Twilio. Vacío = el mismo de SMS.</span>
             </label>
-          </div>
+          </div>}
           <Aviso estado={estado} />
           {soyAdmin && <div className="flex justify-end"><BotonEnvio>Guardar</BotonEnvio></div>}
         </form>
       </SeccionAjuste>
-      <SeccionAjuste titulo="Mensajes entrantes" descripcion="Pega esta URL en Twilio para recibir respuestas: Phone Numbers → tu número → Messaging → «A message comes in» (HTTP POST). En WhatsApp, en la configuración del remitente.">
+      {!subId ? (
+        <SeccionAjuste titulo="Cómo se usa" descripcion="Las subcuentas que no tengan cuenta de Twilio propia envían con esta.">
+          <div className="space-y-3 text-sm text-texto-2">
+            <p>Cada subcuenta solo tiene que poner sus números (comprados en esta cuenta de Twilio) en su Configuración → Integración telefónica, y pegar en Twilio la URL de webhook que le aparece allí.</p>
+            {soyAdmin && <Comprobar subId={null} que="twilio" />}
+          </div>
+        </SeccionAjuste>
+      ) : <SeccionAjuste titulo="Mensajes entrantes" descripcion="Pega esta URL en Twilio para recibir respuestas: Phone Numbers → tu número → Messaging → «A message comes in» (HTTP POST). En WhatsApp, en la configuración del remitente.">
         <div className="space-y-4">
           <UrlWebhook url={`${web}/api/webhooks/twilio/${subId}`} texto="URL del webhook" />
           <p className="text-xs text-tenue">Cada petición se comprueba con la firma de Twilio (X-Twilio-Signature) usando tu Auth Token: las peticiones falsas se rechazan. La misma URL recibe el estado de entrega de los mensajes enviados.</p>
           {soyAdmin && <Comprobar subId={subId} que="twilio" />}
         </div>
-      </SeccionAjuste>
+      </SeccionAjuste>}
     </>
   );
 }
 
 export function AjustesCorreo({ subId, ajustes: a, puestos, soyAdmin, web }: {
-  subId: string; ajustes: Ajustes; puestos: { mailgun_clave: boolean; mailgun_firma: boolean; smtp_clave: boolean }; soyAdmin: boolean; web: string;
+  subId: string | null; ajustes: Ajustes; puestos: { mailgun_clave: boolean; mailgun_firma: boolean; smtp_clave: boolean }; soyAdmin: boolean; web: string;
 }) {
-  const [estado, accion] = useActionState(guardarCorreo.bind(null, subId), null);
+  const [estado, accion] = useActionState(subId ? guardarCorreo.bind(null, subId) : guardarCorreoAgencia, null);
   const [proveedor, setProveedor] = useState(a.correo_proveedor);
   const off = !soyAdmin;
   return (
@@ -138,8 +147,12 @@ export function AjustesCorreo({ subId, ajustes: a, puestos, soyAdmin, web }: {
               <Secreto name="mailgun_clave" texto="Clave de API privada" puesto={puestos.mailgun_clave} deshabilitado={off} />
               <Secreto name="mailgun_firma" texto="HTTP webhook signing key" puesto={puestos.mailgun_firma} deshabilitado={off}
                 nota="Mailgun → Sending → Webhooks. Sirve para comprobar que los correos entrantes vienen de verdad de Mailgun." />
-              <UrlWebhook url={`${web}/api/webhooks/mailgun/${subId}`} texto="URL para recibir correos" />
-              <p className="text-xs text-tenue">En Mailgun → Receiving → Create route: expresión «match_recipient(&quot;{a.correo_remitente || 'hola@tudominio.com'}&quot;)» y acción «forward» a esta URL.</p>
+              {subId ? (<>
+                <UrlWebhook url={`${web}/api/webhooks/mailgun/${subId}`} texto="URL para recibir correos" />
+                <p className="text-xs text-tenue">En Mailgun → Receiving → Create route: expresión «match_recipient(&quot;{a.correo_remitente || 'hola@tudominio.com'}&quot;)» y acción «forward» a esta URL.</p>
+              </>) : (
+                <p className="text-xs text-tenue">Para recibir respuestas, cada subcuenta crea su ruta en Mailgun con la URL que le aparece en su Configuración → Servicios de correo.</p>
+              )}
             </div>
           )}
           {proveedor === 'smtp' && (

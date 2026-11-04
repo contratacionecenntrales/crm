@@ -13,16 +13,70 @@ export function adminObligatorio() {
   return admin;
 }
 
-export async function credenciales(subId: string): Promise<{ ajustes: Ajustes; secretos: Secretos }> {
+const CAMPOS_CORREO = ['correo_proveedor', 'correo_remitente', 'correo_nombre', 'mailgun_dominio', 'mailgun_region', 'smtp_host', 'smtp_puerto', 'smtp_seguro', 'smtp_usuario'] as const;
+
+// Credenciales de la subcuenta; lo que no tenga propio lo toma de la agencia
+// (correo por defecto y cuenta de Twilio de la agencia).
+export async function credenciales(subId: string): Promise<{ ajustes: Ajustes; secretos: Secretos; origen: { correo: '' | 'subcuenta' | 'agencia'; twilio: '' | 'subcuenta' | 'agencia' } }> {
   const admin = adminObligatorio();
-  const [a, s] = await Promise.all([
+  const [a, s, sub] = await Promise.all([
     admin.from('conv_ajustes').select('*').eq('subcuenta_id', subId).maybeSingle(),
     admin.from('conv_secretos').select('twilio_token, mailgun_clave, mailgun_firma, smtp_clave').eq('subcuenta_id', subId).maybeSingle(),
+    admin.from('subcuentas').select('agencia_id').eq('id', subId).maybeSingle(),
   ]);
-  return {
-    ajustes: { ...AJUSTES_VACIOS, ...((a.data ?? {}) as Partial<Ajustes>) },
-    secretos: { twilio_token: '', mailgun_clave: '', mailgun_firma: '', smtp_clave: '', ...((s.data ?? {}) as Partial<Secretos>) },
-  };
+  const ajustes: Ajustes = { ...AJUSTES_VACIOS, ...((a.data ?? {}) as Partial<Ajustes>) };
+  const secretos: Secretos = { twilio_token: '', mailgun_clave: '', mailgun_firma: '', smtp_clave: '', ...((s.data ?? {}) as Partial<Secretos>) };
+  type Origen = '' | 'subcuenta' | 'agencia';
+  const origen: { correo: Origen; twilio: Origen } = { correo: ajustes.correo_proveedor ? 'subcuenta' : '', twilio: ajustes.twilio_sid ? 'subcuenta' : '' };
+  if ((!ajustes.correo_proveedor || !ajustes.twilio_sid) && sub.data?.agencia_id) {
+    const [ag, agk] = await Promise.all([
+      admin.from('agencia_servicios').select('*').eq('agencia_id', sub.data.agencia_id).maybeSingle(),
+      admin.from('agencia_secretos').select('twilio_token, mailgun_clave, mailgun_firma, smtp_clave').eq('agencia_id', sub.data.agencia_id).maybeSingle(),
+    ]);
+    const g = (ag.data ?? null) as (Partial<Ajustes> & { twilio_sid?: string }) | null;
+    const gk = (agk.data ?? {}) as Partial<Secretos>;
+    if (g && !ajustes.correo_proveedor && g.correo_proveedor) {
+      for (const k of CAMPOS_CORREO) (ajustes as unknown as Record<string, unknown>)[k] = g[k];
+      secretos.mailgun_clave = gk.mailgun_clave ?? '';
+      secretos.mailgun_firma = gk.mailgun_firma ?? '';
+      secretos.smtp_clave = gk.smtp_clave ?? '';
+      origen.correo = 'agencia';
+    }
+    if (g && !ajustes.twilio_sid && g.twilio_sid) {
+      ajustes.twilio_sid = g.twilio_sid;
+      secretos.twilio_token = gk.twilio_token ?? '';
+      origen.twilio = 'agencia';
+    }
+  }
+  return { ajustes, secretos, origen };
+}
+
+// ¿El dominio del destinatario recibe correo? (registros MX; si no hay, el
+// registro A también vale según el estándar). Solo se bloquea si no existe.
+const cacheMx = new Map<string, { ok: boolean; hasta: number }>();
+export async function dominioRecibeCorreo(email: string): Promise<boolean> {
+  const dominio = email.split('@')[1]?.toLowerCase() ?? '';
+  if (!dominio) return false;
+  const c = cacheMx.get(dominio);
+  if (c && c.hasta > Date.now()) return c.ok;
+  const { resolveMx, resolve4 } = await import('node:dns/promises');
+  const conTiempo = <T,>(p: Promise<T>) => Promise.race([p, new Promise<T>((_, r) => setTimeout(() => r(new Error('timeout')), 4000))]);
+  let ok = true;
+  try {
+    const mx = await conTiempo(resolveMx(dominio));
+    ok = mx.some((m) => m.exchange && m.exchange !== '.');
+  } catch (e) {
+    const codigo = (e as { code?: string }).code;
+    if (codigo === 'ENOTFOUND' || codigo === 'ENODATA') {
+      try { ok = (await conTiempo(resolve4(dominio))).length > 0; } catch { ok = false; }
+      // Si tampoco resuelve un dominio que seguro existe, el fallo es del DNS del servidor: no se bloquea.
+      if (!ok) {
+        try { await conTiempo(resolveMx('gmail.com')); } catch { ok = true; }
+      }
+    } // otros errores (sin red, tiempo agotado): no se bloquea el envío
+  }
+  cacheMx.set(dominio, { ok, hasta: Date.now() + 3600_000 });
+  return ok;
 }
 
 // Envía un mensaje saliente ya guardado como «pendiente» (o «fallido», al
@@ -69,7 +123,7 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
     if (m.canal === 'sms' || m.canal === 'whatsapp') {
       const desde = m.canal === 'sms' ? ajustes.twilio_numero_sms : ajustes.twilio_numero_wa || ajustes.twilio_numero_sms;
       if (!ajustes.twilio_sid || !secretos.twilio_token || !desde) {
-        return fallar('Twilio no está configurado. Ve a Configuración → Integración telefónica.');
+        return fallar('Twilio no está configurado. Ve a Configuración → Integración telefónica (o conecta la cuenta de Twilio de la agencia y pon aquí los números).');
       }
       if (!/^\+[0-9]{6,15}$/.test(contacto.telefono)) return fallar('El contacto no tiene un teléfono válido con prefijo (+34…).');
       id = await enviarTwilio({ sid: ajustes.twilio_sid, token: secretos.twilio_token }, {
@@ -78,8 +132,11 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
       });
     } else {
       if (!contacto.email) return fallar('El contacto no tiene correo electrónico.');
+      if (ajustes.verificar_correos && !(await dominioRecibeCorreo(contacto.email))) {
+        return fallar(`El dominio de ${contacto.email} no existe o no recibe correo (verificación de correos activada).`);
+      }
       if (!ajustes.correo_proveedor || !ajustes.correo_remitente) {
-        return fallar('El correo no está configurado. Ve a Configuración → Servicios de correo.');
+        return fallar('El correo no está configurado ni en la subcuenta ni en la agencia. Ve a Configuración → Servicios de correo.');
       }
       const de = ajustes.correo_nombre ? `"${ajustes.correo_nombre.replace(/"/g, '')}" <${ajustes.correo_remitente}>` : ajustes.correo_remitente;
       const nombre = `${contacto.nombre} ${contacto.apellidos}`.trim().replace(/[<>"]/g, '');
@@ -97,6 +154,8 @@ export async function enviarGuardado(subId: string, mensajeId: string): Promise<
     return null;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    if (/ENOTFOUND|EAI_AGAIN/.test(msg)) return fallar(`No se encontró el servidor del proveedor (${msg.split(' ').pop()}). Revisa el nombre del servidor en Servicios de correo.`);
+    if (/ECONNREFUSED/.test(msg)) return fallar('El servidor del proveedor rechazó la conexión. Revisa el servidor y el puerto.');
     return fallar(msg.includes('timeout') || msg.includes('aborted') ? 'El proveedor no respondió a tiempo.' : msg);
   }
 }

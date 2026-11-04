@@ -24,3 +24,10 @@ export function canalesDisponibles(a: Ajustes) {
     email: Boolean(a.correo_proveedor && a.correo_remitente),
   };
 }
+
+// Lo que la subcuenta toma de su agencia cuando no tiene configuración propia.
+export async function serviciosHeredados(subId: string): Promise<{ correo: boolean; correo_remitente: string; twilio: boolean }> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.rpc('servicios_heredados', { p_subcuenta: subId });
+  return (data as { correo: boolean; correo_remitente: string; twilio: boolean } | null) ?? { correo: false, correo_remitente: '', twilio: false };
+}

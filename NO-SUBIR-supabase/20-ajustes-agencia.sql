@@ -216,3 +216,147 @@ returns boolean language sql volatile security definer set search_path = public 
 $$;
 revoke all on function public.conv_reclamar_envio(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.conv_reclamar_envio(uuid, uuid) to service_role;
+
+-- -----------------------------------------------------------------------------
+-- 4 · SERVICIOS POR DEFECTO DE LA AGENCIA (correo y Twilio)
+-- Si una subcuenta no tiene correo propio, envía con el de la agencia; si no
+-- tiene cuenta de Twilio propia, usa la de la agencia con sus propios números.
+-- Las claves solo las lee el servidor.
+-- -----------------------------------------------------------------------------
+create table if not exists public.agencia_servicios (
+  agencia_id           uuid primary key references public.agencias(id) on delete cascade,
+  twilio_sid           text not null default '' check (twilio_sid = '' or twilio_sid ~ '^AC[0-9a-fA-F]{32}$'),
+  correo_proveedor     text not null default '' check (correo_proveedor in ('', 'mailgun', 'smtp')),
+  correo_remitente     text not null default '' check (correo_remitente = '' or correo_remitente ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  correo_nombre        text not null default '' check (length(correo_nombre) <= 120),
+  mailgun_dominio      text not null default '' check (mailgun_dominio = '' or mailgun_dominio ~* '^[a-z0-9.-]+\.[a-z]{2,}$'),
+  mailgun_region       text not null default 'eu' check (mailgun_region in ('us', 'eu')),
+  smtp_host            text not null default '' check (length(smtp_host) <= 200),
+  smtp_puerto          int not null default 587 check (smtp_puerto between 1 and 65535),
+  smtp_seguro          boolean not null default false,
+  smtp_usuario         text not null default '' check (length(smtp_usuario) <= 200),
+  actualizado          timestamptz not null default now()
+);
+create table if not exists public.agencia_secretos (
+  agencia_id     uuid primary key references public.agencias(id) on delete cascade,
+  twilio_token   text not null default '',
+  mailgun_clave  text not null default '',
+  mailgun_firma  text not null default '',
+  smtp_clave     text not null default '',
+  actualizado    timestamptz not null default now()
+);
+alter table public.agencia_servicios enable row level security;
+alter table public.agencia_secretos enable row level security;
+revoke all on public.agencia_servicios, public.agencia_secretos from anon, authenticated;
+grant all on public.agencia_servicios, public.agencia_secretos to service_role;
+drop policy if exists agencia_servicios_admin on public.agencia_servicios;
+create policy agencia_servicios_admin on public.agencia_servicios for all to authenticated
+  using (public.soy_admin_agencia(agencia_id)) with check (public.soy_admin_agencia(agencia_id));
+grant select, insert, update on public.agencia_servicios to authenticated;
+
+create or replace function public.agencia_guardar_secretos(p_agencia uuid, p_datos jsonb)
+returns void language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.soy_admin_agencia(p_agencia) then
+    raise exception 'Solo un administrador de la agencia puede cambiar las claves.' using errcode = 'insufficient_privilege';
+  end if;
+  if jsonb_typeof(p_datos) <> 'object'
+     or exists (select 1 from jsonb_object_keys(p_datos) k where k not in ('twilio_token', 'mailgun_clave', 'mailgun_firma', 'smtp_clave')) then
+    raise exception 'Datos no válidos.' using errcode = 'check_violation';
+  end if;
+  if exists (select 1 from jsonb_each(p_datos) e where jsonb_typeof(e.value) not in ('string', 'null') or length(e.value #>> '{}') > 500) then
+    raise exception 'Clave demasiado larga.' using errcode = 'check_violation';
+  end if;
+  insert into public.agencia_secretos (agencia_id) values (p_agencia) on conflict do nothing;
+  -- Igual que en la subcuenta: vacío o ausente = no tocar; null = borrar.
+  update public.agencia_secretos set
+    twilio_token  = case when not p_datos ? 'twilio_token' or p_datos ->> 'twilio_token' = '' then twilio_token
+                    when jsonb_typeof(p_datos -> 'twilio_token') = 'null' then '' else p_datos ->> 'twilio_token' end,
+    mailgun_clave = case when not p_datos ? 'mailgun_clave' or p_datos ->> 'mailgun_clave' = '' then mailgun_clave
+                    when jsonb_typeof(p_datos -> 'mailgun_clave') = 'null' then '' else p_datos ->> 'mailgun_clave' end,
+    mailgun_firma = case when not p_datos ? 'mailgun_firma' or p_datos ->> 'mailgun_firma' = '' then mailgun_firma
+                    when jsonb_typeof(p_datos -> 'mailgun_firma') = 'null' then '' else p_datos ->> 'mailgun_firma' end,
+    smtp_clave    = case when not p_datos ? 'smtp_clave' or p_datos ->> 'smtp_clave' = '' then smtp_clave
+                    when jsonb_typeof(p_datos -> 'smtp_clave') = 'null' then '' else p_datos ->> 'smtp_clave' end,
+    actualizado   = now()
+  where agencia_id = p_agencia;
+end $$;
+
+create or replace function public.agencia_estado_secretos(p_agencia uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if not public.soy_admin_agencia(p_agencia) then
+    raise exception 'Solo un administrador de la agencia puede ver esto.' using errcode = 'insufficient_privilege';
+  end if;
+  select jsonb_build_object('twilio_token', twilio_token <> '', 'mailgun_clave', mailgun_clave <> '',
+                            'mailgun_firma', mailgun_firma <> '', 'smtp_clave', smtp_clave <> '')
+  into r from public.agencia_secretos where agencia_id = p_agencia;
+  return coalesce(r, '{"twilio_token":false,"mailgun_clave":false,"mailgun_firma":false,"smtp_clave":false}'::jsonb);
+end $$;
+revoke all on function public.agencia_guardar_secretos(uuid, jsonb) from public, anon;
+revoke all on function public.agencia_estado_secretos(uuid) from public, anon;
+grant execute on function public.agencia_guardar_secretos(uuid, jsonb) to authenticated;
+grant execute on function public.agencia_estado_secretos(uuid) to authenticated;
+
+-- Verificación de correos (comprobar que el dominio del destinatario recibe correo).
+alter table public.conv_ajustes add column if not exists verificar_correos boolean not null default false;
+
+-- Resumen por subcuenta para las tablas de agencia (sin claves, solo si están puestas).
+create or replace function public.agencia_resumen_servicios(p_agencia uuid)
+returns table (subcuenta_id uuid, nombre text, correo_proveedor text, correo_remitente text, mailgun_dominio text,
+               verificar_correos boolean, twilio_sid text, twilio_numero_sms text, twilio_numero_wa text,
+               twilio_token boolean, correo_clave boolean)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.soy_admin_agencia(p_agencia) then
+    raise exception 'Solo un administrador de la agencia puede ver esto.' using errcode = 'insufficient_privilege';
+  end if;
+  return query
+  select s.id, s.nombre, coalesce(a.correo_proveedor, ''), coalesce(a.correo_remitente, ''), coalesce(a.mailgun_dominio, ''),
+         coalesce(a.verificar_correos, false), coalesce(a.twilio_sid, ''), coalesce(a.twilio_numero_sms, ''), coalesce(a.twilio_numero_wa, ''),
+         coalesce(k.twilio_token <> '', false),
+         coalesce(case a.correo_proveedor when 'mailgun' then k.mailgun_clave <> '' when 'smtp' then k.smtp_clave <> '' else false end, false)
+  from public.subcuentas s
+  left join public.conv_ajustes a on a.subcuenta_id = s.id
+  left join public.conv_secretos k on k.subcuenta_id = s.id
+  where s.agencia_id = p_agencia
+  order by s.nombre;
+end $$;
+revoke all on function public.agencia_resumen_servicios(uuid) from public, anon;
+grant execute on function public.agencia_resumen_servicios(uuid) to authenticated;
+
+-- Activar o quitar la verificación de correos en todas las subcuentas de golpe.
+create or replace function public.agencia_verificacion_correos(p_agencia uuid, p_activar boolean)
+returns int language plpgsql volatile security definer set search_path = public as $$
+declare v int;
+begin
+  if not public.soy_admin_agencia(p_agencia) then
+    raise exception 'Solo un administrador de la agencia puede cambiar esto.' using errcode = 'insufficient_privilege';
+  end if;
+  insert into public.conv_ajustes (subcuenta_id, verificar_correos)
+  select id, p_activar from public.subcuentas where agencia_id = p_agencia
+  on conflict (subcuenta_id) do update set verificar_correos = excluded.verificar_correos, actualizado = now();
+  get diagnostics v = row_count;
+  return v;
+end $$;
+revoke all on function public.agencia_verificacion_correos(uuid, boolean) from public, anon;
+grant execute on function public.agencia_verificacion_correos(uuid, boolean) to authenticated;
+
+-- ¿Qué hereda una subcuenta de su agencia? (para avisarlo en sus ajustes)
+create or replace function public.servicios_heredados(p_subcuenta uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare g public.agencia_servicios; k public.agencia_secretos;
+begin
+  if not public.puedo_ver_subcuenta(p_subcuenta) then
+    raise exception 'No tienes acceso a esta subcuenta.' using errcode = 'insufficient_privilege';
+  end if;
+  select a.* into g from public.agencia_servicios a join public.subcuentas s on s.agencia_id = a.agencia_id where s.id = p_subcuenta;
+  select a.* into k from public.agencia_secretos a join public.subcuentas s on s.agencia_id = a.agencia_id where s.id = p_subcuenta;
+  return jsonb_build_object(
+    'correo', coalesce(g.correo_proveedor, '') <> '',
+    'correo_remitente', coalesce(g.correo_remitente, ''),
+    'twilio', coalesce(g.twilio_sid, '') <> '' and coalesce(k.twilio_token, '') <> '');
+end $$;
+revoke all on function public.servicios_heredados(uuid) from public, anon;
+grant execute on function public.servicios_heredados(uuid) to authenticated;

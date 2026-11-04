@@ -157,5 +157,30 @@ reset role;
 set role authenticated;
 select pg_temp.prueba('Un usuario no puede llamarla', $q$ select public.conv_reclamar_envio(gen_random_uuid(), gen_random_uuid()) $q$, true);
 reset role;
+-- 4 · Servicios por defecto de la agencia
+set role authenticated;
+select pg_temp.entra_como('ana@aj.test');
+select pg_temp.prueba('Un usuario de subcuenta no configura el correo de la agencia',
+  $q$ insert into public.agencia_servicios (agencia_id, correo_proveedor, correo_remitente) values ((select id from ids where clave = 'ag'), 'smtp', 'a@b.es') $q$, true);
+select pg_temp.prueba('…ni sus claves', $q$ select public.agencia_guardar_secretos((select id from ids where clave = 'ag'), '{"smtp_clave":"x"}') $q$, true);
+select pg_temp.entra_como('duena@aj.test');
+select pg_temp.prueba('La dueña guarda el SMTP y el Twilio de la agencia',
+  $q$ insert into public.agencia_servicios (agencia_id, correo_proveedor, correo_remitente, smtp_host, twilio_sid)
+      values ((select id from ids where clave = 'ag'), 'smtp', 'hola@agencia.es', 'smtp.agencia.es', 'AC' || repeat('a', 32)) $q$, false);
+select public.agencia_guardar_secretos((select id from ids where clave = 'ag'), '{"smtp_clave":"secreta","twilio_token":"tok"}');
+select public.agencia_guardar_secretos((select id from ids where clave = 'ag'), '{"smtp_clave":""}');
+select pg_temp.prueba('Las claves de la agencia no se leen desde la app', $q$ select * from public.agencia_secretos $q$, true);
+select pg_temp.igual('Solo se sabe si están puestas (y «vacío» no la borró)',
+  (select public.agencia_estado_secretos((select id from ids where clave = 'ag')) ->> 'smtp_clave'), 'true');
+select pg_temp.igual('El resumen lista sus 2 subcuentas', (select count(*)::text from public.agencia_resumen_servicios((select id from ids where clave = 'ag'))), '2');
+select pg_temp.igual('Activar la verificación en todas', (select public.agencia_verificacion_correos((select id from ids where clave = 'ag'), true)::text), '2');
+select pg_temp.entra_como('ana@aj.test');
+select pg_temp.prueba('Ana no ve el resumen de la agencia', $q$ select * from public.agencia_resumen_servicios((select id from ids where clave = 'ag')) $q$, true);
+select pg_temp.igual('Ana sabe que Norte usa el correo y el Twilio de la agencia',
+  (select (r ->> 'correo') || '/' || (r ->> 'twilio') from (select public.servicios_heredados((select id from ids where clave = 'norte')) r) x), 'true/true');
+select pg_temp.prueba('…pero no puede preguntar por Sur', $q$ select public.servicios_heredados((select id from ids where clave = 'sur')) $q$, true);
+reset role;
+select pg_temp.igual('Norte queda con la verificación de correos activada',
+  (select verificar_correos::text from public.conv_ajustes where subcuenta_id = (select id from ids where clave = 'norte')), 'true');
 delete from public.agencias where nombre in ('Agencia Aj', 'Ajena');
 delete from auth.users where email like '%@aj.test';

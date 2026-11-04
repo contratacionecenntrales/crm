@@ -12,11 +12,12 @@ export interface Ajustes {
   smtp_puerto: number;
   smtp_seguro: boolean;
   smtp_usuario: string;
+  verificar_correos: boolean;
 }
 
 export const AJUSTES_VACIOS: Ajustes = {
   twilio_sid: '', twilio_numero_sms: '', twilio_numero_wa: '', correo_proveedor: '', correo_remitente: '', correo_nombre: '',
-  mailgun_dominio: '', mailgun_region: 'eu', smtp_host: '', smtp_puerto: 587, smtp_seguro: false, smtp_usuario: '',
+  mailgun_dominio: '', mailgun_region: 'eu', smtp_host: '', smtp_puerto: 587, smtp_seguro: false, smtp_usuario: '', verificar_correos: false,
 };
 
 
