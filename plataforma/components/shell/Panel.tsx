@@ -2,6 +2,7 @@ import 'server-only';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { contextoAgencias, esAdminAgencia, subcuentasVisibles, usuarioActual } from '@/lib/sesion';
 import { direccionCompleta } from '@/lib/formato';
+import { resolverUrl } from '@/lib/menu/enlaces';
 import { MarcoPanel } from './MarcoPanel';
 import { SelectorSubcuenta } from './SelectorSubcuenta';
 import { Campana } from './Campana';
@@ -10,7 +11,7 @@ import { AccionesRapidas, Buscador } from './Herramientas';
 import { Ayuda, type DatosSoporte } from './Ayuda';
 import { Anuncios, CierreInactividad, CssAgencia, TemaPorDefecto, type AnuncioVisible } from './Marca';
 import type { SeccionAjustes } from './MarcoPanel';
-import type { ElementoNav } from './iconos';
+import { ICONOS, type ElementoNav } from './iconos';
 
 interface Props {
   principal: ElementoNav[];
@@ -22,7 +23,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export async function Panel({ principal, secundario, ajustes, menuAjustes, subcuentaActual, children }: Props) {
+export async function Panel({ principal, secundario: secundarioBase, ajustes, menuAjustes, subcuentaActual, children }: Props) {
   const usuario = await usuarioActual();
   const supabase = await crearClienteServidor();
   const [{ actual, membresias }, subs, avisos, soporte] = await Promise.all([
@@ -35,6 +36,21 @@ export async function Panel({ principal, secundario, ajustes, menuAjustes, subcu
       .limit(50),
     subcuentaActual ? supabase.rpc('soporte_subcuenta', { p_subcuenta: subcuentaActual.id }) : Promise.resolve({ data: null }),
   ]);
+  // Enlaces de menú personalizados de la agencia para esta vista.
+  const { data: enlaces } = actual || subcuentaActual
+    ? await supabase.rpc('enlaces_menu', { p_agencia: actual?.agencia.id ?? null, p_subcuenta: subcuentaActual?.id ?? null })
+    : { data: [] };
+  const secundario: ElementoNav[] = [
+    ...(secundarioBase ?? []),
+    ...((enlaces ?? []) as { id: string; nombre: string; url: string; icono: string; modo: string }[]).map((e) => ({
+      href: e.modo === 'iframe'
+        ? (subcuentaActual ? `/subcuenta/${subcuentaActual.id}/enlace/${e.id}` : `/agencia/enlace/${e.id}`)
+        : resolverUrl(e.url, { subcuenta: subcuentaActual?.id, agencia: actual?.agencia.id }),
+      etiqueta: e.nombre,
+      icono: (e.icono in ICONOS ? e.icono : 'enlace') as ElementoNav['icono'],
+      externo: e.modo !== 'iframe',
+    })),
+  ];
   const anuncios = subcuentaActual
     ? (((await supabase.rpc('anuncios_pendientes', { p_subcuenta: subcuentaActual.id })).data ?? []) as AnuncioVisible[])
     : [];

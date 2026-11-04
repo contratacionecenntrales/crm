@@ -72,6 +72,7 @@ export function MarcoPanel({ principal, secundario, ajustes, menuAjustes, logo, 
       <li key={e.href} className={expandido ? 'px-2' : ''}>
         <Link
           href={e.href}
+          {...(e.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           aria-label={expandido ? undefined : e.etiqueta}
           aria-current={on ? 'page' : undefined}
           onMouseEnter={mostrar(e.etiqueta)}

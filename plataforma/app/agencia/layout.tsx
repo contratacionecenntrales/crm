@@ -19,6 +19,7 @@ export default async function LayoutAgencia({ children }: { children: React.Reac
         { href: `${c}/empresa`, etiqueta: 'Empresa' },
         { href: `${c}/usuarios`, etiqueta: 'Usuarios' },
         { href: `${c}/anuncios`, etiqueta: 'Anuncios', nueva: true },
+        { href: `${c}/enlaces`, etiqueta: 'Enlaces de menú personalizados', nueva: true },
         { href: `${c}/stripe`, etiqueta: 'Stripe' },
         { href: `${c}/auditoria`, etiqueta: 'Registros de auditoría' },
       ],

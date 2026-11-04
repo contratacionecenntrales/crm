@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react';
+import { BotonCopiar } from '@/components/calendario/TablaCalendarios';
 import { exigirAgencia } from '@/lib/sesion';
 import { ContenedorAjustes, PestanasAjustes, TituloAjustes } from '@/components/ajustes/Piezas';
 import { Avanzada, Basicos, MarcaBlanca } from '@/components/ajustes/Empresa';
@@ -30,7 +30,7 @@ export default async function PaginaEmpresa({ searchParams }: { searchParams: Pr
         <>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-medium text-texto">Detalles básicos</h2>
-            <p className="flex items-center gap-2 text-sm text-texto">Número de relación <span className="text-tenue">{relacion}</span><Copy className="size-4 text-tenue" aria-hidden /></p>
+            <p className="flex items-center gap-2 text-sm text-texto">Número de relación <span className="text-tenue">{relacion}</span><BotonCopiar texto={relacion} etiqueta="Copiar número de relación" /></p>
           </div>
           <Basicos agencia={a} />
         </>
