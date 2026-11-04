@@ -2,7 +2,7 @@
 import { useActionState, useRef, useState, useTransition } from 'react';
 import { ImageUp, Trash2 } from 'lucide-react';
 import {
-  guardarBasicos, guardarCss, guardarDominios, guardarExpiracion, guardarLogo, guardarPoliticas, guardarTema,
+  guardarBasicos, guardarCss, guardarDatosMuestra, guardarDominios, guardarExpiracion, guardarJs, guardarLogo, guardarPoliticas, guardarTema,
 } from '@/app/agencia/configuracion/acciones';
 import { crearClienteNavegador } from '@/lib/supabase/navegador';
 import { Campo, Selector } from '@/components/ui/Campo';
@@ -10,7 +10,7 @@ import { BotonEnvio } from '@/components/ui/BotonEnvio';
 import { Aviso } from '@/components/ui/Aviso';
 import { estilosBoton, estiloArea, estiloInput } from '@/components/ui/clases';
 import { MONEDAS, PAISES, ZONAS_HORARIAS } from '@/lib/opciones';
-import { SeccionAjuste } from './Piezas';
+import { Interruptor, SeccionAjuste } from './Piezas';
 import type { Agencia, Resultado } from '@/lib/tipos';
 
 const CATEGORIAS = ['Agencia de marketing', 'Consultoría', 'Desarrollo de software', 'Comercio', 'Salud y bienestar', 'Inmobiliaria', 'Educación', 'Otro']
@@ -57,7 +57,7 @@ export function Basicos({ agencia: a }: { agencia: Agencia }) {
   );
 }
 
-export function MarcaBlanca({ agencia: a }: { agencia: Agencia }) {
+export function MarcaBlanca({ agencia: a, soyPropietario }: { agencia: Agencia; soyPropietario: boolean }) {
   const [logo, setLogo] = useState(a.logo_url);
   const [avisoLogo, setAvisoLogo] = useState<Resultado | null>(null);
   const [subiendo, iniciar] = useTransition();
@@ -65,6 +65,7 @@ export function MarcaBlanca({ agencia: a }: { agencia: Agencia }) {
   const [eDom, accDom] = useActionState(guardarDominios, null);
   const [ePol, accPol] = useActionState(guardarPoliticas, null);
   const [eCss, accCss] = useActionState(guardarCss, null);
+  const [eJs, accJs] = useActionState(guardarJs, null);
   const [tema, setTema] = useState(a.tema_defecto);
   const [avisoTema, setAvisoTema] = useState<Resultado | null>(null);
 
@@ -141,6 +142,20 @@ export function MarcaBlanca({ agencia: a }: { agencia: Agencia }) {
         </form>
       </SeccionAjuste>
 
+      <SeccionAjuste titulo="JS personalizado" descripcion="Personalice la plataforma con JS">
+        <form action={accJs} className="space-y-4">
+          <textarea name="js" defaultValue={a.js_personalizado} rows={8} spellCheck={false} maxLength={20000} disabled={!soyPropietario}
+            placeholder={'https://tu-widget.com/script.js?app={{subcuenta.id}}\n\no código JavaScript…'} className={`${estiloArea} font-mono text-[13px] leading-5`} />
+          <p className="text-xs text-tenue">
+            Pon una URL https (se carga como script) o código. Se ejecuta para todos los usuarios de la agencia y de sus subcuentas, salvo en estas pantallas de configuración.
+            Puedes usar <code className="rounded bg-superficie-2 px-1">{'{{subcuenta.id}}'}</code> y <code className="rounded bg-superficie-2 px-1">{'{{agencia.id}}'}</code>.
+            {!soyPropietario && ' Solo el propietario de la agencia puede cambiarlo.'}
+          </p>
+          <Aviso estado={eJs} />
+          {soyPropietario && <Botones />}
+        </form>
+      </SeccionAjuste>
+
       <SeccionAjuste titulo="Tema" descripcion="Seleccionar un tema por defecto">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(['claro', 'oscuro'] as const).map((t) => (
@@ -170,20 +185,30 @@ const TIEMPOS = [
 
 export function Avanzada({ agencia: a }: { agencia: Agencia }) {
   const [valor, setValor] = useState<string>(a.expiracion_sesion_min === null ? '' : String(a.expiracion_sesion_min));
+  const [muestra, setMuestra] = useState(a.datos_muestra);
   const [aviso, setAviso] = useState<Resultado | null>(null);
+  const [avisoMuestra, setAvisoMuestra] = useState<Resultado | null>(null);
   const [pendiente, iniciar] = useTransition();
   return (
-    <SeccionAjuste titulo="Interrupción de la sesión" descripcion="Configurar el tiempo de espera de la sesión">
-      <p className="mb-3 text-sm text-texto">La sesión se terminará y el usuario será desconectado automáticamente si está inactivo durante el tiempo seleccionado.</p>
-      <select value={valor} disabled={pendiente} aria-label="Tiempo de espera"
-        onChange={(e) => {
-          setValor(e.target.value);
-          iniciar(async () => setAviso(await guardarExpiracion(e.target.value ? Number(e.target.value) : null)));
-        }}
-        className={`${estiloInput} max-w-60`}>
-        {TIEMPOS.map(([v, t]) => <option key={t} value={v ?? ''}>{t}</option>)}
-      </select>
-      <div className="mt-3"><Aviso estado={aviso} /></div>
-    </SeccionAjuste>
+    <>
+      <SeccionAjuste titulo="Interrupción de la sesión" descripcion="Configurar el tiempo de espera de la sesión">
+        <p className="mb-3 text-sm text-texto">La sesión se terminará y el usuario será desconectado automáticamente si está inactivo durante el tiempo seleccionado.</p>
+        <select value={valor} disabled={pendiente} aria-label="Tiempo de espera"
+          onChange={(e) => {
+            setValor(e.target.value);
+            iniciar(async () => setAviso(await guardarExpiracion(e.target.value ? Number(e.target.value) : null)));
+          }}
+          className={`${estiloInput} max-w-60`}>
+          {TIEMPOS.map(([v, t]) => <option key={t} value={v ?? ''}>{t}</option>)}
+        </select>
+        <div className="mt-3"><Aviso estado={aviso} /></div>
+      </SeccionAjuste>
+      <SeccionAjuste titulo="Optimizar la experiencia" descripcion="Ayuda a tus clientes a arrancar">
+        <Interruptor checked={muestra} disabled={pendiente} etiqueta="Incluya datos de muestra en nuevas subcuentas"
+          descripcion="Cada subcuenta nueva nace con 5 contactos y 5 oportunidades de ejemplo (etiqueta «muestra»), para enseñar el CRM sin empezar en blanco."
+          onChange={(v) => { setMuestra(v); iniciar(async () => { const r = await guardarDatosMuestra(v); setAvisoMuestra(r); if (!r.ok) setMuestra(!v); }); }} />
+        <div className="mt-3"><Aviso estado={avisoMuestra} /></div>
+      </SeccionAjuste>
+    </>
   );
 }

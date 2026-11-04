@@ -360,3 +360,71 @@ begin
 end $$;
 revoke all on function public.servicios_heredados(uuid) from public, anon;
 grant execute on function public.servicios_heredados(uuid) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 5 · CONFIGURACIÓN AVANZADA: datos de muestra y JS personalizado
+-- -----------------------------------------------------------------------------
+alter table public.agencias add column if not exists datos_muestra boolean not null default false;
+alter table public.agencias add column if not exists js_personalizado text not null default '' check (length(js_personalizado) <= 20000);
+
+-- El JS corre en el navegador de todos los usuarios de la agencia y de sus
+-- subcuentas: solo el propietario puede cambiarlo.
+create or replace function public.agencias_protege_js()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.js_personalizado is distinct from old.js_personalizado
+     and auth.uid() is not null and public.rol_en_agencia(new.id) is distinct from 'propietario' then
+    raise exception 'Solo el propietario de la agencia puede cambiar el JS personalizado.' using errcode = 'insufficient_privilege';
+  end if;
+  return new;
+end $$;
+drop trigger if exists agencias_protege_js on public.agencias;
+create trigger agencias_protege_js before update on public.agencias
+  for each row execute function public.agencias_protege_js();
+
+-- JS de la agencia de una subcuenta (para quien está dentro de ella).
+create or replace function public.js_agencia(p_subcuenta uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select a.js_personalizado from public.agencias a join public.subcuentas s on s.agencia_id = a.id
+  where s.id = p_subcuenta and public.puedo_ver_subcuenta(p_subcuenta);
+$$;
+revoke all on function public.js_agencia(uuid) from public, anon;
+grant execute on function public.js_agencia(uuid) to authenticated;
+
+-- Subcuenta nueva con datos de muestra (si la agencia lo tiene activado):
+-- contactos y oportunidades de ejemplo con la etiqueta «muestra».
+create or replace function public.subcuenta_datos_muestra()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_embudo uuid;
+  v_etapas uuid[];
+  c record;
+  i int := 0;
+begin
+  if not coalesce((select datos_muestra from public.agencias where id = new.agencia_id), false) then
+    return null;
+  end if;
+  select id into v_embudo from public.crm_embudos where subcuenta_id = new.id order by orden limit 1;
+  select array_agg(id order by orden) into v_etapas from public.crm_etapas where embudo_id = v_embudo;
+  for c in select * from (values
+      ('Lucía', 'Martín', 'lucia.martin@example.com', '+34600100001', 'cliente', 'Implantación completa', 2400),
+      ('Carlos', 'Ruiz', 'carlos.ruiz@example.com', '+34600100002', 'lead', 'Primera consulta', 150),
+      ('Marta', 'Gómez', 'marta.gomez@example.com', '+34600100003', 'lead', 'Plan anual', 990),
+      ('Javier', 'López', 'javier.lopez@example.com', '+34600100004', 'lead', 'Presupuesto web', 1800),
+      ('Ana', 'Fernández', 'ana.fernandez@example.com', '+34600100005', 'cliente', 'Renovación', 600)
+    ) as t(nombre, apellidos, email, telefono, tipo, oportunidad, valor)
+  loop
+    i := i + 1;
+    with nuevo as (
+      insert into public.crm_contactos (subcuenta_id, nombre, apellidos, email, telefono, tipo, fuente, etiquetas, creado_por)
+      values (new.id, c.nombre, c.apellidos, c.email, c.telefono, c.tipo, 'Datos de muestra', array['muestra'], null)
+      returning id)
+    insert into public.crm_oportunidades (subcuenta_id, embudo_id, etapa_id, contacto_id, nombre, valor, fuente, posicion, creado_por)
+    select new.id, v_embudo, v_etapas[1 + (i - 1) % greatest(cardinality(v_etapas), 1)], nuevo.id, c.oportunidad, c.valor, 'Datos de muestra', i, null
+    from nuevo where v_embudo is not null and cardinality(v_etapas) > 0;
+  end loop;
+  return null;
+end $$;
+drop trigger if exists subcuentas_zz_datos_muestra on public.subcuentas;
+create trigger subcuentas_zz_datos_muestra after insert on public.subcuentas
+  for each row execute function public.subcuenta_datos_muestra();

@@ -29,6 +29,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 17 | `17-automatizacion.sql` | Automatización: flujos «si pasa X, haz Y» conectados a contactos, etiquetas, citas, mensajes, oportunidades y facturas. Se ejecutan con la misma tarea programada de los recordatorios. Requiere el 16 |
 | 18 | `18-correcciones.sql` | Correcciones de seguridad e integridad de la auditoría (banderas internas a prueba de manipulación, facturas, reservas, automatizaciones, SSO con dominios verificados por DNS). **Obligatorio**. Requiere el 17 |
 | 19 | `19-chat-web.sql` | Chat web: globo para la web de cada subcuenta; los mensajes entran en Conversaciones como canal «chat». Requiere el 18 |
+| 20 | `20-ajustes-agencia.sql` | Enlaces de menú personalizados, claves de API (con la API REST /api/v1), correo y Twilio por defecto de la agencia, verificación de correos, datos de muestra, JS personalizado y corrección del envío de mensajes. Requiere el 19 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

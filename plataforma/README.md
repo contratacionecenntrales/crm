@@ -67,6 +67,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 9. `NO-SUBIR-supabase/17-automatizacion.sql` — Automatización: flujos con disparador y pasos (mensajes, etiquetas, esperas, tareas, oportunidades, avisos, webhooks)
 10. `NO-SUBIR-supabase/18-correcciones.sql` — correcciones de seguridad e integridad de la auditoría (**obligatorio**, también si ya tenías instalados los anteriores)
 11. `NO-SUBIR-supabase/19-chat-web.sql` — chat web: globo para la web del cliente conectado a Conversaciones
+12. `NO-SUBIR-supabase/20-ajustes-agencia.sql` — enlaces de menú personalizados, claves de API, correo y Twilio por defecto de la agencia, datos de muestra y JS personalizado
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -94,6 +95,33 @@ Cada subcuenta pega su clave de Stripe en **Pagos → Configuración** y crea en
 Stripe un webhook hacia la URL que aparece allí, con los eventos
 `checkout.session.completed`, `checkout.session.async_payment_succeeded` y
 `charge.refunded` (los reembolsos hechos en Stripe se reflejan en la factura).
+
+### API REST (integraciones privadas)
+
+En **Configuración → Claves de API** se crean claves con permisos por módulo,
+subcuentas y caducidad (el token se enseña una sola vez). Cada petición lleva
+`Authorization: Bearer mtk_…` y trabaja sobre una subcuenta:
+
+| Método | Ruta (`/api/v1/subcuentas/{sub}/…`) | Permiso |
+|---|---|---|
+| GET / POST | `contactos` (`?q=&email=&limite=&pagina=`) | `contactos.leer` / `contactos.escribir` |
+| GET / PATCH / DELETE | `contactos/{id}` | idem |
+| GET / POST | `oportunidades` (`?embudo_id=&estado=&contacto_id=`) | `oportunidades.leer` / `.escribir` |
+| GET / PATCH | `oportunidades/{id}` | idem |
+| POST | `mensajes` (`contacto_id`, `canal` sms/whatsapp/email, `cuerpo`, `asunto`) | `conversaciones.escribir` |
+| GET | `calendarios`, `citas` (`?desde=&hasta=`, máx. 62 días) | `calendarios.leer` |
+
+Respuestas en JSON (`{ datos }` o `{ error: { codigo, mensaje } }`), con 401, 403,
+404, 409, 422 y 429 (máximo 120 peticiones por minuto y clave). Necesita
+`SUPABASE_SERVICE_ROLE_KEY` en el servidor.
+
+### Correo y Twilio de la agencia
+
+En **Configuración → Servicios de correo** e **Integración telefónica** la
+agencia pone su proveedor por defecto: las subcuentas sin configuración propia
+envían con él (en el caso de Twilio, con sus propios números de esa cuenta).
+La verificación de correos comprueba antes de enviar que el dominio del
+destinatario existe.
 
 ### Chat web
 

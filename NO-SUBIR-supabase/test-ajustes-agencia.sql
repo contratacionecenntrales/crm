@@ -182,5 +182,27 @@ select pg_temp.prueba('…pero no puede preguntar por Sur', $q$ select public.se
 reset role;
 select pg_temp.igual('Norte queda con la verificación de correos activada',
   (select verificar_correos::text from public.conv_ajustes where subcuenta_id = (select id from ids where clave = 'norte')), 'true');
+-- 5 · Datos de muestra y JS personalizado
+set role authenticated;
+select pg_temp.entra_como('duena@aj.test');
+update public.agencias set datos_muestra = true where id = (select id from ids where clave = 'ag');
+insert into public.subcuentas (agencia_id, nombre) select id, 'Con muestra' from ids where clave = 'ag';
+select pg_temp.igual('La subcuenta nueva nace con 5 contactos de muestra',
+  (select count(*)::text from public.crm_contactos c join public.subcuentas s on s.id = c.subcuenta_id where s.nombre = 'Con muestra' and 'muestra' = any (c.etiquetas)), '5');
+select pg_temp.igual('…y 5 oportunidades en su embudo',
+  (select count(*)::text from public.crm_oportunidades o join public.subcuentas s on s.id = o.subcuenta_id where s.nombre = 'Con muestra'), '5');
+update public.agencias set datos_muestra = false where id = (select id from ids where clave = 'ag');
+insert into public.subcuentas (agencia_id, nombre) select id, 'Vacía' from ids where clave = 'ag';
+select pg_temp.igual('Sin la opción, nace vacía',
+  (select count(*)::text from public.crm_contactos c join public.subcuentas s on s.id = c.subcuenta_id where s.nombre = 'Vacía'), '0');
+select pg_temp.prueba('La propietaria guarda JS', $q$ update public.agencias set js_personalizado = 'console.log(1)' where id = (select id from ids where clave = 'ag') $q$, false);
+select pg_temp.entra_como('admin@aj.test');
+select pg_temp.prueba('Un admin (no propietario) no puede cambiar el JS',
+  $q$ update public.agencias set js_personalizado = 'robar()' where id = (select id from ids where clave = 'ag') $q$, true);
+select pg_temp.prueba('…pero sí otros ajustes', $q$ update public.agencias set datos_muestra = true where id = (select id from ids where clave = 'ag') $q$, false);
+select pg_temp.entra_como('ana@aj.test');
+select pg_temp.igual('Ana recibe el JS de su agencia en Norte', (select public.js_agencia((select id from ids where clave = 'norte'))), 'console.log(1)');
+select pg_temp.igual('…y nada de una subcuenta a la que no tiene acceso', (select coalesce(public.js_agencia((select id from ids where clave = 'sur')), '∅')), '∅');
+reset role;
 delete from public.agencias where nombre in ('Agencia Aj', 'Ajena');
 delete from auth.users where email like '%@aj.test';

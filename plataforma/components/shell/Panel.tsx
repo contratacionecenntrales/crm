@@ -9,7 +9,7 @@ import { Campana } from './Campana';
 import { MenuUsuario } from './MenuUsuario';
 import { AccionesRapidas, Buscador } from './Herramientas';
 import { Ayuda, type DatosSoporte } from './Ayuda';
-import { Anuncios, CierreInactividad, CssAgencia, TemaPorDefecto, type AnuncioVisible } from './Marca';
+import { Anuncios, CierreInactividad, CssAgencia, JsAgencia, TemaPorDefecto, type AnuncioVisible } from './Marca';
 import type { SeccionAjustes } from './MarcoPanel';
 import { ICONOS, type ElementoNav } from './iconos';
 
@@ -51,6 +51,9 @@ export async function Panel({ principal, secundario: secundarioBase, ajustes, me
       externo: e.modo !== 'iframe',
     })),
   ];
+  const jsAgencia = subcuentaActual
+    ? (((await supabase.rpc('js_agencia', { p_subcuenta: subcuentaActual.id })).data as string | null) ?? '')
+    : actual?.agencia.js_personalizado ?? '';
   const anuncios = subcuentaActual
     ? (((await supabase.rpc('anuncios_pendientes', { p_subcuenta: subcuentaActual.id })).data ?? []) as AnuncioVisible[])
     : [];
@@ -118,6 +121,7 @@ export async function Panel({ principal, secundario: secundarioBase, ajustes, me
       }
     >
       {marca?.css && <CssAgencia css={marca.css} />}
+      {jsAgencia && <JsAgencia codigo={jsAgencia} subcuenta={subcuentaActual?.id ?? null} agencia={actual?.agencia.id ?? null} />}
       {marca && <TemaPorDefecto tema={marca.tema} />}
       {marca?.expiracion && <CierreInactividad minutos={marca.expiracion} />}
       <Anuncios anuncios={anuncios} />

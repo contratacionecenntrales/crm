@@ -91,6 +91,20 @@ export async function guardarTema(tema: 'claro' | 'oscuro'): Promise<Resultado> 
 
 // --- Configuración avanzada ---------------------------------------------------------
 
+// JS personalizado: código o una URL https de un script. Solo el propietario.
+export async function guardarJs(_: Resultado | null, fd: FormData): Promise<Resultado> {
+  const { actual } = await exigirAgencia({ admin: true });
+  if (actual.rol !== 'propietario') return { ok: false, error: 'Solo el propietario de la agencia puede cambiar el JS personalizado.' };
+  const js = String(fd.get('js') ?? '').trim();
+  if (js.length > 20000) return { ok: false, error: 'El JS no puede superar 20.000 caracteres.' };
+  if (/^https?:\/\//i.test(js) && !/^https:\/\/\S+$/.test(js)) return { ok: false, error: 'Si pones una URL, tiene que ser una sola y empezar por https://.' };
+  return actualizar({ js_personalizado: js }, js ? 'JS guardado. Se carga en la agencia y en todas sus subcuentas.' : 'JS quitado.');
+}
+
+export async function guardarDatosMuestra(activar: boolean): Promise<Resultado> {
+  return actualizar({ datos_muestra: Boolean(activar) }, activar ? 'Las subcuentas nuevas nacerán con datos de muestra.' : 'Las subcuentas nuevas nacerán vacías.');
+}
+
 export async function guardarExpiracion(minutos: number | null): Promise<Resultado> {
   if (minutos !== null && (!Number.isInteger(minutos) || minutos < 5 || minutos > 10080)) return { ok: false, error: 'Tiempo no válido.' };
   return actualizar({ expiracion_sesion_min: minutos }, 'Tiempo de sesión guardado.');

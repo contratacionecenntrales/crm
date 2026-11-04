@@ -35,7 +35,7 @@ export default async function PaginaEmpresa({ searchParams }: { searchParams: Pr
           <Basicos agencia={a} />
         </>
       )}
-      {tab === 'marca' && (<><h2 className="mb-4 text-lg font-medium text-texto">Marca Blanca</h2><MarcaBlanca agencia={a} /></>)}
+      {tab === 'marca' && (<><h2 className="mb-4 text-lg font-medium text-texto">Marca Blanca</h2><MarcaBlanca agencia={a} soyPropietario={actual.rol === 'propietario'} /></>)}
       {tab === 'sso' && (<><h2 className="mb-4 text-lg font-medium text-texto">Inicio de sesión único (SSO)</h2>
         <AjustesSso agencia={a} dominios={await dominiosSso(a.id)} supabase={supabaseUrl()} web={siteUrl()} /></>)}
       {tab === 'avanzada' && (<><h2 className="mb-4 text-lg font-medium text-texto">Configuración avanzada</h2><Avanzada agencia={a} /></>)}

@@ -30,6 +30,8 @@ export interface Agencia {
   url_privacidad: string;
   url_terminos: string;
   css_personalizado: string;
+  js_personalizado: string;
+  datos_muestra: boolean;
   tema_defecto: 'claro' | 'oscuro';
   expiracion_sesion_min: number | null;
   sso_activo: boolean;

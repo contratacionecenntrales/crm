@@ -12,6 +12,35 @@ export function CssAgencia({ css }: { css: string }) {
   return <style dangerouslySetInnerHTML={{ __html: css.replace(/</g, '') }} />;
 }
 
+// JS personalizado de la agencia: una URL https (se carga como script) o código.
+// Una sola vez por carga de página, y nunca en la configuración de la agencia
+// (si el JS rompe algo, ahí se puede quitar).
+export function JsAgencia({ codigo, subcuenta, agencia }: { codigo: string; subcuenta: string | null; agencia: string | null }) {
+  const ruta = usePathname();
+  useEffect(() => {
+    if (!codigo || ruta.startsWith('/agencia/configuracion')) return;
+    const w = window as unknown as { __jsAgencia?: string };
+    const clave = `${subcuenta ?? ''}|${agencia ?? ''}`;
+    if (w.__jsAgencia === clave) return;
+    w.__jsAgencia = clave;
+    const sustituir = (t: string, codificar: boolean) => {
+      const f = codificar ? encodeURIComponent : (x: string) => x;
+      return t.replace(/\{\{\s*(subcuenta|location)\.id\s*\}\}/g, f(subcuenta ?? '')).replace(/\{\{\s*(agencia|company)\.id\s*\}\}/g, f(agencia ?? ''));
+    };
+    const s = document.createElement('script');
+    const texto = codigo.trim();
+    if (/^https:\/\/\S+$/.test(texto)) {
+      s.src = sustituir(texto, true);
+      s.async = true;
+    } else {
+      s.text = sustituir(texto, false);
+    }
+    s.dataset.origen = 'js-agencia';
+    document.body.appendChild(s);
+  }, [codigo, ruta, subcuenta, agencia]);
+  return null;
+}
+
 // Tema por defecto de la agencia, solo si el usuario no ha elegido uno.
 export function TemaPorDefecto({ tema }: { tema: 'claro' | 'oscuro' }) {
   useEffect(() => {
