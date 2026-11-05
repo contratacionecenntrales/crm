@@ -70,6 +70,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 12. `NO-SUBIR-supabase/20-ajustes-agencia.sql` — enlaces de menú personalizados, claves de API, correo y Twilio por defecto de la agencia, datos de muestra y JS personalizado (incluye además dos correcciones: envío de mensajes y subida del logo)
 13. `NO-SUBIR-supabase/21-medios.sql` — biblioteca de medios de cada subcuenta (bucket «medios» de Storage, 5 GB por subcuenta) y uso por subcuenta para la agencia
 14. `NO-SUBIR-supabase/22-plataforma.sql` — plataforma Metatok: administradores, planes con límites, alta de agencias, estados (activa, prueba, suspendida)
+15. `NO-SUBIR-supabase/23-embudos.sql` — sitios y embudos: plantillas, editor por bloques, páginas públicas en `/f/…`, formularios conectados a contactos y automatizaciones
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 

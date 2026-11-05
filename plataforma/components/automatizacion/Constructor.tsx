@@ -25,7 +25,7 @@ export interface Ejecucion {
   contacto: { id: string; nombre: string; apellidos: string; email: string | null; telefono: string } | null;
   registro: { paso: number; tipo: string; ok: boolean; detalle: string; ts: string }[];
 }
-interface Opciones { etiquetas: string[]; embudos: Embudo[]; usuarios: Usuario[]; calendarios: { id: string; nombre: string }[] }
+interface Opciones { etiquetas: string[]; embudos: Embudo[]; usuarios: Usuario[]; calendarios: { id: string; nombre: string }[]; embudosWeb: { id: string; nombre: string }[] }
 
 const ICONO: Record<TipoPaso, typeof Mail> = {
   enviar_sms: MessageSquare, enviar_whatsapp: MessageCircle, enviar_email: Mail, anadir_etiqueta: Tag, quitar_etiqueta: Tags,
@@ -223,6 +223,7 @@ function resumenFiltro(d: Disparador, f: Record<string, string | boolean>, o: Op
     case 'cita_estado': return `${f.estado ? { confirmada: 'Confirmada', presentado: 'Se presentó', no_presentado: 'No se presentó', nueva: 'Sin confirmar' }[String(f.estado)] : 'Cualquier estado'}${cal ? ` · «${cal}»` : ''}`;
     case 'mensaje_recibido': return `${f.canal ? (f.canal === 'chat' ? 'Chat web' : String(f.canal).toUpperCase()) : 'Cualquier canal'}${f.palabra ? ` · contiene «${f.palabra}»` : ''}`;
     case 'oportunidad_etapa': return etapa ? `Etapa «${etapa}»` : 'Cualquier etapa';
+    case 'formulario_enviado': { const w = o.embudosWeb.find((e) => e.id === f.embudo_web_id)?.nombre; return w ? `Embudo «${w}»` : 'Cualquier formulario'; }
     case 'manual': return 'Se añade a los contactos a mano';
     default: return 'Sin filtros';
   }
@@ -283,6 +284,13 @@ function PanelDisparador({ disparador, filtro, opciones, reentrada, alCambiar, a
             </select></label>
         )}
       </>)}
+      {disparador === 'formulario_enviado' && (
+        <label className="block"><span className={etiqueta}>Embudo o página</span>
+          <select value={String(filtro.embudo_web_id ?? '')} onChange={(e) => f('embudo_web_id', e.target.value)} className={estiloInput}>
+            <option value="">Cualquiera</option>{opciones.embudosWeb.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          </select>
+          <span className="mt-1 block text-xs text-tenue">Usa {'{{contacto.nombre}}'} y el resto de variables en los pasos; las respuestas extra quedan en las notas del contacto.</span></label>
+      )}
       <label className="flex items-start gap-2 border-t border-borde pt-4 text-sm">
         <input type="checkbox" checked={reentrada} onChange={(e) => alReentrada(e.target.checked)} className="mt-0.5 size-4" />
         <span><span className="block font-medium text-texto">Permitir volver a entrar</span><span className="text-xs text-tenue">Un contacto puede estar varias veces a la vez en el flujo (máximo 10 entradas por hora).</span></span>

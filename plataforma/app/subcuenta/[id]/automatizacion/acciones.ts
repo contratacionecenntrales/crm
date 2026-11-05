@@ -84,7 +84,7 @@ export async function guardarFlujo(subId: string, flujoId: string, d: {
     if (d.activo && pasos.data.length === 0) return { ok: false, error: 'Añade al menos un paso antes de publicar.' };
     // Filtro: solo claves conocidas y de texto/booleano.
     const filtro: Record<string, string | boolean> = {};
-    for (const k of ['etiqueta', 'calendario_id', 'estado', 'canal', 'palabra', 'embudo_id', 'etapa_id', 'solo_online']) {
+    for (const k of ['etiqueta', 'calendario_id', 'estado', 'canal', 'palabra', 'embudo_id', 'etapa_id', 'solo_online', 'embudo_web_id']) {
       const v = d.filtro[k];
       if (typeof v === 'boolean') filtro[k] = v;
       else if (typeof v === 'string' && v.trim()) filtro[k] = v.trim().slice(0, 200);

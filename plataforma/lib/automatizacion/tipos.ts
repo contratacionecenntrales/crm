@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export type Disparador = 'contacto_creado' | 'etiqueta_anadida' | 'cita_reservada' | 'cita_cancelada' | 'cita_estado'
-  | 'mensaje_recibido' | 'oportunidad_etapa' | 'factura_pagada' | 'manual';
+  | 'mensaje_recibido' | 'oportunidad_etapa' | 'factura_pagada' | 'formulario_enviado' | 'manual';
 
 export const DISPARADORES: { valor: Disparador; texto: string; ayuda: string }[] = [
   { valor: 'contacto_creado', texto: 'Contacto creado', ayuda: 'Cuando se crea un contacto (a mano, importado, por reserva o por mensaje).' },
@@ -11,6 +11,7 @@ export const DISPARADORES: { valor: Disparador; texto: string; ayuda: string }[]
   { valor: 'cita_estado', texto: 'Estado de la cita', ayuda: 'Cuando una cita se marca como presentada, no presentada o confirmada.' },
   { valor: 'mensaje_recibido', texto: 'Respuesta del cliente', ayuda: 'Cuando llega un SMS, WhatsApp, correo o mensaje del chat web.' },
   { valor: 'oportunidad_etapa', texto: 'Oportunidad cambia de etapa', ayuda: 'Cuando una oportunidad se crea o se mueve de etapa.' },
+  { valor: 'formulario_enviado', texto: 'Formulario enviado', ayuda: 'Cuando alguien rellena un formulario de tus embudos o páginas.' },
   { valor: 'factura_pagada', texto: 'Factura pagada', ayuda: 'Cuando una factura queda pagada.' },
   { valor: 'manual', texto: 'Solo a mano', ayuda: 'El contacto entra cuando lo añades tú desde el flujo.' },
 ];

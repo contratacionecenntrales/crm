@@ -12,12 +12,13 @@ export default async function PaginaFlujo({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(fid)) notFound();
   const { subcuenta, soyAdmin } = await subcuentaVisible(id);
   const supabase = await crearClienteServidor();
-  const [f, ejec, etiquetas, embudos, usuarios, calendarios] = await Promise.all([
+  const [f, ejec, etiquetas, embudos, usuarios, calendarios, embudosWeb] = await Promise.all([
     supabase.from('aut_flujos').select('id, nombre, activo, disparador, filtro, pasos, permitir_reentrada').eq('id', fid).eq('subcuenta_id', id).maybeSingle(),
     supabase.from('aut_ejecuciones').select('id, estado, paso, motivo, creado, terminado, siguiente_en, contacto:crm_contactos(id, nombre, apellidos, email, telefono), registro:aut_registro(paso, tipo, ok, detalle, ts)')
       .eq('flujo_id', fid).order('creado', { ascending: false }).limit(100),
     etiquetasDe(id), embudosDe(id), asignablesDe(id),
     supabase.from('cal_calendarios').select('id, nombre').eq('subcuenta_id', id).order('nombre'),
+    supabase.from('emb_embudos').select('id, nombre').eq('subcuenta_id', id).order('nombre'),
   ]);
   if (!f.data) notFound();
   return (
@@ -26,7 +27,7 @@ export default async function PaginaFlujo({ params, searchParams }: { params: Pr
       zona={subcuenta.zona_horaria}
       flujo={f.data as unknown as Flujo}
       ejecuciones={(ejec.data ?? []) as unknown as Ejecucion[]}
-      opciones={{ etiquetas, embudos, usuarios, calendarios: (calendarios.data ?? []) as { id: string; nombre: string }[] }}
+      opciones={{ etiquetas, embudos, usuarios, calendarios: (calendarios.data ?? []) as { id: string; nombre: string }[], embudosWeb: (embudosWeb.data ?? []) as { id: string; nombre: string }[] }}
       soyAdmin={soyAdmin}
       pestanaInicial={tab === 'historial' ? 'historial' : 'constructor'}
     />
