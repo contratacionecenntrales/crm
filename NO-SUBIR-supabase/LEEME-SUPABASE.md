@@ -37,6 +37,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 25 | `25-examen.sql` | Correcciones del examen de seguridad: chat suplantado sin respuestas de IA, servicio público cortado al suspender, formularios sin contraseñas ni direcciones reservadas, límite real de agencias por cuenta, anti-repetición de webhooks y topes extra de IA. Requiere el 24 |
 | 26 | `26-marketing.sql` | Marketing: campañas de correo, SMS y WhatsApp por etiquetas, programables, con baja por enlace o respondiendo BAJA. Se envían por tandas desde el cron. Requiere el 25 |
 | 27 | `27-reputacion.sql` | Reputación: solicitudes de reseña con enlace propio; las buenas van a Google, las malas quedan en privado con aviso. Requiere el 26 |
+| 28 | `28-informes.sql` | Informes: cifras del periodo (contactos, oportunidades, citas, facturación, conversaciones, embudos, marketing, reseñas, IA). Requiere el 27 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

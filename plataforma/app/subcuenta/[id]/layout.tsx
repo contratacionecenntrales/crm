@@ -22,6 +22,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
     { href: `${base}/automatizacion`, etiqueta: 'Automatización', icono: 'automatizacion' },
     { href: `${base}/ia`, etiqueta: 'Asistentes IA', icono: 'ia' },
     { href: `${base}/medios`, etiqueta: 'Medios', icono: 'medios' },
+    { href: `${base}/informes`, etiqueta: 'Informes', icono: 'informes' },
   ];
   const ajustes: ElementoNav = { href: `${base}/configuracion`, etiqueta: 'Configuración', icono: 'ajustes' };
   const c = `${base}/configuracion`;

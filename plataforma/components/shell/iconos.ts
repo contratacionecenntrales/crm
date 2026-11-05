@@ -25,6 +25,7 @@ export const ICONOS = {
   ia: Bot,
   marketing: Megaphone,
   reputacion: ThumbsUp,
+  informes: BarChart3,
   // Iconos de los enlaces de menú personalizados
   enlace: Link2,
   globo: Globe,

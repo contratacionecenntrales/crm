@@ -92,7 +92,20 @@ reset role;
 select pg_temp.igual('Quedan guardadas', (select string_agg(puntuacion::text || ':' || estado, ',' order by puntuacion) from public.rep_solicitudes), '2:valorada,5:valorada');
 select pg_temp.igual('…con evento en la ficha', (select count(*)::text from public.crm_eventos where tipo = 'resena'), '2');
 select pg_temp.igual('La mala avisa a quien la pidió', (select count(*)::text from public.notificaciones where categoria = 'Reputación' and usuario_id = (select id from ids where clave = 'duena')), '1');
+delete from auth._sesion;
 update public.agencias set estado = 'suspendida' where id = (select id from ids where clave = 'ag');
 set role anon;
 select pg_temp.igual('Agencia suspendida → la página no se sirve', coalesce(public.rep_pagina((select t from tk where quien = 'lola'))::text, '∅'), '∅');
+reset role;
+
+-- Informes (28) ---------------------------------------------------------------------
+delete from auth._sesion;
+update public.agencias set estado = 'activa' where id = (select id from ids where clave = 'ag');
+set role authenticated;
+select pg_temp.entra_como('ana@rep.test');
+select pg_temp.igual('Informe: contactos nuevos del periodo', (public.inf_resumen((select id from ids where clave = 'norte'), current_date - 30, current_date) -> 'contactos' ->> 'nuevos'), '2');
+select pg_temp.igual('Informe: nota media de reseñas', (public.inf_resumen((select id from ids where clave = 'norte'), current_date - 30, current_date) -> 'resenas' ->> 'media'), '3.50');
+select pg_temp.prueba('Informe de más de un año → error', $q$ select public.inf_resumen((select id from ids where clave = 'norte'), current_date - 400, current_date) $q$, true);
+select pg_temp.entra_como('otro@rep.test');
+select pg_temp.prueba('Otra agencia no ve el informe', $q$ select public.inf_resumen((select id from ids where clave = 'norte'), current_date - 30, current_date) $q$, true);
 reset role;
