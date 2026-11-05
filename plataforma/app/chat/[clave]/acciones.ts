@@ -2,6 +2,7 @@
 import { crearClienteAnonimo } from '@/lib/supabase/anonimo';
 import { CLAVE_CHAT, type MensajeChat } from '@/lib/chat/tipos';
 import { despertarIA } from '@/lib/ia/despertar';
+import { dentroDelLimite } from '@/lib/red/limite';
 
 type R<T> = { ok: true; datos: T } | { ok: false; error: string; caducado?: boolean };
 
@@ -16,6 +17,7 @@ const token = (t: unknown) => (typeof t === 'string' && /^[0-9a-f]{64}$/.test(t)
 export async function iniciarChat(clave: string, datos: { nombre: string; email: string; telefono: string; origen: string }): Promise<R<{ token: string; nombre: string }>> {
   try {
     if (!CLAVE_CHAT.test(clave)) return { ok: false, error: 'Este chat no está disponible.' };
+    if (!(await dentroDelLimite('chat-inicio', 5, 3600))) return { ok: false, error: 'Has abierto varios chats seguidos. Inténtalo más tarde.' };
     const { data, error: e } = await crearClienteAnonimo().rpc('chat_iniciar', {
       p_clave: clave, p_nombre: String(datos.nombre ?? '').slice(0, 100), p_email: String(datos.email ?? '').slice(0, 200),
       p_telefono: String(datos.telefono ?? '').slice(0, 30), p_origen: String(datos.origen ?? '').slice(0, 200),
@@ -30,6 +32,7 @@ export async function iniciarChat(clave: string, datos: { nombre: string; email:
 export async function enviarChat(clave: string, t: string, texto: string): Promise<R<MensajeChat>> {
   try {
     if (!CLAVE_CHAT.test(clave) || !token(t)) return { ok: false, error: 'La conversación ha caducado. Vuelve a empezar.', caducado: true };
+    if (!(await dentroDelLimite('chat-envio', 30, 600))) return { ok: false, error: 'Estás enviando mensajes muy rápido. Espera un momento.' };
     const { data, error: e } = await crearClienteAnonimo().rpc('chat_enviar', { p_clave: clave, p_token: t, p_texto: String(texto ?? '').slice(0, 2000) });
     if (e) return error(e);
     despertarIA();

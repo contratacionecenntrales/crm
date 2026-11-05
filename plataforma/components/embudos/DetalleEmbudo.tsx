@@ -138,7 +138,8 @@ function FormAjustes({ subId, embudo, sitio, alTerminar }: { subId: string; embu
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Nombre</span>
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={120} className={estiloInput} /></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Dirección</span>
-        <div className="flex items-center gap-1 text-sm"><span className="shrink-0 text-tenue">{sitio}/f/</span>
+        <span className="mb-1 block truncate text-xs text-tenue">{sitio}/f/…</span>
+        <div className="flex items-center gap-1 text-sm">
           <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} required minLength={3} maxLength={60} pattern="[a-z0-9]+(-[a-z0-9]+)*" className={estiloInput} /></div>
         <span className="mt-1 block text-xs text-tenue">Si la cambias, los enlaces antiguos dejarán de funcionar.</span></label>
       <Aviso estado={r} />
@@ -156,7 +157,8 @@ function FormPaso({ subId, p, prefijo, alTerminar }: { subId: string; p: PasoRes
     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const x = await actualizarPaso(subId, p.id, f); setR(x); if (x.ok) alTerminar(); }); }}>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Nombre</span><input value={f.nombre} onChange={cambiar('nombre')} required maxLength={120} className={estiloInput} /></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Ruta</span>
-        <div className="flex items-center gap-1 text-sm"><span className="shrink-0 text-tenue">{prefijo}/</span>
+        <span className="mb-1 block truncate text-xs text-tenue">{prefijo}/…</span>
+        <div className="flex items-center gap-1 text-sm">
           <input value={f.ruta} onChange={(e) => setF({ ...f, ruta: e.target.value.toLowerCase() })} required maxLength={60} pattern="[a-z0-9]+(-[a-z0-9]+)*" className={estiloInput} /></div></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Título para buscadores (SEO)</span><input value={f.seo_titulo} onChange={cambiar('seo_titulo')} maxLength={120} className={estiloInput} placeholder={p.nombre} /></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Descripción para buscadores</span><textarea value={f.seo_descripcion} onChange={cambiar('seo_descripcion')} maxLength={300} rows={3} className={estiloArea} /></label>

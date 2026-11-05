@@ -52,10 +52,10 @@ export function ListaEmbudos({ subId, embudos, planIncluye }: { subId: string; e
           <h1 className="text-xl font-semibold text-texto">Embudos</h1>
           <p className="text-xs text-tenue">Páginas de captación, venta y reserva conectadas a tus contactos y automatizaciones.</p>
         </div>
-        <div className="flex gap-2">
-          <label className="relative block">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <label className="relative block w-full sm:w-auto">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tenue" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar embudos" className={`${estiloInput} w-56 pl-9`} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar embudos" className={`${estiloInput} w-full pl-9 sm:w-56`} />
           </label>
           <button onClick={() => { setGaleria(true); setElegida(''); setNombre(''); }} className={`${estilosBoton.primario} inline-flex items-center gap-1.5`}><Plus className="size-4" /> Nuevo embudo</button>
         </div>
@@ -70,13 +70,13 @@ export function ListaEmbudos({ subId, embudos, planIncluye }: { subId: string; e
           <button onClick={() => setGaleria(true)} className={`${estilosBoton.primario} mt-4`}>Ver plantillas</button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-borde bg-superficie">
+        <div className={`overflow-x-auto rounded-lg border border-borde bg-superficie ${menu && lista.length <= 2 ? 'pb-32' : ''}`}>
           <table className="w-full min-w-[760px] text-sm">
             <thead className="border-b border-borde text-left text-xs font-medium text-tenue">
               <tr><th className="px-4 py-2.5">Nombre</th><th className="px-3 py-2.5">Páginas</th><th className="px-3 py-2.5">Visitas (30 días)</th><th className="px-3 py-2.5">Envíos</th><th className="px-3 py-2.5">Conversión</th><th className="px-3 py-2.5">Estado</th><th className="px-3 py-2.5">Actualizado</th><th className="px-3 py-2.5" /></tr>
             </thead>
             <tbody className="divide-y divide-borde">
-              {lista.map((e) => (
+              {lista.map((e, i) => (
                 <tr key={e.id} className="hover:bg-superficie-2">
                   <td className="px-4 py-3"><Link href={`/subcuenta/${subId}/embudos/${e.id}`} className="font-medium text-texto hover:text-primario-texto hover:underline">{e.nombre}</Link><p className="text-xs text-tenue">/f/{e.slug}</p></td>
                   <td className="px-3 py-3 text-texto-2">{e.pasos}</td>
@@ -88,7 +88,7 @@ export function ListaEmbudos({ subId, embudos, planIncluye }: { subId: string; e
                   <td className="relative px-3 py-3 text-right">
                     <button onClick={() => setMenu(menu === e.id ? null : e.id)} aria-label={`Más acciones de ${e.nombre}`} className="rounded p-1.5 text-texto-2 hover:text-texto"><MoreVertical className="size-4" /></button>
                     {menu === e.id && (
-                      <div className="absolute right-3 top-10 z-20 w-48 rounded-lg border border-borde bg-superficie p-1 text-left shadow-xl">
+                      <div className={`absolute right-3 z-20 w-48 ${i >= lista.length - 2 && lista.length > 2 ? 'bottom-10' : 'top-10'} rounded-lg border border-borde bg-superficie p-1 text-left shadow-xl`}>
                         {e.publicado && <a href={`/f/${e.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded px-3 py-2 hover:bg-superficie-2"><ExternalLink className="size-4" /> Ver publicado</a>}
                         <button onClick={() => { setMenu(null); iniciar(async () => setAviso(await duplicarEmbudo(subId, e.id))); }} className="flex w-full items-center gap-2 rounded px-3 py-2 hover:bg-superficie-2"><Copy className="size-4" /> Duplicar</button>
                         <button onClick={() => { setMenu(null); if (confirm(`¿Borrar «${e.nombre}» y sus páginas? Las estadísticas también se borran.`)) iniciar(async () => setAviso(await borrarEmbudo(subId, e.id))); }} className="flex w-full items-center gap-2 rounded px-3 py-2 text-peligro hover:bg-superficie-2"><Trash2 className="size-4" /> Borrar</button>

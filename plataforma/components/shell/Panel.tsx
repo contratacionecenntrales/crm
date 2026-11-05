@@ -52,7 +52,12 @@ export async function Panel({ principal, secundario: secundarioBase, ajustes, me
       externo: e.modo !== 'iframe',
     })),
   ];
-  const jsAgencia = subcuentaActual
+  // El JS personalizado de una agencia solo se ejecuta para quien pertenece a esa
+  // única agencia: nunca para administradores de la plataforma ni para quien
+  // también tiene acceso a otras agencias (podría usarse contra ellas).
+  const agenciasDelUsuario = new Set([...membresias.map((m) => m.agencia.id), ...subs.map((s) => s.agencia_id)]);
+  const jsPermitido = !adminPlataforma && agenciasDelUsuario.size <= 1;
+  const jsAgencia = !jsPermitido ? '' : subcuentaActual
     ? (((await supabase.rpc('js_agencia', { p_subcuenta: subcuentaActual.id })).data as string | null) ?? '')
     : actual?.agencia.js_personalizado ?? '';
   const anuncios = subcuentaActual

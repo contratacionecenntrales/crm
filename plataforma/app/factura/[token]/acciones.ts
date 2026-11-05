@@ -14,6 +14,8 @@ export async function pagarFactura(token: string, _: Resultado | null): Promise<
     .select('id, subcuenta_id, numero, estado, total, cobrado, moneda, checkout_id, checkout_url, checkout_expira, contacto:crm_contactos(email), subcuenta:subcuentas(nombre)')
     .eq('token', token).maybeSingle();
   if (!f || f.estado === 'borrador') return { ok: false, error: 'Esta factura no existe.' };
+  const { data: operativa } = await admin.rpc('subcuenta_operativa', { p_subcuenta: f.subcuenta_id });
+  if (!operativa) return { ok: false, error: 'El cobro online de esta empresa no está disponible ahora mismo.' };
   if (f.estado !== 'enviada') return { ok: false, error: f.estado === 'pagada' ? 'Esta factura ya está pagada.' : 'Esta factura está anulada.' };
   const pendiente = Math.round((Number(f.total) - Number(f.cobrado)) * 100) / 100;
   if (pendiente <= 0) return { ok: false, error: 'No queda nada por pagar.' };

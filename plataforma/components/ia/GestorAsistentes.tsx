@@ -56,13 +56,13 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
         {soyAdmin && <button onClick={() => { setElegido('nuevo'); setF(VACIO); setAviso(null); }} className={estilosBoton.primario}><Plus className="size-4" /> Nuevo asistente</button>}
       </div>
       {!configurada && <p className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" /> La IA aún no está conectada en el servidor de la plataforma (falta ANTHROPIC_API_KEY). Puedes preparar los asistentes; empezarán a contestar en cuanto se conecte.</p>}
-      <div className="mb-4 grid grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[['Respuestas hoy', `${uso.hoy} / 500`], ['Respuestas (30 días)', uso.mes], ['Tokens (30 días)', uso.tokens.toLocaleString('es-ES')]].map(([t, v]) => (
-          <div key={t as string} className="rounded-lg border border-borde bg-superficie p-3"><p className="text-xs text-tenue">{t}</p><p className="mt-1 text-xl font-semibold text-texto">{v}</p></div>
+          <div key={t as string} className="min-w-0 rounded-lg border border-borde bg-superficie p-3"><p className="text-xs text-tenue">{t}</p><p className="mt-1 text-xl font-semibold text-texto">{v}</p></div>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[220px_1fr_360px]">
+      <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <nav className="rounded-lg border border-borde bg-superficie p-2" aria-label="Asistentes">
           {asistentes.length === 0 && elegido !== 'nuevo' && <p className="p-3 text-sm text-tenue">Aún no hay asistentes.</p>}
           {asistentes.map((a) => (
@@ -92,24 +92,24 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
                 </div>
                 <p className="mt-1 text-xs text-tenue">Solo puede haber un asistente activo por canal. SMS y WhatsApp usan la Integración telefónica; el correo, los Servicios de correo.</p>
               </div>
-              <label className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Instrucciones
+              <div className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Instrucciones
                 <select aria-label="Usar plantilla" value="" onChange={(e) => { const p = PLANTILLAS_ASISTENTE.find((x) => x.id === e.target.value); if (p) { set('instrucciones', p.instrucciones); set('canales', [...p.canales]); } }}
                   className="rounded border border-borde-fuerte bg-superficie px-1.5 py-0.5 text-xs font-normal">
                   <option value="">Usar plantilla…</option>{PLANTILLAS_ASISTENTE.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                 </select></span>
-                <textarea value={f.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} rows={8} maxLength={8000} className={estiloArea} placeholder="Cómo debe hablar, qué debe conseguir y cuándo pasar a una persona." />
-                <span className="text-xs text-tenue">{f.instrucciones.length} / 8000</span></label>
-              <label className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Base de conocimiento
-                <span className="inline-flex cursor-pointer items-center gap-1 text-xs font-normal text-primario-texto"><FileUp className="size-3.5" /> Importar .txt / .md
+                <textarea aria-label="Instrucciones" value={f.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} rows={8} maxLength={8000} className={estiloArea} placeholder="Cómo debe hablar, qué debe conseguir y cuándo pasar a una persona." />
+                <span className="text-xs text-tenue">{f.instrucciones.length} / 8000</span></div>
+              <div className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Base de conocimiento
+                <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-normal text-primario-texto"><FileUp className="size-3.5" /> Importar .txt / .md
                   <input type="file" accept=".txt,.md,text/plain,text/markdown" className="sr-only" onChange={async (e) => {
                     const a = e.target.files?.[0]; e.target.value = '';
                     if (!a) return;
                     if (a.size > 200_000) { setAviso({ ok: false, error: 'El archivo es demasiado grande (máximo 200 KB).' }); return; }
                     set('conocimiento', `${f.conocimiento}${f.conocimiento ? '\n\n' : ''}${(await a.text()).slice(0, 60000)}`.slice(0, 60000));
-                  }} /></span></span>
-                <textarea value={f.conocimiento} onChange={(e) => set('conocimiento', e.target.value)} rows={10} maxLength={60000} className={estiloArea}
+                  }} /></label></span>
+                <textarea aria-label="Base de conocimiento" value={f.conocimiento} onChange={(e) => set('conocimiento', e.target.value)} rows={10} maxLength={60000} className={estiloArea}
                   placeholder={'Servicios y precios, horario, dirección, preguntas frecuentes, enlace de reserva, políticas…'} />
-                <span className="text-xs text-tenue">{f.conocimiento.length.toLocaleString('es-ES')} / 60 000 · El asistente solo usa esta información; si no sabe algo, lo dice y pasa a una persona.</span></label>
+                <span className="text-xs text-tenue">{f.conocimiento.length.toLocaleString('es-ES')} / 60 000 · El asistente solo usa esta información; si no sabe algo, lo dice y pasa a una persona.</span></div>
               <details className="rounded-md border border-borde p-3">
                 <summary className="cursor-pointer text-sm font-medium">Paso a una persona y límites</summary>
                 <div className="mt-3 space-y-3">

@@ -11,6 +11,7 @@ export const maxDuration = 60;
 // Envía los avisos de cita vencidos y ejecuta los pasos de automatización que tocan. Lo llama un programador cada 5 minutos
 // (Vercel Cron, o pg_cron de Supabase) con «Authorization: Bearer <CRON_SECRET>».
 async function ejecutar(req: NextRequest) {
+  const inicio = Date.now();
   const secreto = process.env.CRON_SECRET;
   if (!secreto) return NextResponse.json({ error: 'Falta CRON_SECRET en el servidor.' }, { status: 503 });
   const recibido = Buffer.from(req.headers.get('authorization') ?? '');
@@ -28,7 +29,8 @@ async function ejecutar(req: NextRequest) {
     }
     const avisos = await procesarAvisos(50);
     const automatizaciones = await procesarAutomatizaciones(50);
-    const ia = await procesarColaIA(20).catch((e: Error) => ({ error: e.message }));
+    // Lo que quede del minuto de la función (con margen) para la IA.
+    const ia = await procesarColaIA(20, inicio + 52_000).catch((e: Error) => ({ error: e.message }));
     // Archivos de Medios subidos a medias (sin registrar) hace más de una hora.
     let medios = 0;
     if (admin) {

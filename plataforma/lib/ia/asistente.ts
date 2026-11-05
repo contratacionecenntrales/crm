@@ -7,12 +7,12 @@ import { ErrorIA, iaConfigurada, responderConversacion, type Canal, type Turno }
 interface Cola { id: string; subcuenta_id: string; conversacion_id: string; mensaje_id: string; asistente_id: string; intentos: number }
 interface Asistente { id: string; nombre: string; instrucciones: string; conocimiento: string; traspaso_palabras: string[]; mensaje_traspaso: string }
 
-export async function procesarColaIA(limite = 10) {
+export async function procesarColaIA(limite = 10, hasta = Date.now() + 45_000) {
   const admin = adminObligatorio();
   const resumen = { tomadas: 0, respondidas: 0, traspasos: 0, omitidas: 0, errores: 0 };
   const { data, error } = await admin.rpc('ia_tomar', { p_limite: limite });
   if (error) throw new Error(error.message);
-  const fin = Date.now() + 45_000;
+  const fin = hasta;
   for (const q of (data ?? []) as Cola[]) {
     if (Date.now() > fin) { await marcar(admin, q.id, 'pendiente', ''); continue; }
     resumen.tomadas++;
@@ -40,7 +40,7 @@ async function contestar(admin: SupabaseClient, q: Cola): Promise<'respondidas' 
 
   const [{ data: a }, { data: entrante }, { data: conv }, { data: sub }] = await Promise.all([
     admin.from('ia_asistentes').select('id, nombre, instrucciones, conocimiento, traspaso_palabras, mensaje_traspaso').eq('id', q.asistente_id).single(),
-    admin.from('conv_mensajes').select('canal, asunto, cuerpo').eq('id', q.mensaje_id).single(),
+    admin.from('conv_mensajes').select('canal, asunto, cuerpo, chat_visitante_id').eq('id', q.mensaje_id).single(),
     admin.from('conv_conversaciones').select('asignado_id, contacto:crm_contactos(nombre, apellidos, propietario_id)').eq('id', q.conversacion_id).single(),
     admin.from('subcuentas').select('nombre, zona_horaria, agencia_id').eq('id', q.subcuenta_id).single(),
   ]);
@@ -58,8 +58,11 @@ async function contestar(admin: SupabaseClient, q: Cola): Promise<'respondidas' 
     return 'traspasos';
   }
 
-  const { data: hist } = await admin.from('conv_mensajes').select('direccion, canal, cuerpo, creado')
-    .eq('conversacion_id', q.conversacion_id).neq('canal', 'nota').order('creado', { ascending: false }).limit(30);
+  // En el chat web solo cuenta lo hablado con este visitante (no el historial de otros canales).
+  let consulta = admin.from('conv_mensajes').select('direccion, canal, cuerpo, creado')
+    .eq('conversacion_id', q.conversacion_id).neq('canal', 'nota');
+  if (canal === 'chat') consulta = consulta.eq('canal', 'chat').eq('chat_visitante_id', entrante.chat_visitante_id as string);
+  const { data: hist } = await consulta.order('creado', { ascending: false }).limit(30);
   const historial: Turno[] = (hist ?? []).reverse().map((m) => ({ de: m.direccion === 'entrante' ? 'cliente' : 'negocio', texto: String(m.cuerpo) }));
   const r = await responderConversacion({
     asistente, empresa: String(sub.nombre), canal, contacto: `${contacto.nombre} ${contacto.apellidos}`.trim(), zona: String(sub.zona_horaria || ''), historial,

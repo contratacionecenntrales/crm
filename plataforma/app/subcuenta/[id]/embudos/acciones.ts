@@ -48,8 +48,19 @@ export async function actualizarEmbudo(sub: string, eid: string, cambios: { nomb
     const { data, error } = await supabase.from('emb_embudos').update(fila).eq('id', eid).eq('subcuenta_id', sub).select('id');
     if (error) return { ok: false, error: error.code === '23505' ? 'Esa dirección ya la usa otro embudo.' : mensajeDeError(error) };
     if (!data?.length) return { ok: false, error: 'No se encontró el embudo.' };
+    // Al publicar el embudo se publican también las páginas que aún no lo estaban.
+    if (cambios.publicado) {
+      const { data: pasos } = await supabase.from('emb_pasos').select('id').eq('embudo_id', eid).is('publicado_en', null);
+      for (const p of pasos ?? []) {
+        const { error: e2 } = await supabase.rpc('emb_publicar', { p_paso: p.id });
+        if (e2) {
+          await supabase.from('emb_embudos').update({ publicado: false }).eq('id', eid);
+          return { ok: false, error: mensajeDeError(e2) };
+        }
+      }
+    }
     refrescar(sub, eid);
-    return { ok: true, mensaje: 'Guardado.' };
+    return { ok: true, mensaje: cambios.publicado ? 'Embudo publicado.' : 'Guardado.' };
   } catch (e) { return fallo(e); }
 }
 
@@ -75,7 +86,13 @@ export async function duplicarEmbudo(sub: string, eid: string): Promise<Resultad
     const nombre = `${e.nombre} (copia)`.slice(0, 120);
     const { data: n, error } = await supabase.from('emb_embudos').insert({ subcuenta_id: sub, nombre, slug: slugEmbudo(nombre, sufijo()), plantilla: e.plantilla }).select('id').single();
     if (error) return { ok: false, error: mensajeDeError(error) };
-    if (pasos?.length) await supabase.from('emb_pasos').insert(pasos.map((x) => ({ ...x, embudo_id: n.id, subcuenta_id: sub })));
+    if (pasos?.length) {
+      const { error: e2 } = await supabase.from('emb_pasos').insert(pasos.map((x) => ({ ...x, embudo_id: n.id, subcuenta_id: sub })));
+      if (e2) {
+        await supabase.from('emb_embudos').delete().eq('id', n.id);
+        return { ok: false, error: mensajeDeError(e2) };
+      }
+    }
     refrescar(sub);
     return { ok: true, mensaje: 'Embudo duplicado.' };
   } catch (e) { return fallo(e); }

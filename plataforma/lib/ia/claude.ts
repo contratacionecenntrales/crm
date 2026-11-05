@@ -14,7 +14,7 @@ export const iaConfigurada = () => Boolean(process.env.ANTHROPIC_API_KEY);
 let cliente: Anthropic | null = null;
 function claude(): Anthropic {
   if (!iaConfigurada()) throw new ErrorIA('La IA no está configurada en el servidor (falta ANTHROPIC_API_KEY).', false);
-  cliente ??= new Anthropic({ timeout: 60_000, maxRetries: 2 });
+  cliente ??= new Anthropic({ timeout: 25_000, maxRetries: 1 });
   return cliente;
 }
 

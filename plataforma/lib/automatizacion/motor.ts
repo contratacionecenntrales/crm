@@ -20,9 +20,9 @@ export async function procesarAutomatizaciones(limite = 50, solo?: string) {
   if (error) throw new Error(error.message);
   const resumen = { tomadas: 0, pasos: 0, completadas: 0, errores: 0, aplazadas: 0 };
   const lista = (data ?? []) as Ejecucion[];
-  // La función del servidor tiene un tiempo máximo: a los 40 s se devuelven a
+  // La función del servidor tiene un tiempo máximo: a los 30 s se devuelven a
   // la cola las ejecuciones que no se han empezado (siguen en la próxima vuelta).
-  const limiteTiempo = Date.now() + 40_000;
+  const limiteTiempo = Date.now() + 30_000;
   for (const [n, e] of lista.entries()) {
     if (Date.now() > limiteTiempo) {
       const resto = lista.slice(n).map((x) => x.id);

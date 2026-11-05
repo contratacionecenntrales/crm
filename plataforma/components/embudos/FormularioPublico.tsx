@@ -16,10 +16,9 @@ export function FormularioPublico({ b, pasoId, destinoSiguiente, color, vistaPre
       e.preventDefault();
       if (vistaPrevia) return;
       const fd = new FormData(e.currentTarget);
-      if (fd.get('web_url')) return; // trampa para bots
       const datos = Object.fromEntries(b.campos.map((c) => [c.clave, String(fd.get(c.clave) ?? '').slice(0, 2000)]));
       setEstado('enviando'); setError('');
-      const r = await enviarFormularioEmbudo(pasoId, b.id, datos);
+      const r = await enviarFormularioEmbudo(pasoId, b.id, datos, String(fd.get('web_url') ?? ''));
       if (!r.ok) { setEstado('listo'); setError(r.error ?? 'No se pudo enviar.'); return; }
       if (b.despues === 'siguiente' && destinoSiguiente) window.location.href = destinoSiguiente;
       else if (b.despues === 'url' && /^https?:\/\//.test(b.url)) window.location.href = b.url;

@@ -68,6 +68,8 @@ export async function probarAsistente(sub: string, datos: Pick<DatosAsistente, '
     const turnos = z.array(z.object({ de: z.enum(['cliente', 'negocio']), texto: z.string().max(4000) })).max(40).safeParse(historial);
     if (!turnos.success) return { ok: false, error: 'Conversación de prueba no válida.' };
     const supabase = await crearClienteServidor();
+    const { data: admin } = await supabase.rpc('soy_admin_subcuenta', { p_subcuenta: sub });
+    if (!admin) return { ok: false, error: 'Solo un administrador de la subcuenta puede probar asistentes.' };
     const [{ data: cupo }, { data: s }] = await Promise.all([
       supabase.rpc('ia_reservar_uso', { p_subcuenta: sub }),
       supabase.from('subcuentas').select('nombre, zona_horaria').eq('id', sub).maybeSingle(),

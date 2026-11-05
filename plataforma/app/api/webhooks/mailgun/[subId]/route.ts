@@ -21,6 +21,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
   if (!firmaMailgunValida(clave, campo('timestamp'), campo('token'), campo('signature'))) {
     return new NextResponse('Firma no válida', { status: 406 }); // 406: Mailgun no reintenta
   }
+  // Cada token firmado vale una sola vez: un aviso capturado no se puede reenviar.
+  const { data: nuevo } = await adminObligatorio().rpc('webhook_token_nuevo', { p_token: `mailgun:${campo('token')}` });
+  if (nuevo === false) return NextResponse.json({ ignorado: 'repetido' });
 
   // Respuestas automáticas (vacaciones, «no-reply»…): no se registran, así un
   // flujo que contesta correos no entra en bucle con un autorespondedor.
