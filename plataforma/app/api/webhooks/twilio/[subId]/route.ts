@@ -1,3 +1,4 @@
+import { despertarIA } from '@/lib/ia/despertar';
 import { NextResponse, type NextRequest } from 'next/server';
 import { siteUrl } from '@/lib/env';
 import { credenciales, adminObligatorio } from '@/lib/conversaciones/envio';
@@ -56,5 +57,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
     p_asunto: '', p_proveedor_id: sid || null, p_nombre: datos.ProfileName ?? '',
   });
   if (error) return new NextResponse(error.message, { status: 400 });
+  despertarIA();
   return vacia();
 }

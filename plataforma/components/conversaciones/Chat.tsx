@@ -3,10 +3,9 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import {
   AlertTriangle, ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronDown, EllipsisVertical, FileText, Loader2, Mail, MailOpen,
-  MessageCircle, MessageSquare, MessagesSquare, PanelRight, RotateCw, Send, StickyNote, Trash2, UserPlus,
-} from 'lucide-react';
+  MessageCircle, MessageSquare, MessagesSquare, PanelRight, RotateCw, Send, StickyNote, Trash2, UserPlus, Bot } from 'lucide-react';
 import {
-  asignarConversacion, borrarConversacion, cerrarConversacion, enviarMensaje, marcarLeida, reintentarMensaje,
+  asignarConversacion, borrarConversacion, cerrarConversacion, pausarIA, enviarMensaje, marcarLeida, reintentarMensaje,
 } from '@/app/subcuenta/[id]/conversaciones/acciones';
 import { useFueraDe } from '@/components/shell/useFueraDe';
 import { NOMBRE_CANAL, segmentosSms, type Canal, type Conversacion, type Fragmento, type Mensaje } from '@/lib/conversaciones/tipos';
@@ -16,11 +15,11 @@ import { AvatarContacto } from './Bandeja';
 const ICONO_CANAL: Record<Canal, typeof Mail> = { sms: MessageSquare, whatsapp: MessageCircle, email: Mail, nota: StickyNote, chat: MessagesSquare };
 const ESTADO: Record<string, string> = { pendiente: 'Enviando…', enviado: 'Enviado', entregado: 'Entregado', leido: 'Leído', fallido: 'No enviado', recibido: '' };
 
-export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contactoCompleto, mensajes, fragmentos, asignables, canales, volver, panelAbierto, alPanel, alCreada }: {
+export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contactoCompleto, mensajes, fragmentos, asignables, canales, iaCanales, volver, panelAbierto, alPanel, alCreada }: {
   subId: string; zona: string; yo: string; soyAdmin: boolean;
   conversacion: Conversacion | null; contacto: Conversacion['contacto']; contactoCompleto: Contacto | null;
   mensajes: Mensaje[]; fragmentos: Fragmento[]; asignables: Usuario[];
-  canales: { sms: boolean; whatsapp: boolean; email: boolean };
+  canales: { sms: boolean; whatsapp: boolean; email: boolean }; iaCanales: string[];
   volver: string; panelAbierto: boolean; alPanel: () => void; alCreada: (id: string) => void;
 }) {
   const [lista, setLista] = useState(mensajes);
@@ -67,7 +66,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
     setError(null);
     const temporal: Mensaje = {
       id: `tmp-${Date.now()}`, direccion: 'saliente', canal, asunto: canal === 'email' ? asunto : '', cuerpo,
-      estado: canal === 'nota' ? 'enviado' : 'pendiente', error: '', autor_id: yo, creado: new Date().toISOString(),
+      estado: canal === 'nota' ? 'enviado' : 'pendiente', error: '', autor_id: yo, ia: false, creado: new Date().toISOString(),
     };
     setLista((l) => [...l, temporal]);
     setTexto('');
@@ -137,6 +136,15 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
                 </div>
               )}
             </div>
+            {iaCanales.length > 0 && (
+              <button type="button" aria-pressed={!conversacion.ia_pausada}
+                title={conversacion.ia_pausada ? 'Asistente IA pausado aquí: pulsa para que vuelva a contestar' : 'Asistente IA activo aquí: pulsa para pausarlo'}
+                aria-label={conversacion.ia_pausada ? 'Reanudar asistente IA' : 'Pausar asistente IA'}
+                onClick={() => accion(() => pausarIA(subId, conversacion.id, !conversacion.ia_pausada))}
+                className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium hover:bg-superficie-2 ${conversacion.ia_pausada ? 'text-tenue' : 'text-primario-texto'}`}>
+                <Bot className="size-5" /><span className="hidden sm:inline">{conversacion.ia_pausada ? 'IA en pausa' : 'IA activa'}</span>
+              </button>
+            )}
             <button type="button" title={conversacion.estado === 'cerrada' ? 'Reabrir' : 'Cerrar conversación'} aria-label={conversacion.estado === 'cerrada' ? 'Reabrir' : 'Cerrar conversación'}
               onClick={() => accion(() => cerrarConversacion(subId, conversacion.id, conversacion.estado !== 'cerrada'))}
               className={`rounded p-1.5 hover:bg-superficie-2 ${conversacion.estado === 'cerrada' ? 'text-exito' : ''}`}>
@@ -212,7 +220,7 @@ export function Chat({ subId, zona, yo, soyAdmin, conversacion, contacto, contac
                       </div>
                       <span className="mt-1 flex items-center gap-1.5 text-[12px] leading-[13px] text-[#475467] dark:text-texto-2" suppressHydrationWarning>
                         <Ic className="size-3" />
-                        {sale && !nota && `${autor(m.autor_id)} · `}{hora(m.creado)}
+                        {sale && !nota && `${m.ia ? 'Asistente IA' : autor(m.autor_id)} · `}{hora(m.creado)}
                         {sale && !nota && ESTADO[m.estado] && (
                           <span className={`flex items-center gap-0.5 ${m.estado === 'fallido' ? 'text-[#b42318] dark:text-red-300' : m.estado === 'leido' ? 'text-primario' : ''}`}>
                             · {m.estado === 'pendiente' ? <Loader2 className="size-3 animate-spin" /> : m.estado === 'enviado' ? <Check className="size-3" /> : m.estado !== 'fallido' ? <CheckCheck className="size-3" /> : null}

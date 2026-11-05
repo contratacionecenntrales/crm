@@ -92,6 +92,8 @@ export const marcarLeida = async (subId: string, convId: string, leida: boolean)
   cambiarConversacion(subId, convId, { no_leidos: leida ? 0 : 1 });
 export const destacar = async (subId: string, convId: string, destacada: boolean) =>
   cambiarConversacion(subId, convId, { destacada });
+export const pausarIA = async (subId: string, convId: string, pausada: boolean) =>
+  cambiarConversacion(subId, convId, { ia_pausada: pausada });
 export const cerrarConversacion = async (subId: string, convId: string, cerrada: boolean) =>
   cambiarConversacion(subId, convId, { estado: cerrada ? 'cerrada' : 'abierta' });
 export async function asignarConversacion(subId: string, convId: string, usuarioId: string | null) {

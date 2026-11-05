@@ -1,3 +1,4 @@
+import { despertarIA } from '@/lib/ia/despertar';
 import { NextResponse, type NextRequest } from 'next/server';
 import { credenciales, adminObligatorio } from '@/lib/conversaciones/envio';
 import { firmaMailgunValida, separarRemitente } from '@/lib/conversaciones/firmas';
@@ -37,5 +38,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sub
   });
   // Datos no válidos: 406 (Mailgun no reintenta). Fallo del servidor: 500 (reintenta).
   if (error) return new NextResponse(error.message, { status: error.code === '23514' || error.code === '22P02' ? 406 : 500 });
+  despertarIA();
   return NextResponse.json({ ok: true });
 }

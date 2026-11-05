@@ -1,6 +1,7 @@
 'use server';
 import { crearClienteAnonimo } from '@/lib/supabase/anonimo';
 import { CLAVE_CHAT, type MensajeChat } from '@/lib/chat/tipos';
+import { despertarIA } from '@/lib/ia/despertar';
 
 type R<T> = { ok: true; datos: T } | { ok: false; error: string; caducado?: boolean };
 
@@ -31,6 +32,7 @@ export async function enviarChat(clave: string, t: string, texto: string): Promi
     if (!CLAVE_CHAT.test(clave) || !token(t)) return { ok: false, error: 'La conversación ha caducado. Vuelve a empezar.', caducado: true };
     const { data, error: e } = await crearClienteAnonimo().rpc('chat_enviar', { p_clave: clave, p_token: t, p_texto: String(texto ?? '').slice(0, 2000) });
     if (e) return error(e);
+    despertarIA();
     return { ok: true, datos: data as MensajeChat };
   } catch {
     return error(null);

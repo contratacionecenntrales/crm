@@ -38,11 +38,12 @@ export interface Conversacion {
   ultimo_canal: Canal | null;
   ultima_direccion: 'entrante' | 'saliente' | null;
   chat_visitante_id: string | null; // hay un visitante del chat web al que responder
+  ia_pausada: boolean; // el asistente IA no contesta en esta conversación
   contacto: ContactoConv;
 }
 
 export const COLUMNAS_CONVERSACION =
-  'id, contacto_id, asignado_id, estado, destacada, no_leidos, ultimo_mensaje_en, ultimo_extracto, ultimo_canal, ultima_direccion, chat_visitante_id, contacto:crm_contactos!inner(id, nombre, apellidos, email, telefono)';
+  'id, contacto_id, asignado_id, estado, destacada, no_leidos, ultimo_mensaje_en, ultimo_extracto, ultimo_canal, ultima_direccion, chat_visitante_id, ia_pausada, contacto:crm_contactos!inner(id, nombre, apellidos, email, telefono)';
 
 export interface Mensaje {
   id: string;
@@ -53,10 +54,11 @@ export interface Mensaje {
   estado: 'pendiente' | 'enviado' | 'entregado' | 'leido' | 'fallido' | 'recibido';
   error: string;
   autor_id: string | null;
+  ia: boolean; // lo escribió el asistente IA
   creado: string;
 }
 
-export const COLUMNAS_MENSAJE = 'id, direccion, canal, asunto, cuerpo, estado, error, autor_id, creado';
+export const COLUMNAS_MENSAJE = 'id, direccion, canal, asunto, cuerpo, estado, error, autor_id, ia, creado';
 
 export interface Fragmento { id: string; nombre: string; cuerpo: string }
 

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import {
   ArrowDown, ArrowLeft, ArrowUp, Bell, CheckSquare, Clock, FlaskConical, GitBranch, Globe, Loader2, Mail, MessageCircle, MessageSquare,
-  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap,
+  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap, Sparkles,
 } from 'lucide-react';
 import { guardarFlujo, pararEjecucion, probarFlujo } from '@/app/subcuenta/[id]/automatizacion/acciones';
 import { SelectorContacto } from '@/components/crm/SelectorContacto';
@@ -30,7 +30,7 @@ interface Opciones { etiquetas: string[]; embudos: Embudo[]; usuarios: Usuario[]
 const ICONO: Record<TipoPaso, typeof Mail> = {
   enviar_sms: MessageSquare, enviar_whatsapp: MessageCircle, enviar_email: Mail, anadir_etiqueta: Tag, quitar_etiqueta: Tags,
   asignar_propietario: UserCheck, crear_tarea: CheckSquare, crear_oportunidad: Target, nota: StickyNote, notificar: Bell,
-  esperar: Clock, condicion: GitBranch, webhook: Globe,
+  esperar: Clock, condicion: GitBranch, webhook: Globe, ia_mensaje: Sparkles,
 };
 const COLOR: Record<string, string> = { Comunicación: '#155eef', Contacto: '#7a5af8', Interno: '#f79009', Lógica: '#12b76a' };
 const grupoDe = (t: TipoPaso) => PASOS.find((p) => p.tipo === t)!.grupo;
@@ -332,6 +332,16 @@ function PanelPaso({ p, opciones, alCambiar }: { p: Paso; opciones: Opciones; al
           <textarea ref={area} value={p.texto} onChange={(e) => set('texto', e.target.value)} rows={p.tipo === 'enviar_email' ? 10 : 6} className={estiloArea} /></label>
         <div><span className="mb-1 block text-xs font-medium text-tenue">Insertar dato</span><Variables alInsertar={insertar} /></div>
         {p.tipo !== 'nota' && <p className="text-xs text-tenue">Se envía con la cuenta configurada en Integración telefónica o Servicios de correo y queda en Conversaciones. Si el contacto tiene «No molestar», no se envía.</p>}
+      </>);
+    case 'ia_mensaje':
+      return (<>
+        <label className="block"><span className={etiqueta}>Canal</span>
+          <select value={p.canal} onChange={(e) => set('canal', e.target.value)} className={estiloInput}>
+            <option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Correo</option>
+          </select></label>
+        <label className="block"><span className={etiqueta}>Qué tiene que escribir la IA</span>
+          <textarea value={p.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} rows={7} maxLength={4000} className={estiloArea} /></label>
+        <p className="text-xs text-tenue">La IA redacta un mensaje personalizado con los datos del contacto y su conversación reciente, y lo envía. Necesita la función «IA» en el plan; cuenta para el límite diario de respuestas con IA.</p>
       </>);
     case 'anadir_etiqueta': case 'quitar_etiqueta':
       return (<label className="block"><span className={etiqueta}>Etiqueta</span>

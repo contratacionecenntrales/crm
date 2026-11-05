@@ -57,7 +57,7 @@ export default async function PaginaConversaciones({ params, searchParams }: {
     contactoId = q.contacto;
   }
 
-  const [mensajes, contacto, fragmentos] = await Promise.all([
+  const [mensajes, contacto, fragmentos, asistentes] = await Promise.all([
     actual
       ? supabase.from('conv_mensajes').select(COLUMNAS_MENSAJE).eq('conversacion_id', actual.id).order('creado', { ascending: false }).limit(300)
       : Promise.resolve({ data: [] }),
@@ -65,6 +65,7 @@ export default async function PaginaConversaciones({ params, searchParams }: {
       ? supabase.from('crm_contactos').select(SELECT_CONTACTO).eq('id', contactoId).eq('subcuenta_id', id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from('conv_fragmentos').select('id, nombre, cuerpo').eq('subcuenta_id', id).order('nombre').limit(500),
+    supabase.from('ia_asistentes').select('canales').eq('subcuenta_id', id).eq('activo', true),
   ]);
   // Al abrir una conversación con mensajes sin leer, se marca como leída.
   if (actual && actual.no_leidos > 0) {
@@ -88,6 +89,7 @@ export default async function PaginaConversaciones({ params, searchParams }: {
       contacto={(contacto.data as unknown as Contacto) ?? null}
       mensajes={((mensajes.data ?? []) as Mensaje[]).reverse()}
       fragmentos={(fragmentos.data ?? []) as Fragmento[]}
+      iaCanales={(asistentes.data ?? []).flatMap((a) => a.canales as string[])}
       asignables={asignables}
       etiquetas={etiquetas}
       canales={canalesDisponibles(ajustes)}

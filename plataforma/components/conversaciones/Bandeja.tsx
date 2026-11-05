@@ -68,6 +68,7 @@ interface Props {
   asignables: Usuario[];
   etiquetas: string[];
   canales: { sms: boolean; whatsapp: boolean; email: boolean };
+  iaCanales: string[];
 }
 
 export function Bandeja(p: Props) {
@@ -266,7 +267,7 @@ export function Bandeja(p: Props) {
             key={contactoChat.id}
             subId={p.subId} zona={p.zona} yo={p.yo} soyAdmin={p.soyAdmin}
             conversacion={p.actual} contacto={contactoChat} contactoCompleto={p.contacto} mensajes={p.mensajes}
-            fragmentos={p.fragmentos} asignables={p.asignables} canales={p.canales}
+            fragmentos={p.fragmentos} asignables={p.asignables} canales={p.canales} iaCanales={p.iaCanales}
             volver={url({ c: null, contacto: null })} panelAbierto={panel} alPanel={() => setPanel((v) => !v)}
             alCreada={(id) => router.replace(url({ c: id, contacto: null }))}
           />

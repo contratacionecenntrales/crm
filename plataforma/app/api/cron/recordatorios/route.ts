@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { crearClienteAdmin } from '@/lib/supabase/admin';
 import { procesarAvisos } from '@/lib/calendario/procesarAvisos';
 import { procesarAutomatizaciones } from '@/lib/automatizacion/motor';
+import { procesarColaIA } from '@/lib/ia/asistente';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -27,6 +28,7 @@ async function ejecutar(req: NextRequest) {
     }
     const avisos = await procesarAvisos(50);
     const automatizaciones = await procesarAutomatizaciones(50);
+    const ia = await procesarColaIA(20).catch((e: Error) => ({ error: e.message }));
     // Archivos de Medios subidos a medias (sin registrar) hace más de una hora.
     let medios = 0;
     if (admin) {
@@ -34,7 +36,7 @@ async function ejecutar(req: NextRequest) {
       const rutas = (huerfanos ?? []) as string[];
       if (rutas.length && !(await admin.storage.from('medios').remove(rutas)).error) medios = rutas.length;
     }
-    return NextResponse.json({ avisos, automatizaciones, medios_huerfanos_borrados: medios });
+    return NextResponse.json({ avisos, automatizaciones, ia, medios_huerfanos_borrados: medios });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

@@ -17,12 +17,13 @@ export const DISPARADORES: { valor: Disparador; texto: string; ayuda: string }[]
 ];
 
 export type TipoPaso = 'enviar_sms' | 'enviar_whatsapp' | 'enviar_email' | 'anadir_etiqueta' | 'quitar_etiqueta' | 'asignar_propietario'
-  | 'crear_tarea' | 'crear_oportunidad' | 'nota' | 'notificar' | 'esperar' | 'condicion' | 'webhook';
+  | 'crear_tarea' | 'crear_oportunidad' | 'nota' | 'notificar' | 'esperar' | 'condicion' | 'webhook' | 'ia_mensaje';
 
 export const PASOS: { tipo: TipoPaso; texto: string; grupo: 'Comunicación' | 'Contacto' | 'Interno' | 'Lógica' }[] = [
   { tipo: 'enviar_sms', texto: 'Enviar SMS', grupo: 'Comunicación' },
   { tipo: 'enviar_whatsapp', texto: 'Enviar WhatsApp', grupo: 'Comunicación' },
   { tipo: 'enviar_email', texto: 'Enviar correo', grupo: 'Comunicación' },
+  { tipo: 'ia_mensaje', texto: 'Mensaje con IA', grupo: 'Comunicación' },
   { tipo: 'anadir_etiqueta', texto: 'Añadir etiqueta', grupo: 'Contacto' },
   { tipo: 'quitar_etiqueta', texto: 'Quitar etiqueta', grupo: 'Contacto' },
   { tipo: 'asignar_propietario', texto: 'Asignar propietario', grupo: 'Contacto' },
@@ -53,6 +54,7 @@ export const esquemaPaso = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.literal('notificar'), usuario_id: uuid.or(z.literal('')), titulo: texto(200, 'El aviso necesita título'), texto: z.string().max(1000).default('') }),
   z.object({ tipo: z.literal('esperar'), cantidad: z.number().int().min(1, 'Espera al menos 1').max(365), unidad: z.enum(['minutos', 'horas', 'dias']) }),
   z.object({ tipo: z.literal('condicion'), regla: z.enum(['tiene_etiqueta', 'no_tiene_etiqueta', 'tiene_email', 'tiene_telefono']), etiqueta: z.string().trim().max(60).default('') }),
+  z.object({ tipo: z.literal('ia_mensaje'), canal: z.enum(['sms', 'whatsapp', 'email']), instrucciones: texto(4000, 'Dile a la IA qué mensaje escribir') }),
   z.object({ tipo: z.literal('webhook'), url: z.string().trim().url('URL no válida').max(500).refine((u) => /^https:\/\//i.test(u), 'El webhook tiene que ser https://') }),
 ]);
 export type Paso = z.infer<typeof esquemaPaso>;
@@ -73,6 +75,7 @@ export function pasoVacio(tipo: TipoPaso): Paso {
     case 'esperar': return { tipo, cantidad: 1, unidad: 'dias' };
     case 'condicion': return { tipo, regla: 'tiene_etiqueta', etiqueta: '' };
     case 'webhook': return { tipo, url: 'https://' };
+    case 'ia_mensaje': return { tipo, canal: 'whatsapp', instrucciones: 'Saluda al contacto por su nombre, agradécele su interés y pregúntale qué día le viene bien para una llamada de 15 minutos.' };
   }
 }
 
@@ -105,6 +108,7 @@ export function resumenPaso(p: Paso): string {
     case 'esperar': return `${p.cantidad} ${p.unidad === 'dias' ? (p.cantidad === 1 ? 'día' : 'días') : p.unidad === 'horas' ? (p.cantidad === 1 ? 'hora' : 'horas') : 'minutos'}`;
     case 'condicion': return { tiene_etiqueta: `Si tiene «${p.etiqueta}»`, no_tiene_etiqueta: `Si no tiene «${p.etiqueta}»`, tiene_email: 'Si tiene correo', tiene_telefono: 'Si tiene teléfono' }[p.regla] + '; si no, termina';
     case 'webhook': return p.url;
+    case 'ia_mensaje': return `${p.canal === 'email' ? 'Correo' : p.canal === 'sms' ? 'SMS' : 'WhatsApp'} · ${p.instrucciones.slice(0, 70)}`;
   }
 }
 

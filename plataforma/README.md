@@ -71,6 +71,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 13. `NO-SUBIR-supabase/21-medios.sql` — biblioteca de medios de cada subcuenta (bucket «medios» de Storage, 5 GB por subcuenta) y uso por subcuenta para la agencia
 14. `NO-SUBIR-supabase/22-plataforma.sql` — plataforma Metatok: administradores, planes con límites, alta de agencias, estados (activa, prueba, suspendida)
 15. `NO-SUBIR-supabase/23-embudos.sql` — sitios y embudos: plantillas, editor por bloques, páginas públicas en `/f/…`, formularios conectados a contactos y automatizaciones
+16. `NO-SUBIR-supabase/24-asistentes.sql` — asistentes con IA que contestan en chat web, WhatsApp, SMS y correo, y paso «Mensaje con IA» en automatizaciones (necesita `ANTHROPIC_API_KEY`)
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 

@@ -4,6 +4,7 @@ import { adminObligatorio, enviarGuardado } from '@/lib/conversaciones/envio';
 import { diaEn, fechaLarga, horaEn } from '@/lib/calendario/tiempo';
 import { esperaEnMinutos, esquemaPaso, rellenarVariables, urlPublica, type Paso } from './tipos';
 import { postJsonSeguro } from '@/lib/red/seguro';
+import { ErrorIA, iaConfigurada, redactarMensaje } from '@/lib/ia/claude';
 
 interface Ejecucion {
   id: string; subcuenta_id: string; flujo_id: string; contacto_id: string; paso: number; pasos: unknown[]; datos: Record<string, unknown>;
@@ -141,6 +142,41 @@ async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso,
       if (m.error) throw new Error(m.error.message);
       const fallo = await enviarGuardado(sub, m.data.id as string);
       return fallo ? { ok: false, detalle: fallo } : { ok: true, detalle: `${canal === 'email' ? 'Correo' : canal === 'sms' ? 'SMS' : 'WhatsApp'} enviado.` };
+    }
+    case 'ia_mensaje': {
+      const canal = p.canal;
+      if (canal === 'email' ? !c.email : !c.telefono) return { ok: false, detalle: canal === 'email' ? 'El contacto no tiene correo.' : 'El contacto no tiene teléfono.' };
+      if (!iaConfigurada()) return { ok: false, detalle: 'La IA no está configurada en el servidor (falta ANTHROPIC_API_KEY).' };
+      const { data: cupo } = await admin.rpc('ia_reservar_uso', { p_subcuenta: sub });
+      if (!cupo) return { ok: false, detalle: 'Sin IA disponible: el plan no la incluye o se alcanzó el límite diario.' };
+      let { data: conv } = await admin.from('conv_conversaciones').select('id').eq('subcuenta_id', sub).eq('contacto_id', c.id).maybeSingle();
+      if (!conv) {
+        const ins = await admin.from('conv_conversaciones').upsert({ subcuenta_id: sub, contacto_id: c.id }, { onConflict: 'subcuenta_id,contacto_id' }).select('id').single();
+        if (ins.error) throw new Error(ins.error.message);
+        conv = ins.data;
+      }
+      const [{ data: hist }, { data: s }] = await Promise.all([
+        admin.from('conv_mensajes').select('direccion, cuerpo').eq('conversacion_id', conv!.id).neq('canal', 'nota').order('creado', { ascending: false }).limit(10),
+        admin.from('subcuentas').select('nombre').eq('id', sub).single(),
+      ]);
+      let r;
+      try {
+        r = await redactarMensaje({
+          empresa: String(s?.nombre ?? ''), canal, instrucciones: t(p.instrucciones),
+          contacto: { nombre: c.nombre, apellidos: c.apellidos, email: c.email ?? '', telefono: c.telefono, etiquetas: c.etiquetas.join(', ') },
+          contexto: (hist ?? []).reverse().map((m) => ({ de: m.direccion === 'entrante' ? 'cliente' as const : 'negocio' as const, texto: String(m.cuerpo) })),
+        });
+      } catch (err) {
+        return { ok: false, detalle: err instanceof ErrorIA ? err.message : 'La IA falló.' };
+      }
+      await admin.rpc('ia_sumar_tokens', { p_subcuenta: sub, p_entrada: r.uso.entrada, p_salida: r.uso.salida });
+      const m = await admin.from('conv_mensajes').insert({
+        subcuenta_id: sub, conversacion_id: conv!.id, direccion: 'saliente', canal, ia: true,
+        asunto: canal === 'email' ? (r.asunto || `Mensaje de ${s?.nombre ?? ''}`).slice(0, 300) : '', cuerpo: r.mensaje, estado: 'pendiente',
+      }).select('id').single();
+      if (m.error) throw new Error(m.error.message);
+      const fallo = await enviarGuardado(sub, m.data.id as string);
+      return fallo ? { ok: false, detalle: fallo } : { ok: true, detalle: `Mensaje con IA enviado: «${r.mensaje.slice(0, 120)}»` };
     }
     case 'anadir_etiqueta': case 'quitar_etiqueta': {
       const etiqueta = t(p.etiqueta).trim().slice(0, 60);
