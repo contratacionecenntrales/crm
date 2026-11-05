@@ -35,6 +35,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 23 | `23-embudos.sql` | Sitios y embudos: páginas por pasos con borrador y versión publicada (`/f/<embudo>/<paso>`), formularios que crean el contacto y disparan «Formulario enviado», estadísticas de visitas y envíos. Requiere el 22 |
 | 24 | `24-asistentes.sql` | Asistentes con IA: instrucciones y base de conocimiento por subcuenta, cola de respuestas automáticas en Conversaciones, pausa al contestar una persona, límites diarios y uso. Necesita `ANTHROPIC_API_KEY` en el servidor. Requiere el 23 |
 | 25 | `25-examen.sql` | Correcciones del examen de seguridad: chat suplantado sin respuestas de IA, servicio público cortado al suspender, formularios sin contraseñas ni direcciones reservadas, límite real de agencias por cuenta, anti-repetición de webhooks y topes extra de IA. Requiere el 24 |
+| 26 | `26-marketing.sql` | Marketing: campañas de correo, SMS y WhatsApp por etiquetas, programables, con baja por enlace o respondiendo BAJA. Se envían por tandas desde el cron. Requiere el 25 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.
