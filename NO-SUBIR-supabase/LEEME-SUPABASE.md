@@ -31,6 +31,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 19 | `19-chat-web.sql` | Chat web: globo para la web de cada subcuenta; los mensajes entran en Conversaciones como canal «chat». Requiere el 18 |
 | 20 | `20-ajustes-agencia.sql` | Enlaces de menú personalizados, claves de API (con la API REST /api/v1), correo y Twilio por defecto de la agencia, verificación de correos, datos de muestra, JS personalizado y corrección del envío de mensajes. Requiere el 19 |
 | 21 | `21-medios.sql` | Biblioteca de medios por subcuenta (bucket «medios» de Storage con políticas por subcuenta y cupo de 5 GB) y uso por subcuenta para la agencia. Requiere el 20 |
+| 22 | `22-plataforma.sql` | Plataforma Metatok: administradores (`select public.plataforma_alta_admin('correo')` para el primero), planes con límites, alta de agencias y estados activa/prueba/suspendida. Requiere el 21 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

@@ -34,6 +34,8 @@ export async function conClave(request: NextRequest, sub: string, permiso: Permi
     return error(estado, codigo, estado === 500 ? 'Error interno al validar la clave.' : e.message,
       estado === 429 ? { 'Retry-After': '60' } : estado === 401 ? { 'WWW-Authenticate': 'Bearer' } : undefined);
   }
+  const { data: permitida } = await admin.rpc('api_subcuenta_permitida', { p_subcuenta: sub });
+  if (!permitida) return error(403, 'prohibido', 'La API no está disponible para esta subcuenta (agencia suspendida o plan sin API).');
   try {
     return await fn({ admin, sub, claveId: (data as { clave_id: string }).clave_id });
   } catch (x) {

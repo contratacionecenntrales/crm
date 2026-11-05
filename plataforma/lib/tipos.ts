@@ -31,6 +31,10 @@ export interface Agencia {
   url_terminos: string;
   css_personalizado: string;
   js_personalizado: string;
+  plan_id: string | null;
+  estado: 'activa' | 'prueba' | 'suspendida';
+  prueba_hasta: string | null;
+  motivo_suspension: string;
   datos_muestra: boolean;
   tema_defecto: 'claro' | 'oscuro';
   expiracion_sesion_min: number | null;

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react';
+import { LogOut, Monitor, Moon, ShieldCheck, Sun, UserRound } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useFueraDe } from './useFueraDe';
 
@@ -18,7 +18,7 @@ function aplicarTema(t: Tema) {
   }
 }
 
-export function MenuUsuario({ nombre, email, logo, perfil }: { nombre: string; email: string; logo?: string | null; perfil?: string }) {
+export function MenuUsuario({ nombre, email, logo, perfil, plataforma }: { nombre: string; email: string; logo?: string | null; perfil?: string; plataforma?: boolean }) {
   const [abierto, setAbierto] = useState(false);
   const [tema, setTema] = useState<Tema>('sistema');
   const caja = useRef<HTMLDivElement>(null);
@@ -57,6 +57,11 @@ export function MenuUsuario({ nombre, email, logo, perfil }: { nombre: string; e
           {perfil && (
             <Link href={perfil} onClick={() => setAbierto(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-superficie-2">
               <UserRound className="size-4" /> Mi perfil
+            </Link>
+          )}
+          {plataforma && (
+            <Link href="/plataforma" onClick={() => setAbierto(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-superficie-2">
+              <ShieldCheck className="size-4" /> Panel de la plataforma
             </Link>
           )}
           <div className="my-1 border-t" />

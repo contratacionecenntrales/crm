@@ -1,24 +1,22 @@
-'use client';
-import { useActionState } from 'react';
-import { crearAgencia } from './acciones';
 import { MarcoAcceso } from '@/components/ui/MarcoAcceso';
-import { Campo, Selector } from '@/components/ui/Campo';
-import { BotonEnvio } from '@/components/ui/BotonEnvio';
-import { Aviso } from '@/components/ui/Aviso';
-import { MONEDAS, ZONAS_HORARIAS } from '@/lib/opciones';
+import { crearClienteServidor } from '@/lib/supabase/server';
+import { esAdminPlataforma } from '@/lib/sesion';
+import { FormularioOnboarding } from './Formulario';
 
-export default function PaginaOnboarding() {
-  const [estado, accion] = useActionState(crearAgencia, null);
+export const metadata = { title: 'Crea tu agencia' };
+
+// Si la plataforma tiene el alta cerrada, se explica en vez del formulario.
+export default async function PaginaOnboarding() {
+  const supabase = await crearClienteServidor();
+  const [{ data: a }, admin] = await Promise.all([
+    supabase.from('plataforma_ajustes').select('nombre, registro_abierto').eq('id', true).maybeSingle(),
+    esAdminPlataforma(),
+  ]);
+  if (a?.registro_abierto || admin) return <FormularioOnboarding />;
   return (
-    <MarcoAcceso titulo="Crea tu agencia" subtitulo="Es el espacio desde el que gestionarás todas tus subcuentas.">
-      <form action={accion} className="space-y-4">
-        <Campo etiqueta="Nombre de la agencia" name="nombre" required minLength={2} maxLength={120} />
-        <Selector etiqueta="Moneda" name="moneda" defaultValue="EUR" opciones={MONEDAS} />
-        <Selector etiqueta="Zona horaria" name="zona_horaria" defaultValue="Europe/Madrid" opciones={ZONAS_HORARIAS} />
-        <Aviso estado={estado} />
-        <BotonEnvio className="w-full">Crear agencia</BotonEnvio>
-      </form>
-      <form action="/auth/salir" method="post" className="mt-4 text-center">
+    <MarcoAcceso titulo="Tu cuenta aún no tiene agencia" subtitulo={`Las agencias las da de alta ${a?.nombre ?? 'la plataforma'}.`}>
+      <p className="text-sm text-texto-2">Si has contratado un plan, en cuanto activen tu agencia podrás entrar con este mismo correo. Si te han invitado a una subcuenta, pide a quien te invitó que revise el acceso.</p>
+      <form action="/auth/salir" method="post" className="mt-6 text-center">
         <button className="text-sm text-tenue hover:underline">Cerrar sesión</button>
       </form>
     </MarcoAcceso>

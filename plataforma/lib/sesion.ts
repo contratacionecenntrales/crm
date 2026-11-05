@@ -70,8 +70,32 @@ export const subcuentaVisible = cache(async (id: string) => {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const supabase = await crearClienteServidor();
   const { data } = await supabase.from('subcuentas').select('*').eq('id', id).maybeSingle();
-  if (!data) notFound();
+  if (!data) {
+    // ¿Es de una agencia suspendida o con la prueba vencida? Se explica en vez de un 404.
+    const { data: bloqueo } = await supabase.rpc('bloqueo_subcuenta', { p_subcuenta: id });
+    if (bloqueo) redirect('/suspendida');
+    notFound();
+  }
   const { data: soyAdmin } = await supabase.rpc('soy_admin_subcuenta', { p_subcuenta: id });
   const { data: soyAdminAgencia } = await supabase.rpc('soy_admin_agencia', { p_agencia: data.agencia_id });
   return { subcuenta: data as Subcuenta, soyAdmin: Boolean(soyAdmin), soyAdminAgencia: Boolean(soyAdminAgencia) };
+});
+
+// ¿Es administrador de la plataforma (Metatok)?
+export const esAdminPlataforma = cache(async () => {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.rpc('es_admin_plataforma');
+  return Boolean(data);
+});
+
+export interface MiPlan {
+  estado: 'activa' | 'prueba' | 'suspendida'; prueba_hasta: string | null; motivo: string; operativa: boolean;
+  plan: { nombre: string; precio: number; moneda: string; max_subcuentas: number | null; max_usuarios: number | null; funciones: Record<string, boolean>; descripcion: string } | null;
+  subcuentas: number; usuarios: number; plataforma: string;
+}
+
+export const miPlan = cache(async (agenciaId: string): Promise<MiPlan | null> => {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.rpc('mi_plan', { p_agencia: agenciaId });
+  return (data as MiPlan | null) ?? null;
 });

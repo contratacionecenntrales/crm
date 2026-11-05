@@ -1,6 +1,6 @@
 import 'server-only';
 import { crearClienteServidor } from '@/lib/supabase/server';
-import { contextoAgencias, esAdminAgencia, subcuentasVisibles, usuarioActual } from '@/lib/sesion';
+import { contextoAgencias, esAdminAgencia, esAdminPlataforma, subcuentasVisibles, usuarioActual } from '@/lib/sesion';
 import { direccionCompleta } from '@/lib/formato';
 import { resolverUrl } from '@/lib/menu/enlaces';
 import { MarcoPanel } from './MarcoPanel';
@@ -26,7 +26,7 @@ interface Props {
 export async function Panel({ principal, secundario: secundarioBase, ajustes, menuAjustes, subcuentaActual, children }: Props) {
   const usuario = await usuarioActual();
   const supabase = await crearClienteServidor();
-  const [{ actual, membresias }, subs, avisos, soporte] = await Promise.all([
+  const [{ actual, membresias }, subs, avisos, soporte, adminPlataforma] = await Promise.all([
     contextoAgencias(),
     subcuentasVisibles(),
     supabase
@@ -35,6 +35,7 @@ export async function Panel({ principal, secundario: secundarioBase, ajustes, me
       .order('creado', { ascending: false })
       .limit(50),
     subcuentaActual ? supabase.rpc('soporte_subcuenta', { p_subcuenta: subcuentaActual.id }) : Promise.resolve({ data: null }),
+    esAdminPlataforma(),
   ]);
   // Enlaces de menú personalizados de la agencia para esta vista.
   const { data: enlaces } = actual || subcuentaActual
@@ -116,7 +117,8 @@ export async function Panel({ principal, secundario: secundarioBase, ajustes, me
           <Campana usuarioId={usuario.id} iniciales={(avisos.data ?? []) as never} />
           <Ayuda datos={datosSoporte} />
           <MenuUsuario nombre={nombre} email={usuario.email ?? ''} logo={logoAgencia}
-            perfil={subcuentaActual ? `/subcuenta/${subcuentaActual.id}/configuracion/perfil` : actual ? '/agencia/configuracion/perfil' : undefined} />
+            perfil={subcuentaActual ? `/subcuenta/${subcuentaActual.id}/configuracion/perfil` : actual ? '/agencia/configuracion/perfil' : undefined}
+            plataforma={adminPlataforma} />
         </>
       }
     >

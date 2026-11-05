@@ -69,6 +69,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 11. `NO-SUBIR-supabase/19-chat-web.sql` — chat web: globo para la web del cliente conectado a Conversaciones
 12. `NO-SUBIR-supabase/20-ajustes-agencia.sql` — enlaces de menú personalizados, claves de API, correo y Twilio por defecto de la agencia, datos de muestra y JS personalizado (incluye además dos correcciones: envío de mensajes y subida del logo)
 13. `NO-SUBIR-supabase/21-medios.sql` — biblioteca de medios de cada subcuenta (bucket «medios» de Storage, 5 GB por subcuenta) y uso por subcuenta para la agencia
+14. `NO-SUBIR-supabase/22-plataforma.sql` — plataforma Metatok: administradores, planes con límites, alta de agencias, estados (activa, prueba, suspendida)
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -123,6 +124,25 @@ agencia pone su proveedor por defecto: las subcuentas sin configuración propia
 envían con él (en el caso de Twilio, con sus propios números de esa cuenta).
 La verificación de correos comprueba antes de enviar que el dominio del
 destinatario existe.
+
+### Plataforma (Metatok, la «agencia madre»)
+
+Metatok da de alta las agencias de sus clientes desde **/plataforma**. El primer
+administrador se crea una vez en Supabase → SQL Editor (con un usuario que ya
+exista en Authentication → Users):
+
+```sql
+select public.plataforma_alta_admin('tu-correo@dominio.com');
+```
+
+Desde el panel: resumen (agencias, MRR, pruebas, suspendidas), **Agencias**
+(crear con el correo del dueño, que recibe una invitación; cambiar plan, estado,
+fin de la prueba y notas internas), **Planes** (precio, máximo de subcuentas y de
+usuarios, funciones incluidas) y **Ajustes** (nombre, alta libre de agencias
+sí/no, plan y días de prueba por defecto, administradores). Los límites se
+aplican en la base de datos. Una agencia suspendida, o con la prueba vencida,
+no puede entrar en sus subcuentas, y sus reservas públicas, chat web y API dejan
+de funcionar. La agencia ve su plan en **Configuración → Facturación**.
 
 ### Medios
 
