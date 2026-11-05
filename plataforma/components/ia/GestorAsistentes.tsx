@@ -62,7 +62,7 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <nav className="rounded-lg border border-borde bg-superficie p-2" aria-label="Asistentes">
           {asistentes.length === 0 && elegido !== 'nuevo' && <p className="p-3 text-sm text-tenue">Aún no hay asistentes.</p>}
           {asistentes.map((a) => (
@@ -76,9 +76,9 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
 
         {elegido !== null ? (
           <form className="space-y-4 rounded-lg border border-borde bg-superficie p-4" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
-            <fieldset disabled={!soyAdmin} className="space-y-4">
+            <fieldset disabled={!soyAdmin} className="min-w-0 space-y-4">
               <div className="flex flex-wrap items-end gap-3">
-                <label className="block min-w-48 flex-1"><span className="mb-1 block text-sm font-medium">Nombre</span>
+                <label className="block min-w-0 flex-1 basis-48"><span className="mb-1 block text-sm font-medium">Nombre</span>
                   <input value={f.nombre} onChange={(e) => set('nombre', e.target.value)} maxLength={80} required className={estiloInput} /></label>
                 <label className="flex h-8 items-center gap-2 text-sm font-medium"><input type="checkbox" checked={f.activo} onChange={(e) => set('activo', e.target.checked)} className="size-4" /> Activo</label>
               </div>
@@ -94,7 +94,7 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
               </div>
               <div className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Instrucciones
                 <select aria-label="Usar plantilla" value="" onChange={(e) => { const p = PLANTILLAS_ASISTENTE.find((x) => x.id === e.target.value); if (p) { set('instrucciones', p.instrucciones); set('canales', [...p.canales]); } }}
-                  className="rounded border border-borde-fuerte bg-superficie px-1.5 py-0.5 text-xs font-normal">
+                  className="max-w-[55%] rounded border border-borde-fuerte bg-superficie px-1.5 py-0.5 text-xs font-normal">
                   <option value="">Usar plantilla…</option>{PLANTILLAS_ASISTENTE.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                 </select></span>
                 <textarea aria-label="Instrucciones" value={f.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} rows={8} maxLength={8000} className={estiloArea} placeholder="Cómo debe hablar, qué debe conseguir y cuándo pasar a una persona." />
