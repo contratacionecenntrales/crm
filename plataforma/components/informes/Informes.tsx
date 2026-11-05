@@ -81,10 +81,10 @@ function Barras({ filas }: { filas: { etiqueta: string; valor: number; texto?: s
   const max = Math.max(1, ...filas.map((f) => f.valor));
   return (
     <ul className="space-y-2.5">
-      {filas.map((f) => (
-        <li key={f.etiqueta} className="group" title={`${f.etiqueta}: ${f.texto ?? n(f.valor)}`}>
+      {filas.map((f, i) => (
+        <li key={`${i}-${f.etiqueta}`} className="group" title={`${f.etiqueta}: ${f.texto ?? n(f.valor)}`}>
           <div className="mb-1 flex justify-between gap-2 text-xs"><span className="truncate text-texto-2">{f.etiqueta}</span><span className="shrink-0 font-medium text-texto">{f.texto ?? n(f.valor)}</span></div>
-          <div className="h-2 rounded-full bg-superficie-2"><div className="h-full rounded-full bg-primario group-hover:opacity-80" style={{ width: `${Math.max(2, (f.valor / max) * 100)}%` }} /></div>
+          <div className="h-2 rounded-full bg-superficie-2"><div className="h-full rounded-full bg-primario group-hover:opacity-80" style={{ width: f.valor ? `${Math.max(2, (f.valor / max) * 100)}%` : 0 }} /></div>
         </li>
       ))}
     </ul>
