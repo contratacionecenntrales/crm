@@ -74,6 +74,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 16. `NO-SUBIR-supabase/24-asistentes.sql` — asistentes con IA que contestan en chat web, WhatsApp, SMS y correo, y paso «Mensaje con IA» en automatizaciones (necesita `ANTHROPIC_API_KEY`)
 17. `NO-SUBIR-supabase/25-examen.sql` — correcciones del examen final de seguridad
 18. `NO-SUBIR-supabase/26-marketing.sql` — campañas masivas (correo, SMS, WhatsApp). Conviene llamar al cron cada minuto para enviarlas más rápido
+19. `NO-SUBIR-supabase/27-reputacion.sql` — reseñas: solicitudes por SMS, WhatsApp o correo y paso «Pedir reseña» en automatizaciones
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 

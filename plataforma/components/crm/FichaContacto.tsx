@@ -272,6 +272,7 @@ function textoEvento(e: Evento, moneda: string, zona: string): string {
     case 'cita_creada': return `Cita ${d.origen === 'reserva' ? 'reservada online' : 'creada'}: ${d.titulo ?? ''} (${fechaCita(d.inicio)}) en ${d.calendario ?? ''}`;
     case 'cita_movida': return `Cita movida: ${d.titulo ?? ''} → ${fechaCita(d.inicio)}`;
     case 'cita_estado': return `Cita «${d.titulo ?? ''}» marcada como ${ESTADO_TEXTO[String(d.estado)] ?? d.estado}`;
+    case 'resena': return `Valoró con ${d.puntuacion}/5${d.comentario ? `: «${d.comentario}»` : ''}`;
     case 'baja': return `Se dio de baja de ${({ email: 'correos', sms: 'SMS', whatsapp: 'WhatsApp' } as Record<string, string>)[String(d.canal)] ?? d.canal} (${d.campana ?? ''})`;
     case 'formulario_enviado': return `Formulario enviado en «${d.pagina ?? ''}» (${d.embudo ?? ''})${d.datos ? ` · ${String(d.datos).trim().replace(/\n/g, ' · ')}` : ''}`;
     case 'factura_pagada': return `Factura ${d.numero ?? ''} pagada (${dinero(Number(d.total ?? 0), String(d.moneda ?? moneda))})`;

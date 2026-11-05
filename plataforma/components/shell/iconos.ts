@@ -1,5 +1,5 @@
 import {
-  BarChart3, BookUser, Bot, Megaphone, Images, Building2, CalendarDays, CircleHelp, FileText, Globe, LayoutDashboard, LayoutGrid, LayoutTemplate, Link2, MessageCircle, MessagesSquare,
+  BarChart3, BookUser, Bot, Megaphone, ThumbsUp, Images, Building2, CalendarDays, CircleHelp, FileText, Globe, LayoutDashboard, LayoutGrid, LayoutTemplate, Link2, MessageCircle, MessagesSquare,
   Network, PlayCircle, Receipt, Rocket, Settings, ShoppingCart, Star, Workflow, User, UserCog, Users,
 } from 'lucide-react';
 
@@ -24,6 +24,7 @@ export const ICONOS = {
   embudos: LayoutTemplate,
   ia: Bot,
   marketing: Megaphone,
+  reputacion: ThumbsUp,
   // Iconos de los enlaces de menú personalizados
   enlace: Link2,
   globo: Globe,

@@ -17,6 +17,7 @@ export default async function LayoutSubcuenta({ children, params }: { children: 
     { href: `${base}/oportunidades`, etiqueta: 'Clientes Potenciales', icono: 'oportunidades' },
     { href: `${base}/pagos`, etiqueta: 'Pagos', icono: 'facturacion' },
     { href: `${base}/marketing`, etiqueta: 'Marketing', icono: 'marketing' },
+    { href: `${base}/reputacion`, etiqueta: 'Reputación', icono: 'reputacion' },
     { href: `${base}/embudos`, etiqueta: 'Sitios y embudos', icono: 'embudos' },
     { href: `${base}/automatizacion`, etiqueta: 'Automatización', icono: 'automatizacion' },
     { href: `${base}/ia`, etiqueta: 'Asistentes IA', icono: 'ia' },

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import {
   ArrowDown, ArrowLeft, ArrowUp, Bell, CheckSquare, Clock, FlaskConical, GitBranch, Globe, Loader2, Mail, MessageCircle, MessageSquare,
-  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap, Sparkles,
+  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap, Sparkles, Star,
 } from 'lucide-react';
 import { guardarFlujo, pararEjecucion, probarFlujo } from '@/app/subcuenta/[id]/automatizacion/acciones';
 import { SelectorContacto } from '@/components/crm/SelectorContacto';
@@ -30,7 +30,7 @@ interface Opciones { etiquetas: string[]; embudos: Embudo[]; usuarios: Usuario[]
 const ICONO: Record<TipoPaso, typeof Mail> = {
   enviar_sms: MessageSquare, enviar_whatsapp: MessageCircle, enviar_email: Mail, anadir_etiqueta: Tag, quitar_etiqueta: Tags,
   asignar_propietario: UserCheck, crear_tarea: CheckSquare, crear_oportunidad: Target, nota: StickyNote, notificar: Bell,
-  esperar: Clock, condicion: GitBranch, webhook: Globe, ia_mensaje: Sparkles,
+  esperar: Clock, condicion: GitBranch, webhook: Globe, ia_mensaje: Sparkles, pedir_resena: Star,
 };
 const COLOR: Record<string, string> = { Comunicación: '#155eef', Contacto: '#7a5af8', Interno: '#f79009', Lógica: '#12b76a' };
 const grupoDe = (t: TipoPaso) => PASOS.find((p) => p.tipo === t)!.grupo;
@@ -332,6 +332,14 @@ function PanelPaso({ p, opciones, alCambiar }: { p: Paso; opciones: Opciones; al
           <textarea ref={area} value={p.texto} onChange={(e) => set('texto', e.target.value)} rows={p.tipo === 'enviar_email' ? 10 : 6} className={estiloArea} /></label>
         <div><span className="mb-1 block text-xs font-medium text-tenue">Insertar dato</span><Variables alInsertar={insertar} /></div>
         {p.tipo !== 'nota' && <p className="text-xs text-tenue">Se envía con la cuenta configurada en Integración telefónica o Servicios de correo y queda en Conversaciones. Si el contacto tiene «No molestar», no se envía.</p>}
+      </>);
+    case 'pedir_resena':
+      return (<>
+        <label className="block"><span className={etiqueta}>Canal</span>
+          <select value={p.canal} onChange={(e) => set('canal', e.target.value)} className={estiloInput}>
+            <option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Correo</option>
+          </select></label>
+        <p className="text-xs text-tenue">Envía el mensaje de Reputación con un enlace de valoración. Las buenas van a tu ficha de Google; las malas te llegan en privado. Como mucho una por contacto y semana.</p>
       </>);
     case 'ia_mensaje':
       return (<>

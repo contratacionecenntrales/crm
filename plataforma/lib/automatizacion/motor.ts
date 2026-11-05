@@ -5,6 +5,7 @@ import { diaEn, fechaLarga, horaEn } from '@/lib/calendario/tiempo';
 import { esperaEnMinutos, esquemaPaso, rellenarVariables, urlPublica, type Paso } from './tipos';
 import { postJsonSeguro } from '@/lib/red/seguro';
 import { ErrorIA, iaConfigurada, redactarMensaje } from '@/lib/ia/claude';
+import { pedirResena } from '@/lib/reputacion/enviar';
 
 interface Ejecucion {
   id: string; subcuenta_id: string; flujo_id: string; contacto_id: string; paso: number; pasos: unknown[]; datos: Record<string, unknown>;
@@ -142,6 +143,10 @@ async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso,
       if (m.error) throw new Error(m.error.message);
       const fallo = await enviarGuardado(sub, m.data.id as string);
       return fallo ? { ok: false, detalle: fallo } : { ok: true, detalle: `${canal === 'email' ? 'Correo' : canal === 'sms' ? 'SMS' : 'WhatsApp'} enviado.` };
+    }
+    case 'pedir_resena': {
+      const fallo = await pedirResena(admin, sub, c.id, p.canal);
+      return fallo ? { ok: false, detalle: fallo } : { ok: true, detalle: 'Solicitud de reseña enviada.' };
     }
     case 'ia_mensaje': {
       const canal = p.canal;
