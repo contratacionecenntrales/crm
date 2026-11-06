@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Contenido de una página de embudo: estilo + secciones con bloques.
 export type Alineacion = 'izquierda' | 'centro' | 'derecha';
-export type AccionBoton = 'siguiente' | 'url' | 'ancla';
+export type AccionBoton = 'siguiente' | 'url' | 'ancla' | 'pagina'; // pagina: otra página del sitio (url = su ruta)
 
 export type Bloque =
   | { id: string; tipo: 'titulo'; texto: string; nivel: 1 | 2 | 3; alineacion: Alineacion }
@@ -56,7 +56,7 @@ const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const txt = (max: number) => z.string().max(max);
 const id = z.string().regex(/^[a-z0-9_-]{1,40}$/i);
 const ali = z.enum(['izquierda', 'centro', 'derecha']);
-const accion = z.enum(['siguiente', 'url', 'ancla']);
+const accion = z.enum(['siguiente', 'url', 'ancla', 'pagina']);
 const visual = z.enum(['ninguno', 'imagen', 'panel', 'movil', 'chat', 'tarjetas']);
 const boton1 = { boton_texto: txt(80), boton_accion: accion, boton_url: txt(1000) };
 const campo = z.object({ clave: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/), etiqueta: txt(80), tipo: z.enum(['texto', 'email', 'tel', 'textarea']), obligatorio: z.boolean() });

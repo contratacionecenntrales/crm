@@ -10,8 +10,9 @@ import { Aviso } from '@/components/ui/Aviso';
 import { estilosBoton } from '@/components/ui/clases';
 import { esquemaContenido, type Bloque, type Contenido, type Seccion } from '@/lib/embudos/tipos';
 import { BloqueVista, fuenteDe, SeccionVista, temaDe, Tipografia } from './Renderizado';
+import { CabeceraSitio, PieSitio } from './Sitio';
 import {
-  bloqueNuevo, CATALOGO, conIdsNuevos, PropiedadesBloque, PropiedadesEstilo, PropiedadesSeccion, seccionNueva,
+  bloqueNuevo, CATALOGO, PaginasSitio, conIdsNuevos, PropiedadesBloque, PropiedadesEstilo, PropiedadesSeccion, seccionNueva,
   type Calendario, type Imagen, type TipoBloque,
 } from './Propiedades';
 import type { Resultado } from '@/lib/tipos';
@@ -21,7 +22,8 @@ interface Props {
   subId: string;
   embudo: { id: string; nombre: string; slug: string; publicado: boolean };
   paso: { id: string; nombre: string; ruta: string; publicado_en: string | null; primero: boolean };
-  pasos: { id: string; nombre: string }[];
+  pasos: { id: string; nombre: string; ruta: string }[];
+  sitio?: { config: Record<string, unknown> } | null;
   inicial: Contenido; imagenes: Imagen[]; calendarios: Calendario[];
 }
 
@@ -31,7 +33,7 @@ const mover = <T,>(a: T[], i: number, d: number): T[] => {
   const n = [...a]; [n[i], n[j]] = [n[j], n[i]]; return n;
 };
 
-export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, calendarios }: Props) {
+export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, calendarios, sitio }: Props) {
   const router = useRouter();
   const [c, setC] = useState<Contenido>(inicial);
   const [pasado, setPasado] = useState<Contenido[]>([]);
@@ -242,6 +244,7 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
   </>);
 
   return (
+    <PaginasSitio.Provider value={pasos}>
     <div className="flex h-[calc(100dvh-93px)] min-h-[560px] flex-col bg-fondo font-sans">
       {/* Barra superior */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borde bg-superficie px-3 py-2">
@@ -277,6 +280,7 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
           <div className={`mx-auto overflow-hidden rounded-lg bg-white shadow-md ring-1 ring-black/5 transition-all ${movil ? 'max-w-[390px]' : 'max-w-[1200px]'}`}
             style={{ fontFamily: fuenteDe(c.estilo.fuente), background: c.estilo.fondo }}>
             <Tipografia fuente={c.estilo.fuente} />
+            {sitio && <CabeceraSitio config={sitio.config} menu={pasos} base="" actual={paso.ruta} estilo={c.estilo} empresa={embudo.nombre} vistaPrevia />}
             {c.secciones.length === 0 && (
               <div className="flex flex-col items-center gap-3 py-24 text-center text-[#667085]">
                 <p>La página está vacía.</p>
@@ -325,6 +329,7 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
                 </div>
               );
             })}
+            {sitio && <PieSitio config={sitio.config} menu={pasos} base="" actual={paso.ruta} estilo={c.estilo} empresa={embudo.nombre} vistaPrevia />}
           </div>
           {c.secciones.length > 0 && (
             <div className="mx-auto mt-4 flex max-w-[1200px] justify-center">
@@ -348,5 +353,6 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
         </div>
       )}
     </div>
+    </PaginasSitio.Provider>
   );
 }

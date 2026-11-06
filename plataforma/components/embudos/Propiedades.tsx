@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { estiloArea, estiloInput, estilosBoton } from '@/components/ui/clases';
-import { nuevoId, type Bloque, type CampoFormulario, type Contenido, type Seccion, type Visual } from '@/lib/embudos/tipos';
+import { nuevoId, type AccionBoton, type Bloque, type CampoFormulario, type Contenido, type Seccion, type Visual } from '@/lib/embudos/tipos';
 import { ICONOS } from './Renderizado';
 
 // Panel de propiedades del editor de embudos y bloques nuevos por defecto.
@@ -162,12 +162,17 @@ function ImagenCampo({ t, v, on, imagenes, subId }: { t: string; v: string; on: 
   );
 }
 
-function AccionCampos({ accion, url, on, anclas }: { accion: 'siguiente' | 'url' | 'ancla'; url: string; on: (c: { accion?: 'siguiente' | 'url' | 'ancla'; url?: string }) => void; anclas: string[] }) {
+// Páginas del embudo o sitio (para los botones «Ir a otra página»).
+export const PaginasSitio = createContext<{ nombre: string; ruta: string }[]>([]);
+
+function AccionCampos({ accion, url, on, anclas }: { accion: AccionBoton; url: string; on: (c: { accion?: AccionBoton; url?: string }) => void; anclas: string[] }) {
+  const paginas = useContext(PaginasSitio);
   return (
     <>
-      <Sel t="Al hacer clic" v={accion} on={(a) => on({ accion: a, url: a === 'ancla' ? (anclas[0] ? `#${anclas[0]}` : '') : a === 'url' ? '' : url })}
-        op={[['siguiente', 'Ir a la página siguiente'], ['url', 'Abrir un enlace'], ['ancla', 'Bajar a una sección']]} />
+      <Sel t="Al hacer clic" v={accion} on={(a) => on({ accion: a, url: a === 'ancla' ? (anclas[0] ? `#${anclas[0]}` : '') : a === 'pagina' ? (paginas[0]?.ruta ?? '') : a === 'url' ? '' : url })}
+        op={[['siguiente', 'Ir a la página siguiente'], ...(paginas.length > 1 ? [['pagina', 'Ir a otra página'] as [AccionBoton, string]] : []), ['url', 'Abrir un enlace'], ['ancla', 'Bajar a una sección']]} />
       {accion === 'url' && <Txt t="Enlace" v={url} on={(u) => on({ url: u })} max={1000} ph="https://… · mailto: · tel:" />}
+      {accion === 'pagina' && <Sel t="Página" v={url} on={(r) => on({ url: r })} op={paginas.map((p) => [p.ruta, p.nombre] as [string, string])} />}
       {accion === 'ancla' && (anclas.length
         ? <Sel t="Sección" v={url.replace(/^#/, '')} on={(a) => on({ url: `#${a}` })} op={anclas.map((a) => [a, a] as [string, string])} />
         : <p className="text-xs text-aviso">Ponle un «ancla» a una sección (en sus ajustes) para poder enlazarla.</p>)}

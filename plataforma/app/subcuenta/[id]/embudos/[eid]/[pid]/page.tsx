@@ -15,9 +15,9 @@ export default async function PaginaEditor({ params }: { params: Promise<{ id: s
   await subcuentaVisible(id);
   const supabase = await crearClienteServidor();
   const [{ data: embudo }, { data: paso }, { data: pasos }, { data: medios }, { data: calendarios }] = await Promise.all([
-    supabase.from('emb_embudos').select('id, nombre, slug, publicado').eq('id', eid).eq('subcuenta_id', id).maybeSingle(),
+    supabase.from('emb_embudos').select('id, nombre, slug, publicado, tipo, config').eq('id', eid).eq('subcuenta_id', id).maybeSingle(),
     supabase.from('emb_pasos').select('id, nombre, ruta, contenido, publicado_en, actualizado').eq('id', pid).eq('embudo_id', eid).eq('subcuenta_id', id).maybeSingle(),
-    supabase.from('emb_pasos').select('id, nombre, orden').eq('embudo_id', eid).order('orden'),
+    supabase.from('emb_pasos').select('id, nombre, ruta, orden').eq('embudo_id', eid).order('orden'),
     supabase.from('medios').select('id, ruta, nombre, tipo').eq('subcuenta_id', id).like('tipo', 'image/%').order('creado', { ascending: false }).limit(300),
     supabase.from('cal_calendarios').select('nombre, slug, activo').eq('subcuenta_id', id).order('nombre'),
   ]);
@@ -31,7 +31,8 @@ export default async function PaginaEditor({ params }: { params: Promise<{ id: s
     <EditorPagina
       subId={id} embudo={embudo as { id: string; nombre: string; slug: string; publicado: boolean }}
       paso={{ id: paso.id as string, nombre: paso.nombre as string, ruta: paso.ruta as string, publicado_en: paso.publicado_en as string | null, primero: indice === 0 }}
-      pasos={(pasos ?? []).map((p) => ({ id: p.id as string, nombre: p.nombre as string }))}
+      pasos={(pasos ?? []).map((p) => ({ id: p.id as string, nombre: p.nombre as string, ruta: p.ruta as string }))}
+      sitio={embudo.tipo === 'sitio' ? { config: (embudo.config ?? {}) as Record<string, unknown> } : null}
       inicial={contenido} imagenes={imagenes}
       calendarios={(calendarios ?? []).map((c) => ({ nombre: c.nombre as string, slug: c.slug as string, activo: c.activo as boolean }))}
     />

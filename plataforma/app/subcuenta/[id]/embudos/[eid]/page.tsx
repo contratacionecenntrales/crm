@@ -13,7 +13,7 @@ export default async function PaginaEmbudo({ params }: { params: Promise<{ id: s
   await subcuentaVisible(id);
   const supabase = await crearClienteServidor();
   const desde = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-  const { data: embudo } = await supabase.from('emb_embudos').select('id, nombre, slug, publicado, plantilla, creado, actualizado').eq('id', eid).eq('subcuenta_id', id).maybeSingle();
+  const { data: embudo } = await supabase.from('emb_embudos').select('id, nombre, slug, publicado, plantilla, creado, actualizado, tipo, config').eq('id', eid).eq('subcuenta_id', id).maybeSingle();
   if (!embudo) notFound();
   const [{ data: pasos }, { data: est }] = await Promise.all([
     supabase.from('emb_pasos').select('id, nombre, ruta, orden, publicado_en, actualizado, seo_titulo, seo_descripcion').eq('embudo_id', eid).order('orden'),

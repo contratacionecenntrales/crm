@@ -2,20 +2,21 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { ArrowDown, ArrowLeft, ArrowUp, Check, Copy, ExternalLink, Pencil, Plus, Settings2, Trash2 } from 'lucide-react';
-import { actualizarEmbudo, actualizarPaso, borrarPaso, crearPaso, duplicarPaso, moverPaso } from '@/app/subcuenta/[id]/embudos/acciones';
+import { ArrowDown, ArrowLeft, ArrowUp, Check, Copy, ExternalLink, Pencil, Plus, Settings2, Trash2, Globe } from 'lucide-react';
+import { actualizarEmbudo, actualizarSitio, actualizarPaso, borrarPaso, crearPaso, duplicarPaso, moverPaso } from '@/app/subcuenta/[id]/embudos/acciones';
 import { Modal } from '@/components/ui/Modal';
 import { Aviso } from '@/components/ui/Aviso';
 import { Insignia } from '@/components/ui/Insignia';
 import { estilosBoton, estiloInput, estiloArea } from '@/components/ui/clases';
 import { fecha } from '@/lib/formato';
 import type { Resultado } from '@/lib/tipos';
+import { CONFIG_VACIA, type ConfigSitio } from '@/lib/embudos/sitios';
 
 export interface PasoResumen {
   id: string; nombre: string; ruta: string; orden: number; publicado_en: string | null; actualizado: string;
   seo_titulo: string; seo_descripcion: string; visitas: number; envios: number;
 }
-interface Embudo { id: string; nombre: string; slug: string; publicado: boolean; plantilla: string; creado: string; actualizado: string }
+interface Embudo { id: string; nombre: string; slug: string; publicado: boolean; plantilla: string; creado: string; actualizado: string; tipo?: 'embudo' | 'sitio'; config?: Partial<ConfigSitio> }
 
 const pct = (a: number, b: number) => (b ? `${((a / b) * 100).toFixed(1)} %` : '—');
 
@@ -26,6 +27,8 @@ export function DetalleEmbudo({ subId, embudo, pasos, sitio }: { subId: string; 
   const [ajustes, setAjustes] = useState(false);
   const [editando, setEditando] = useState<PasoResumen | null>(null);
   const [nueva, setNueva] = useState(false);
+  const [sitioAj, setSitioAj] = useState(false);
+  const esSitio = embudo.tipo === 'sitio';
   const [copiado, setCopiado] = useState('');
   const base = `/subcuenta/${subId}/embudos`;
   const url = (ruta?: string) => `${sitio}/f/${embudo.slug}${ruta ? `/${ruta}` : ''}`;
@@ -42,7 +45,7 @@ export function DetalleEmbudo({ subId, embudo, pasos, sitio }: { subId: string; 
 
   return (
     <div className="px-4 py-6 font-sans sm:px-6">
-      <Link href={base} className="mb-3 inline-flex items-center gap-1 text-sm text-tenue hover:text-texto"><ArrowLeft className="size-4" /> Embudos</Link>
+      <Link href={esSitio ? `${base}?tipo=sitio` : base} className="mb-3 inline-flex items-center gap-1 text-sm text-tenue hover:text-texto"><ArrowLeft className="size-4" /> {esSitio ? 'Sitios web' : 'Embudos'}</Link>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-texto">{embudo.nombre}
@@ -54,9 +57,10 @@ export function DetalleEmbudo({ subId, embudo, pasos, sitio }: { subId: string; 
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {esSitio && <button onClick={() => setSitioAj(true)} className={estilosBoton.secundario}><Globe className="size-4" /> Menú, contacto y redes</button>}
           <button onClick={() => setAjustes(true)} className={estilosBoton.secundario}><Settings2 className="size-4" /> Ajustes</button>
           <button disabled={pendiente} onClick={() => ejecutar(() => actualizarEmbudo(subId, embudo.id, { publicado: !embudo.publicado }))} className={embudo.publicado ? estilosBoton.secundario : estilosBoton.primario}>
-            {embudo.publicado ? 'Despublicar' : 'Publicar embudo'}</button>
+            {embudo.publicado ? 'Despublicar' : esSitio ? 'Publicar sitio' : 'Publicar embudo'}</button>
         </div>
       </div>
       {aviso && <div className="mb-3"><Aviso estado={aviso} /></div>}
@@ -69,7 +73,7 @@ export function DetalleEmbudo({ subId, embudo, pasos, sitio }: { subId: string; 
 
       <div className="rounded-lg border border-borde bg-superficie">
         <div className="flex items-center justify-between border-b border-borde px-4 py-3">
-          <h2 className="font-semibold text-texto">Páginas del embudo</h2>
+          <h2 className="font-semibold text-texto">{esSitio ? 'Páginas del sitio (el orden es el del menú)' : 'Páginas del embudo'}</h2>
           <button onClick={() => setNueva(true)} className={estilosBoton.primario}><Plus className="size-4" /> Añadir página</button>
         </div>
         {pasos.length === 0 && <p className="px-4 py-10 text-center text-sm text-tenue">Este embudo no tiene páginas.</p>}
@@ -101,6 +105,9 @@ export function DetalleEmbudo({ subId, embudo, pasos, sitio }: { subId: string; 
       </div>
       <p className="mt-3 text-xs text-tenue">Los cambios de cada página se ven en la dirección pública cuando la publicas desde el editor. El embudo entero se puede despublicar en cualquier momento.</p>
 
+      <Modal abierto={sitioAj} alCerrar={() => setSitioAj(false)} titulo="Menú, contacto y redes" ancho="max-w-2xl">
+        {sitioAj && <FormSitio subId={subId} eid={embudo.id} c={{ ...CONFIG_VACIA, ...(embudo.config ?? {}), redes: { ...CONFIG_VACIA.redes, ...(embudo.config?.redes ?? {}) } }} paginas={pasos.map((p) => ({ nombre: p.nombre, ruta: p.ruta }))} alTerminar={() => { setSitioAj(false); router.refresh(); }} />}
+      </Modal>
       <Modal abierto={ajustes} alCerrar={() => setAjustes(false)} titulo="Ajustes del embudo">
         {ajustes && <FormAjustes subId={subId} embudo={embudo} sitio={sitio} alTerminar={() => { setAjustes(false); router.refresh(); }} />}
       </Modal>
@@ -162,6 +169,44 @@ function FormPaso({ subId, p, prefijo, alTerminar }: { subId: string; p: PasoRes
           <input value={f.ruta} onChange={(e) => setF({ ...f, ruta: e.target.value.toLowerCase() })} required maxLength={60} pattern="[a-z0-9]+(-[a-z0-9]+)*" className={estiloInput} /></div></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Título para buscadores (SEO)</span><input value={f.seo_titulo} onChange={cambiar('seo_titulo')} maxLength={120} className={estiloInput} placeholder={p.nombre} /></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium">Descripción para buscadores</span><textarea value={f.seo_descripcion} onChange={cambiar('seo_descripcion')} maxLength={300} rows={3} className={estiloArea} /></label>
+      <Aviso estado={r} />
+      <div className="flex justify-end gap-2"><button type="button" onClick={alTerminar} className={estilosBoton.secundario}>Cancelar</button><button disabled={pendiente} className={estilosBoton.primario}>Guardar</button></div>
+    </form>
+  );
+}
+
+function FormSitio({ subId, eid, c, paginas, alTerminar }: { subId: string; eid: string; c: ConfigSitio; paginas: { nombre: string; ruta: string }[]; alTerminar: () => void }) {
+  const [f, setF] = useState<ConfigSitio>(c);
+  const [r, setR] = useState<Resultado | null>(null);
+  const [pendiente, iniciar] = useTransition();
+  const campo = (k: Exclude<keyof ConfigSitio, 'redes'>, t: string, ph = '', max = 200) => (
+    <label className="block"><span className="mb-1 block text-sm font-medium">{t}</span><input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} maxLength={max} placeholder={ph} className={estiloInput} /></label>
+  );
+  return (
+    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); iniciar(async () => { const x = await actualizarSitio(subId, eid, f); setR(x); if (x.ok) alTerminar(); }); }}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {campo('marca', 'Nombre de la marca', '', 80)}
+        {campo('logo', 'Logo (enlace https, opcional)', 'https://…', 1000)}
+        {campo('menu_cta_texto', 'Botón del menú', 'Contactar', 40)}
+        <label className="block"><span className="mb-1 block text-sm font-medium">El botón lleva a</span>
+          <select value={f.menu_cta_ruta} onChange={(e) => setF({ ...f, menu_cta_ruta: e.target.value })} className={estiloInput}>
+            {paginas.map((p) => <option key={p.ruta} value={p.ruta}>{p.nombre}</option>)}
+          </select></label>
+      </div>
+      <label className="block"><span className="mb-1 block text-sm font-medium">Descripción (pie de página)</span>
+        <textarea value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} maxLength={300} rows={2} className={estiloArea} /></label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {campo('telefono', 'Teléfono', '+34 …', 40)}
+        {campo('email', 'Correo', 'hola@…', 120)}
+        {campo('direccion', 'Dirección')}
+        {campo('horario', 'Horario', 'L-V 9:00–18:00', 120)}
+      </div>
+      <fieldset className="grid gap-3 rounded-lg border border-borde p-3 sm:grid-cols-2"><legend className="px-1 text-sm font-medium">Redes sociales (enlaces https)</legend>
+        {(['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'x'] as const).map((k) => (
+          <label key={k} className="block"><span className="mb-1 block text-xs capitalize text-texto-2">{k === 'x' ? 'X (Twitter)' : k}</span>
+            <input value={f.redes[k]} onChange={(e) => setF({ ...f, redes: { ...f.redes, [k]: e.target.value } })} placeholder="https://…" maxLength={300} className={estiloInput} /></label>
+        ))}
+      </fieldset>
       <Aviso estado={r} />
       <div className="flex justify-end gap-2"><button type="button" onClick={alTerminar} className={estilosBoton.secundario}>Cancelar</button><button disabled={pendiente} className={estilosBoton.primario}>Guardar</button></div>
     </form>

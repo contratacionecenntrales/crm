@@ -76,6 +76,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 18. `NO-SUBIR-supabase/26-marketing.sql` — campañas masivas (correo, SMS, WhatsApp). Conviene llamar al cron cada minuto para enviarlas más rápido
 19. `NO-SUBIR-supabase/27-reputacion.sql` — reseñas: solicitudes por SMS, WhatsApp o correo y paso «Pedir reseña» en automatizaciones
 20. `NO-SUBIR-supabase/28-informes.sql` — panel de informes por periodo
+21. `NO-SUBIR-supabase/29-sitios.sql` — constructor de sitios web de varias páginas
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 

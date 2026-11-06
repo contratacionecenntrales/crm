@@ -2,7 +2,7 @@ import {
   ArrowRight, BarChart3, BookOpen, Calendar, Camera, Check, Clock, CreditCard, Euro, Gift, Globe, Heart, Home, Leaf, Lock, Mail, MapPin,
   MessageCircle, Phone, Plus, Rocket, Shield, Sparkles, Star, Sun, Target, Trophy, User, Users, Wrench, Zap,
 } from 'lucide-react';
-import { enlaceSeguro, imagenSegura, videoInsertable, type Bloque, type Contenido, type Fuente, type Seccion, type Visual } from '@/lib/embudos/tipos';
+import { enlaceSeguro, imagenSegura, videoInsertable, type AccionBoton, type Bloque, type Contenido, type Fuente, type Seccion, type Visual } from '@/lib/embudos/tipos';
 import { conAlfa, esOscuro, mezclar, textoSobre } from '@/lib/embudos/color';
 import { FormularioPublico } from './FormularioPublico';
 import { CuentaAtras } from './CuentaAtras';
@@ -14,6 +14,8 @@ export interface ContextoPagina {
   pasoId: string;
   siguiente: string | null; // URL del paso siguiente (o null)
   vistaPrevia?: boolean; // en el editor: formularios y enlaces no navegan
+  base?: string; // dirección del sitio (/f/<slug>) para los enlaces entre páginas
+  primera?: string; // ruta de la primera página (va a la raíz del sitio)
 }
 
 // --- Tipografía ------------------------------------------------------------------
@@ -68,8 +70,13 @@ const Icono = ({ nombre, className, style }: { nombre: string; className?: strin
   return <I className={className} style={style} aria-hidden />;
 };
 
-function destino(accion: 'siguiente' | 'url' | 'ancla', url: string, ctx: ContextoPagina): string | undefined {
+export function destino(accion: AccionBoton, url: string, ctx: ContextoPagina): string | undefined {
   if (accion === 'siguiente') return ctx.siguiente ?? undefined;
+  if (accion === 'pagina') {
+    const r = url.trim().replace(/^\//, '');
+    if (!ctx.base || !/^[a-z0-9-]{1,60}$/.test(r)) return undefined;
+    return r === ctx.primera ? ctx.base : `${ctx.base}/${r}`;
+  }
   return enlaceSeguro(url) ?? undefined;
 }
 
@@ -81,7 +88,7 @@ function Destacado({ texto, t }: { texto: string; t: Tema }) {
     : p)}</>;
 }
 
-function Boton({ texto, accion, url, ctx, t, variante = 'primario', grande }: { texto: string; accion: 'siguiente' | 'url' | 'ancla'; url: string; ctx: ContextoPagina; t: Tema; variante?: 'primario' | 'secundario' | 'claro'; grande?: boolean }) {
+function Boton({ texto, accion, url, ctx, t, variante = 'primario', grande }: { texto: string; accion: AccionBoton; url: string; ctx: ContextoPagina; t: Tema; variante?: 'primario' | 'secundario' | 'claro'; grande?: boolean }) {
   if (!texto) return null;
   const href = destino(accion, url, ctx);
   const tk = tinta(t);
@@ -433,7 +440,7 @@ export function BloqueVista({ b, ctx, color, tema }: { b: Bloque; ctx: ContextoP
   }
 }
 
-function Plan({ p, accion, url, ctx, t }: { p: { nombre: string; precio: string; periodo: string; descripcion: string; caracteristicas: string[]; boton: string; destacado: boolean }; accion: 'siguiente' | 'url' | 'ancla'; url: string; ctx: ContextoPagina; t: Tema }) {
+function Plan({ p, accion, url, ctx, t }: { p: { nombre: string; precio: string; periodo: string; descripcion: string; caracteristicas: string[]; boton: string; destacado: boolean }; accion: AccionBoton; url: string; ctx: ContextoPagina; t: Tema }) {
   const r = rTarjeta(t);
   const oscuroPlan = p.destacado;
   const fuerte = oscuroPlan ? '#ffffff' : '#0b1220';

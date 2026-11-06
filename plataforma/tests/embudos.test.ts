@@ -47,3 +47,19 @@ test('slugs y contraste', () => {
   assert.equal(textoSobre('#ffffff'), '#101828');
   assert.equal(textoSobre('#0b1f4d'), '#ffffff');
 });
+
+test('todas las plantillas de sitio cumplen el esquema y enlazan a páginas que existen', async () => {
+  const { PLANTILLAS_SITIO } = await import('../lib/embudos/sitios.ts');
+  for (const p of PLANTILLAS_SITIO) {
+    const paginas = p.paginas();
+    const rutas = new Set(paginas.map((x) => x.ruta));
+    assert.equal(rutas.size, paginas.length, `${p.id}: rutas repetidas`);
+    if (p.config.menu_cta_ruta) assert.ok(rutas.has(p.config.menu_cta_ruta), `${p.id}: el botón del menú lleva a una página que no existe`);
+    for (const x of paginas) {
+      const v = esquemaContenido.safeParse(x.contenido);
+      assert.ok(v.success, `${p.id}/${x.ruta}: ${v.success ? '' : JSON.stringify(v.error.issues[0])}`);
+      // Todo botón «Ir a otra página» apunta a una ruta del sitio.
+      for (const m of JSON.stringify(x.contenido).matchAll(/"(?:boton_|boton2_)?accion":"pagina","(?:boton_|boton2_)?url":"([^"]*)"/g)) assert.ok(rutas.has(m[1]), `${p.id}/${x.ruta}: enlace a «${m[1]}»`);
+    }
+  }
+});

@@ -15,33 +15,33 @@ export const pagina = (o: { color: string; acento: string; fuente?: Fuente; radi
   ({ estilo: { color_primario: o.color, color_acento: o.acento, fondo: o.fondo ?? '#ffffff', fuente: o.fuente ?? 'geometrica', radio: o.radio ?? 'suave' }, secciones });
 
 // --- Constructores de bloques ----------------------------------------------------
-const titulo = (texto: string, nivel: 1 | 2 | 3 = 2) => b({ tipo: 'titulo', texto, nivel, alineacion: 'centro' });
-const texto = (t: string, tamano: 'normal' | 'grande' = 'normal') => b({ tipo: 'texto', texto: t, alineacion: 'centro', tamano });
-const boton = (t: string, accion: AccionBoton = 'siguiente', url = '') => b({ tipo: 'boton', texto: t, accion, url, alineacion: 'centro', tamano: 'grande' });
-const campos = (...c: [string, string, CampoFormulario['tipo'], boolean][]): CampoFormulario[] => c.map(([clave, etiqueta, tipo, obligatorio]) => ({ clave, etiqueta, tipo, obligatorio }));
-const CAMPOS_BASE = campos(['nombre', 'Nombre', 'texto', true], ['email', 'Correo electrónico', 'email', true]);
-const form = (botonTxt: string, etiquetas: string[], cs = CAMPOS_BASE, despues: 'siguiente' | 'mensaje' = 'siguiente', mensaje = '¡Gracias! Te escribimos en breve.') =>
+export const titulo = (texto: string, nivel: 1 | 2 | 3 = 2) => b({ tipo: 'titulo', texto, nivel, alineacion: 'centro' });
+export const texto = (t: string, tamano: 'normal' | 'grande' = 'normal') => b({ tipo: 'texto', texto: t, alineacion: 'centro', tamano });
+export const boton = (t: string, accion: AccionBoton = 'siguiente', url = '') => b({ tipo: 'boton', texto: t, accion, url, alineacion: 'centro', tamano: 'grande' });
+export const campos = (...c: [string, string, CampoFormulario['tipo'], boolean][]): CampoFormulario[] => c.map(([clave, etiqueta, tipo, obligatorio]) => ({ clave, etiqueta, tipo, obligatorio }));
+export const CAMPOS_BASE = campos(['nombre', 'Nombre', 'texto', true], ['email', 'Correo electrónico', 'email', true]);
+export const form = (botonTxt: string, etiquetas: string[], cs = CAMPOS_BASE, despues: 'siguiente' | 'mensaje' = 'siguiente', mensaje = '¡Gracias! Te escribimos en breve.') =>
   b({ tipo: 'formulario', campos: cs, boton: botonTxt, etiquetas, despues, url: '', mensaje, aviso_legal: 'Al enviar aceptas nuestra política de privacidad. Cero spam.' });
-const hero = (o: { etiqueta?: string; titulo: string; subtitulo: string; boton: string; accion?: AccionBoton; url?: string; boton2?: string; accion2?: AccionBoton; url2?: string; prueba?: string; visual?: Visual; centro?: boolean }) =>
+export const hero = (o: { etiqueta?: string; titulo: string; subtitulo: string; boton: string; accion?: AccionBoton; url?: string; boton2?: string; accion2?: AccionBoton; url2?: string; prueba?: string; visual?: Visual; centro?: boolean }) =>
   b({ tipo: 'hero', etiqueta: o.etiqueta ?? '', titulo: o.titulo, subtitulo: o.subtitulo, prueba: o.prueba ?? '', disposicion: o.centro ? 'centro' : 'dividido', visual: o.visual ?? 'tarjetas', imagen: '',
     boton_texto: o.boton, boton_accion: o.accion ?? 'ancla', boton_url: o.url ?? '#formulario', boton2_texto: o.boton2 ?? '', boton2_accion: o.accion2 ?? 'ancla', boton2_url: o.url2 ?? '' });
-const ventajas = (tituloTxt: string, subtitulo: string, items: [string, string, string][], columnas: 2 | 3 | 4 = 3, estilo: 'tarjetas' | 'simple' = 'tarjetas') =>
+export const ventajas = (tituloTxt: string, subtitulo: string, items: [string, string, string][], columnas: 2 | 3 | 4 = 3, estilo: 'tarjetas' | 'simple' = 'tarjetas') =>
   b({ tipo: 'caracteristicas', titulo: tituloTxt, subtitulo, columnas, estilo, items: items.map(([icono, t, x]) => ({ icono, titulo: t, texto: x })) });
-const bloqueIT = (o: { etiqueta: string; titulo: string; texto: string; puntos?: string[]; visual?: Visual; invertir?: boolean; boton?: string; accion?: AccionBoton; url?: string }) =>
+export const bloqueIT = (o: { etiqueta: string; titulo: string; texto: string; puntos?: string[]; visual?: Visual; invertir?: boolean; boton?: string; accion?: AccionBoton; url?: string }) =>
   b({ tipo: 'imagen_texto', etiqueta: o.etiqueta, titulo: o.titulo, texto: o.texto, puntos: o.puntos ?? [], visual: o.visual ?? 'panel', imagen: '', invertir: o.invertir ?? false,
     boton_texto: o.boton ?? '', boton_accion: o.accion ?? 'ancla', boton_url: o.url ?? '#formulario' });
-const cifras = (items: [string, string][]) => b({ tipo: 'cifras', items: items.map(([valor, etiqueta]) => ({ valor, etiqueta })) });
-const opiniones = (tituloTxt: string, items: [string, string, string][]) =>
+export const cifras = (items: [string, string][]) => b({ tipo: 'cifras', items: items.map(([valor, etiqueta]) => ({ valor, etiqueta })) });
+export const opiniones = (tituloTxt: string, items: [string, string, string][]) =>
   b({ tipo: 'testimonios', titulo: tituloTxt, items: items.map(([cita, autor, cargo]) => ({ cita, autor, cargo, foto: '', estrellas: 5 })) });
-const faq = (tituloTxt: string, items: [string, string][]) => b({ tipo: 'preguntas', titulo: tituloTxt, items: items.map(([pregunta, respuesta]) => ({ pregunta, respuesta })) });
-const logos = (tituloTxt: string, items: string[]) => b({ tipo: 'logos', titulo: tituloTxt, items });
-const llamada = (t: string, x: string, botonTxt: string, accion: AccionBoton = 'ancla', url = '#formulario') =>
+export const faq = (tituloTxt: string, items: [string, string][]) => b({ tipo: 'preguntas', titulo: tituloTxt, items: items.map(([pregunta, respuesta]) => ({ pregunta, respuesta })) });
+export const logos = (tituloTxt: string, items: string[]) => b({ tipo: 'logos', titulo: tituloTxt, items });
+export const llamada = (t: string, x: string, botonTxt: string, accion: AccionBoton = 'ancla', url = '#formulario') =>
   b({ tipo: 'llamada', titulo: t, texto: x, estilo: 'tarjeta', boton_texto: botonTxt, boton_accion: accion, boton_url: url });
-const pasos = (tituloTxt: string, items: [string, string][]) => b({ tipo: 'pasos', titulo: tituloTxt, items: items.map(([t, x]) => ({ titulo: t, texto: x })) });
-const planes = (tituloTxt: string, subtitulo: string, items: { nombre: string; precio: string; periodo?: string; descripcion?: string; caracteristicas: string[]; boton: string; destacado?: boolean }[], accion: AccionBoton = 'siguiente', url = '') =>
+export const pasos = (tituloTxt: string, items: [string, string][]) => b({ tipo: 'pasos', titulo: tituloTxt, items: items.map(([t, x]) => ({ titulo: t, texto: x })) });
+export const planes = (tituloTxt: string, subtitulo: string, items: { nombre: string; precio: string; periodo?: string; descripcion?: string; caracteristicas: string[]; boton: string; destacado?: boolean }[], accion: AccionBoton = 'siguiente', url = '') =>
   b({ tipo: 'planes', titulo: tituloTxt, subtitulo, accion, url, items: items.map((p) => ({ periodo: '', descripcion: '', destacado: false, ...p })) });
 const enUnaSemana = () => new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 16);
-const espacio = (alto = 8) => b({ tipo: 'separador', estilo: 'espacio', alto });
+export const espacio = (alto = 8) => b({ tipo: 'separador', estilo: 'espacio', alto });
 
 // Página de «gracias» común con próximos pasos.
 const gracias = (color: string, acento: string, fuente: Fuente, t: string, sub: string, items: [string, string][], extra: Bloque[] = []) => pagina({ color, acento, fuente }, [
