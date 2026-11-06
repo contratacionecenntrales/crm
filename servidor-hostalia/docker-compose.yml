@@ -1,0 +1,190 @@
+# Metatok en un VPS (Hostalia u otro): base de datos y servicios de Supabase
+# en tu propio servidor, la plataforma y HTTPS automático.
+# No se edita: todo se configura en el archivo .env (lo crea instalar.sh).
+name: metatok
+
+x-reinicio: &reinicio
+  restart: unless-stopped
+  logging: { driver: json-file, options: { max-size: "10m", max-file: "5" } }
+
+services:
+  db:
+    <<: *reinicio
+    image: supabase/postgres:15.8.1.060
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - ./db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
+      - ./db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+      - datos-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  auth:
+    <<: *reinicio
+    image: supabase/gotrue:v2.170.0
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${URL_PUBLICA}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${URL_PUBLICA}
+      GOTRUE_URI_ALLOW_LIST: ${URL_PUBLICA}/**
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: ${CORREO_AUTOCONFIRMAR:-false}
+      GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      GOTRUE_MAILER_SUBJECTS_INVITE: "Te han invitado a la plataforma"
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: "Restablece tu contraseña"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Confirma tu correo"
+      GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: "Confirma tu nuevo correo"
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USUARIO:-}
+      GOTRUE_SMTP_PASS: ${SMTP_CLAVE:-}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_REMITENTE:-}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_NOMBRE:-Metatok}
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 60
+      GOTRUE_SAML_ENABLED: "true"
+      GOTRUE_SAML_PRIVATE_KEY: ${SAML_CLAVE_PRIVADA}
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ACTIVO:-false}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENTE_ID:-}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_SECRETO:-}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${URL_PUBLICA}/auth/v1/callback
+      GOTRUE_EXTERNAL_AZURE_ENABLED: ${MICROSOFT_ACTIVO:-false}
+      GOTRUE_EXTERNAL_AZURE_CLIENT_ID: ${MICROSOFT_CLIENTE_ID:-}
+      GOTRUE_EXTERNAL_AZURE_SECRET: ${MICROSOFT_SECRETO:-}
+      GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${URL_PUBLICA}/auth/v1/callback
+
+  rest:
+    <<: *reinicio
+    image: postgrest/postgrest:v12.2.3
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+
+  storage:
+    <<: *reinicio
+    image: supabase/storage-api:v1.19.3
+    depends_on: { db: { condition: service_healthy }, rest: { condition: service_started } }
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      DB_INSTALL_ROLES: "false"
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      STORAGE_FILE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: stub
+      IMAGE_TRANSFORMATION_ENABLED: "false"
+    volumes:
+      - datos-archivos:/var/lib/storage
+
+  realtime:
+    <<: *reinicio
+    image: supabase/realtime:v2.153.3
+    # El nombre del servidor decide el «inquilino» de Realtime (realtime-dev).
+    hostname: realtime-dev.supabase-realtime
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET}
+      METRICS_JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${REALTIME_SECRETO}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+
+  app:
+    <<: *reinicio
+    build:
+      context: ../plataforma
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${URL_PUBLICA}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+        NEXT_PUBLIC_SITE_URL: ${URL_PUBLICA}
+    image: metatok-plataforma
+    depends_on: [auth, rest, storage]
+    # El servidor llama a su propio dominio: que llegue directo a Caddy.
+    extra_hosts: ["${DOMINIO}:host-gateway"]
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${URL_PUBLICA}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+      NEXT_PUBLIC_SITE_URL: ${URL_PUBLICA}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      CRON_SECRET: ${CRON_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      IA_PROVEEDOR_PAGINAS: ${IA_PROVEEDOR_PAGINAS:-claude}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+
+  # Tareas programadas (recordatorios, colas de IA, campañas, automatizaciones): cada minuto.
+  cron:
+    <<: *reinicio
+    image: node:22-alpine
+    depends_on: [app]
+    environment: { CRON_SECRET: "${CRON_SECRET}" }
+    command: ["sh", "-c", "while true; do wget -q -O /dev/null -T 280 --header \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/recordatorios || echo \"$$(date) cron sin respuesta\"; sleep 60; done"]
+
+  caddy:
+    <<: *reinicio
+    image: caddy:2.10-alpine
+    depends_on: [app, auth, rest, storage, realtime]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITIO: ${SITIO}
+      CORREO_AVISOS: ${CORREO_AVISOS:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - datos-caddy:/data
+      - config-caddy:/config
+
+volumes:
+  datos-db:
+  datos-archivos:
+  datos-caddy:
+  config-caddy:

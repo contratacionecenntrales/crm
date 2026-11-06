@@ -12,6 +12,15 @@ import { estilosBoton, estiloInput } from '@/components/ui/clases';
 import { CUPO_MEDIOS, MAX_ARCHIVO, TIPOS_MEDIOS, carpetaValida, tamanoLegible, type Medio } from '@/lib/medios';
 import type { Resultado } from '@/lib/tipos';
 
+// UUID v4 también fuera de HTTPS (crypto.randomUUID solo existe en contextos seguros).
+function uuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 interface Subida { id: string; nombre: string; estado: 'subiendo' | 'ok' | 'error'; error?: string }
 
 const icono = (tipo: string) => tipo.startsWith('image/') ? ImageIcon : tipo.startsWith('video/') ? Film : tipo.startsWith('audio/') ? Music
@@ -46,7 +55,7 @@ export function GestorMedios({ subId, medios, usado }: { subId: string; medios: 
     const supabase = crearClienteNavegador();
     const destino = carpeta ?? '';
     for (const f of Array.from(archivos)) {
-      const id = crypto.randomUUID();
+      const id = uuid();
       const poner = (x: Partial<Subida>) => setSubidas((l) => l.map((s) => (s.id === id ? { ...s, ...x } : s)));
       setSubidas((l) => [{ id, nombre: f.name, estado: 'subiendo' as const }, ...l].slice(0, 20));
       const ext = TIPOS_MEDIOS[f.type];

@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Servidor autónomo (node server.js) para la imagen Docker del VPS.
+  output: 'standalone',
   async headers() {
     return [
       {

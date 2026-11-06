@@ -1,0 +1,36 @@
+# Un solo dominio: Caddy saca y renueva el certificado HTTPS (Let's Encrypt)
+# y reparte las peticiones entre la plataforma y los servicios de Supabase.
+{
+	email {$CORREO_AVISOS}
+}
+
+{$SITIO} {
+	encode zstd gzip
+	request_body {
+		max_size 60MB
+	}
+
+	handle_path /auth/v1/* {
+		reverse_proxy auth:9999
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+	handle_path /storage/v1/* {
+		reverse_proxy storage:5000
+	}
+	handle_path /realtime/v1/* {
+		rewrite * /socket{uri}
+		reverse_proxy realtime:4000 {
+			header_up Host realtime-dev.supabase-realtime
+		}
+	}
+	handle {
+		reverse_proxy app:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+}
