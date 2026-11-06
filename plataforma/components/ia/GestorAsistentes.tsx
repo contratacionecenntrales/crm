@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { AlertTriangle, Bot, FileUp, Lock, Plus, RotateCcw, Send, Trash2, UserRound } from 'lucide-react';
+import { AlertTriangle, Bot, Copy, FileUp, Lock, Phone, PhoneForwarded, Plus, RotateCcw, Send, Trash2, UserRound } from 'lucide-react';
 import { borrarAsistente, guardarAsistente, probarAsistente, type DatosAsistente } from '@/app/subcuenta/[id]/ia/acciones';
 import { Aviso } from '@/components/ui/Aviso';
 import { Insignia } from '@/components/ui/Insignia';
@@ -11,13 +11,14 @@ import { fecha } from '@/lib/formato';
 import type { Resultado } from '@/lib/tipos';
 
 export interface FilaAsistente extends DatosAsistente { id: string; actualizado: string }
+export interface FilaLlamada { id: string; de: string; estado: string; motivo: string; creado: string; terminado: string | null; conversacion_id: string | null; contacto: { nombre: string; apellidos: string } | null }
 type Canal = DatosAsistente['canales'][number];
-const CANALES: [Canal, string][] = [['chat', 'Chat web'], ['whatsapp', 'WhatsApp'], ['sms', 'SMS'], ['email', 'Correo']];
-const VACIO: DatosAsistente = { nombre: 'Asistente', instrucciones: PLANTILLAS_ASISTENTE[0].instrucciones, conocimiento: '', canales: ['chat'], activo: false, max_respuestas: 30, traspaso_palabras: ['persona', 'humano', 'queja'], mensaje_traspaso: 'Te paso con una persona del equipo, en breve te contesta.' };
+const CANALES: [Canal, string][] = [['chat', 'Chat web'], ['whatsapp', 'WhatsApp'], ['sms', 'SMS'], ['email', 'Correo'], ['voz', 'Llamadas (voz)']];
+const VACIO: DatosAsistente = { nombre: 'Asistente', instrucciones: PLANTILLAS_ASISTENTE[0].instrucciones, conocimiento: '', canales: ['chat'], activo: false, max_respuestas: 30, traspaso_palabras: ['persona', 'humano', 'queja'], mensaje_traspaso: 'Te paso con una persona del equipo, en breve te contesta.', saludo_voz: '', desvio_voz: '' };
 
-export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, configurada, uso, actividad }: {
+export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, configurada, uso, actividad, urlVoz, llamadas }: {
   subId: string; asistentes: FilaAsistente[]; soyAdmin: boolean; planIncluye: boolean; configurada: boolean;
-  uso: { hoy: number; mes: number; tokens: number }; actividad: { estado: string; detalle: string; creado: string }[];
+  uso: { hoy: number; mes: number; tokens: number }; actividad: { estado: string; detalle: string; creado: string }[]; urlVoz: string; llamadas: FilaLlamada[];
 }) {
   const router = useRouter();
   const [elegido, setElegido] = useState<string | 'nuevo' | null>(asistentes[0]?.id ?? null);
@@ -28,7 +29,7 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
   useEffect(() => {
     if (elegido === 'nuevo' || elegido === null) return;
     const a = asistentes.find((x) => x.id === elegido);
-    if (a) setF({ nombre: a.nombre, instrucciones: a.instrucciones, conocimiento: a.conocimiento, canales: a.canales, activo: a.activo, max_respuestas: a.max_respuestas, traspaso_palabras: a.traspaso_palabras, mensaje_traspaso: a.mensaje_traspaso });
+    if (a) setF({ nombre: a.nombre, instrucciones: a.instrucciones, conocimiento: a.conocimiento, canales: a.canales, activo: a.activo, max_respuestas: a.max_respuestas, traspaso_palabras: a.traspaso_palabras, mensaje_traspaso: a.mensaje_traspaso, saludo_voz: a.saludo_voz ?? '', desvio_voz: a.desvio_voz ?? '' });
   }, [elegido, asistentes]);
 
   if (!planIncluye) return (
@@ -51,7 +52,7 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-texto">Asistentes IA</h1>
-          <p className="text-xs text-tenue">Contestan solos en Conversaciones (chat web, WhatsApp, SMS y correo) con tus instrucciones y tu información. Cuando una persona responde, el asistente se pausa en esa conversación.</p>
+          <p className="text-xs text-tenue">Contestan solos en Conversaciones (chat web, WhatsApp, SMS y correo) y atienden llamadas por voz con tus instrucciones y tu información. Cuando una persona responde, el asistente se pausa en esa conversación.</p>
         </div>
         {soyAdmin && <button onClick={() => { setElegido('nuevo'); setF(VACIO); setAviso(null); }} className={estilosBoton.primario}><Plus className="size-4" /> Nuevo asistente</button>}
       </div>
@@ -90,8 +91,9 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
                     </label>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-tenue">Solo puede haber un asistente activo por canal. SMS y WhatsApp usan la Integración telefónica; el correo, los Servicios de correo.</p>
+                <p className="mt-1 text-xs text-tenue">Solo puede haber un asistente activo por canal. SMS, WhatsApp y llamadas usan la Integración telefónica; el correo, los Servicios de correo.</p>
               </div>
+              {f.canales.includes('voz') && <PanelVoz f={f} set={set} urlVoz={urlVoz} />}
               <div className="block"><span className="mb-1 flex items-center justify-between text-sm font-medium">Instrucciones
                 <select aria-label="Usar plantilla" value="" onChange={(e) => { const p = PLANTILLAS_ASISTENTE.find((x) => x.id === e.target.value); if (p) { set('instrucciones', p.instrucciones); set('canales', [...p.canales]); } }}
                   className="max-w-[55%] rounded border border-borde-fuerte bg-superficie px-1.5 py-0.5 text-xs font-normal">
@@ -135,6 +137,7 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
 
         <div className="space-y-4">
           {elegido !== null && <ChatPrueba subId={subId} datos={f} key={String(elegido)} />}
+          {llamadas.length > 0 && <UltimasLlamadas subId={subId} llamadas={llamadas} />}
           <div className="rounded-lg border border-borde bg-superficie p-3">
             <h2 className="mb-2 text-sm font-semibold text-texto">Actividad reciente</h2>
             {actividad.length === 0 ? <p className="text-xs text-tenue">Todavía no ha contestado a nadie.</p> : (
@@ -148,6 +151,58 @@ export function GestorAsistentes({ subId, asistentes, soyAdmin, planIncluye, con
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Ajustes del canal de voz: saludo, desvío y URL para Twilio.
+function PanelVoz({ f, set, urlVoz }: { f: DatosAsistente; set: <K extends keyof DatosAsistente>(k: K, v: DatosAsistente[K]) => void; urlVoz: string }) {
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <div className="space-y-3 rounded-md border border-borde bg-superficie-2 p-3">
+      <p className="flex items-center gap-2 text-sm font-medium text-texto"><Phone className="size-4 text-primario" /> Llamadas de teléfono</p>
+      <div>
+        <span className="mb-1 block text-xs text-texto-2">En Twilio, en tu número → «A call comes in» → Webhook (POST), pega esta URL:</span>
+        <div className="flex gap-2">
+          <input readOnly value={urlVoz} aria-label="URL de voz para Twilio" className={`${estiloInput} font-mono text-xs`} onFocus={(e) => e.currentTarget.select()} />
+          <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(urlVoz); setCopiado(true); setTimeout(() => setCopiado(false), 1500); } catch { /* sin portapapeles */ } }}
+            className={estilosBoton.secundario}><Copy className="size-4" /> {copiado ? 'Copiada' : 'Copiar'}</button>
+        </div>
+      </div>
+      <label className="block"><span className="mb-1 block text-sm">Saludo al descolgar (opcional)</span>
+        <input value={f.saludo_voz} onChange={(e) => set('saludo_voz', e.target.value)} maxLength={500} placeholder="Hola, has llamado a … ¿En qué puedo ayudarte?" className={estiloInput} /></label>
+      <label className="block"><span className="mb-1 flex items-center gap-1.5 text-sm"><PhoneForwarded className="size-3.5" /> Desviar a una persona en el teléfono (opcional)</span>
+        <input value={f.desvio_voz} onChange={(e) => set('desvio_voz', e.target.value)} inputMode="tel" maxLength={20} placeholder="+34600111222" className={`${estiloInput} sm:w-56`} />
+        <span className="mt-1 block text-xs text-tenue">Si el cliente pide hablar con alguien, el asistente le pasa la llamada a este número. Si lo dejas vacío, se despide y avisa al equipo para devolver la llamada.</span></label>
+    </div>
+  );
+}
+
+const ESTADO_LLAMADA: Record<string, [string, 'verde' | 'gris' | 'rojo' | 'azul']> = {
+  en_curso: ['En curso', 'azul'], terminada: ['Atendida', 'verde'], desviada: ['Desviada', 'gris'], sin_respuesta: ['Sin respuesta', 'rojo'],
+};
+
+function UltimasLlamadas({ subId, llamadas }: { subId: string; llamadas: FilaLlamada[] }) {
+  return (
+    <div className="rounded-lg border border-borde bg-superficie p-3">
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-texto"><Phone className="size-4" /> Últimas llamadas</h2>
+      <ul className="space-y-1.5 text-xs">
+        {llamadas.map((l) => {
+          const [t, tono] = ESTADO_LLAMADA[l.estado] ?? [l.estado, 'gris'];
+          const quien = `${l.contacto?.nombre ?? ''} ${l.contacto?.apellidos ?? ''}`.trim() || l.de || 'Número oculto';
+          const dur = l.terminado ? Math.max(0, Math.round((Date.parse(l.terminado) - Date.parse(l.creado)) / 1000)) : null;
+          return (
+            <li key={l.id} className="flex items-center gap-2">
+              <Insignia tono={tono}>{t}</Insignia>
+              {l.conversacion_id
+                ? <a href={`/subcuenta/${subId}/conversaciones?c=${l.conversacion_id}`} className="min-w-0 flex-1 truncate text-primario-texto hover:underline" title={l.motivo || undefined}>{quien}</a>
+                : <span className="min-w-0 flex-1 truncate text-texto-2">{quien}</span>}
+              {dur !== null && <span className="shrink-0 text-tenue">{Math.floor(dur / 60)}:{String(dur % 60).padStart(2, '0')}</span>}
+              <span className="shrink-0 text-tenue">{fecha(l.creado)}</span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

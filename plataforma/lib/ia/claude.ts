@@ -43,7 +43,7 @@ const usoDe = (u: Anthropic.Beta.BetaUsage): Uso => ({
 // en el modelo que recomienda Anthropic («fallbacks: default»).
 async function pedirJson<T>(p: {
   sistemaFijo: string; sistemaVariable: string; mensajes: Anthropic.Beta.BetaMessageParam[];
-  esquema: z.ZodType<T>; esquemaJson: Record<string, unknown>; maxTokens: number;
+  esquema: z.ZodType<T>; esquemaJson: Record<string, unknown>; maxTokens: number; ms?: number;
 }): Promise<{ datos: T | null; rechazo: boolean; uso: Uso }> {
   let r: Anthropic.Beta.BetaMessage;
   try {
@@ -59,7 +59,7 @@ async function pedirJson<T>(p: {
         { type: 'text', text: p.sistemaVariable },
       ],
       messages: p.mensajes,
-    });
+    }, p.ms ? { timeout: p.ms, maxRetries: 0 } : undefined);
   } catch (e) {
     throw traducirError(e);
   }
@@ -79,7 +79,7 @@ async function pedirJson<T>(p: {
 // --- Respuesta de un asistente en una conversación -----------------------------
 export interface Asistente { nombre: string; instrucciones: string; conocimiento: string }
 export interface Turno { de: 'cliente' | 'negocio'; texto: string }
-export type Canal = 'chat' | 'sms' | 'whatsapp' | 'email';
+export type Canal = 'chat' | 'sms' | 'whatsapp' | 'email' | 'voz';
 
 const esquemaRespuesta = z.object({ respuesta: z.string().max(6000), pasar_a_humano: z.boolean(), motivo: z.string().max(300) });
 const JSON_RESPUESTA = {
@@ -96,6 +96,7 @@ const ESTILO_CANAL: Record<Canal, string> = {
   sms: 'SMS: muy breve (máximo unos 300 caracteres), sin Markdown ni emojis raros.',
   whatsapp: 'WhatsApp: breve y cercano; puedes usar algún emoji con moderación; sin Markdown salvo *negrita* puntual.',
   email: 'Correo: saludo, cuerpo claro y despedida con el nombre del negocio; texto plano sin Markdown.',
+  voz: 'Llamada de teléfono: tu respuesta se leerá en voz alta. Una o dos frases cortas y naturales, como hablaría una persona; sin listas, emojis, enlaces, Markdown ni abreviaturas. Escribe las cifras y horas como se dicen. Termina con una pregunta cuando tenga sentido para seguir la conversación.',
 };
 
 export function sistemaAsistente(a: Asistente, empresa: string): string {
@@ -131,7 +132,7 @@ export function mensajesDe(historial: Turno[]): Anthropic.Beta.BetaMessageParam[
 }
 
 export async function responderConversacion(p: {
-  asistente: Asistente; empresa: string; canal: Canal; contacto: string; zona: string; historial: Turno[];
+  asistente: Asistente; empresa: string; canal: Canal; contacto: string; zona: string; historial: Turno[]; ms?: number;
 }): Promise<{ respuesta: string; pasarAHumano: boolean; motivo: string; uso: Uso }> {
   const mensajes = mensajesDe(p.historial.slice(-30));
   if (!mensajes.length) throw new ErrorIA('No hay ningún mensaje del cliente que contestar.', false);
@@ -139,10 +140,10 @@ export async function responderConversacion(p: {
   const r = await pedirJson({
     sistemaFijo: sistemaAsistente(p.asistente, p.empresa),
     sistemaVariable: `Canal: ${ESTILO_CANAL[p.canal]}\nNombre del cliente (si lo sabemos): ${p.contacto || 'desconocido'}\nFecha y hora del negocio: ${ahora}`,
-    mensajes, esquema: esquemaRespuesta, esquemaJson: JSON_RESPUESTA, maxTokens: 4000,
+    mensajes, esquema: esquemaRespuesta, esquemaJson: JSON_RESPUESTA, maxTokens: p.canal === 'voz' ? 1500 : 4000, ms: p.ms,
   });
   if (r.rechazo || !r.datos) return { respuesta: '', pasarAHumano: true, motivo: 'La IA no pudo contestar a este mensaje.', uso: r.uso };
-  const respuesta = r.datos.respuesta.trim().slice(0, p.canal === 'sms' ? 1500 : 5000);
+  const respuesta = r.datos.respuesta.trim().slice(0, p.canal === 'sms' ? 1500 : p.canal === 'voz' ? 800 : 5000);
   return { respuesta, pasarAHumano: r.datos.pasar_a_humano || !respuesta, motivo: r.datos.motivo.trim(), uso: r.uso };
 }
 
@@ -154,7 +155,7 @@ const JSON_REDACCION = {
 };
 
 export async function redactarMensaje(p: {
-  empresa: string; canal: Exclude<Canal, 'chat'>; instrucciones: string; contacto: Record<string, string>; contexto: Turno[];
+  empresa: string; canal: Exclude<Canal, 'chat' | 'voz'>; instrucciones: string; contacto: Record<string, string>; contexto: Turno[];
 }): Promise<{ asunto: string; mensaje: string; uso: Uso }> {
   const datos = Object.entries(p.contacto).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n');
   const conversacion = p.contexto.slice(-10).map((t) => `${t.de === 'cliente' ? 'Cliente' : 'Negocio'}: ${t.texto.slice(0, 1000)}`).join('\n');

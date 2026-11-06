@@ -16,11 +16,13 @@ const esquema = z.object({
   nombre: z.string().trim().min(1, 'Ponle un nombre').max(80),
   instrucciones: z.string().max(8000, 'Las instrucciones son demasiado largas (máximo 8000 caracteres).'),
   conocimiento: z.string().max(60000, 'La base de conocimiento es demasiado larga (máximo 60 000 caracteres).'),
-  canales: z.array(z.enum(['chat', 'sms', 'whatsapp', 'email'])).max(4),
+  canales: z.array(z.enum(['chat', 'sms', 'whatsapp', 'email', 'voz'])).max(5),
   activo: z.boolean(),
   max_respuestas: z.number().int().min(1).max(200),
   traspaso_palabras: z.array(z.string().trim().max(60)).max(30),
   mensaje_traspaso: z.string().max(500),
+  saludo_voz: z.string().max(500, 'El saludo es demasiado largo (máximo 500 caracteres).'),
+  desvio_voz: z.string().trim().transform((s) => s.replace(/[\s().-]/g, '')).refine((s) => s === '' || /^\+[0-9]{6,15}$/.test(s), 'El teléfono de desvío tiene que ir en formato internacional, p. ej. +34600111222.'),
 });
 export type DatosAsistente = z.infer<typeof esquema>;
 

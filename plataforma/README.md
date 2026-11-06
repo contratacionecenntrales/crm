@@ -79,6 +79,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 21. `NO-SUBIR-supabase/29-sitios.sql` — constructor de sitios web de varias páginas
 22. `NO-SUBIR-supabase/30-subagencias.sql` — subagencias (cada agencia puede crear y gestionar agencias propias)
 23. `NO-SUBIR-supabase/31-flujos.sql` — automatizaciones tipo n8n: webhook entrante, ramas si/si no, peticiones HTTP y variables
+24. `NO-SUBIR-supabase/32-voz.sql` — asistente de voz: la IA atiende las llamadas del número de Twilio, desvía a una persona y deja la transcripción
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -87,6 +88,13 @@ Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a
 - `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_SITE_URL` (con https) son **obligatorias**: el servidor lee con ellas las claves de Twilio/Mailgun, que nadie del equipo puede leer.
 - Cada subcuenta conecta su cuenta en **Configuración → Integración telefónica** (Twilio) y **Servicios de correo** (Mailgun o SMTP). Allí aparece la URL del webhook que hay que pegar en Twilio y en la «Route» de Mailgun para recibir respuestas.
 - Los webhooks comprueban la firma de Twilio (`X-Twilio-Signature`) y de Mailgun; las peticiones falsas se rechazan.
+
+### Asistente de voz (llamadas)
+
+- En **Asistentes IA**, marca el canal «Llamadas (voz)» en un asistente. Aparece la URL que hay que pegar en Twilio: número → *A call comes in* → Webhook (POST) → `<web>/api/voz/<id de la subcuenta>`.
+- Opcional: pega la misma URL como *Call status changes* para cerrar las llamadas que cuelga el cliente.
+- Twilio convierte la voz en texto y lee las respuestas (voz `Polly.Lucia-Neural`, español de España). Si el cliente pide una persona, la llamada se desvía al teléfono configurado; si no hay, el asistente se despide y avisa al equipo.
+- Cada turno gasta una respuesta del cupo diario de IA. La transcripción queda como comentario interno en la conversación del contacto.
 
 ### Inicio de sesión único (SSO): verificar el dominio
 
