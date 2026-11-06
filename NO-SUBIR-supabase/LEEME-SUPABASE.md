@@ -40,6 +40,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 28 | `28-informes.sql` | Informes: cifras del periodo (contactos, oportunidades, citas, facturación, conversaciones, embudos, marketing, reseñas, IA). Requiere el 27 |
 | 29 | `29-sitios.sql` | Sitios web: tipo «sitio» con menú, pie, marca, contacto y redes; la página pública devuelve el menú. Requiere el 28 |
 | 30 | `30-subagencias.sql` | Subagencias (reventa): agencias que cuelgan de otra, hasta 3 niveles; la madre suspende, limita subcuentas y puede conservar acceso de soporte. La suspensión baja en cascada. Requiere el 29 |
+| 31 | `31-flujos.sql` | Automatizaciones avanzadas: disparador «Webhook entrante» con URL secreta por flujo (las ramas, peticiones HTTP y variables viven en los pasos). Requiere el 30 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

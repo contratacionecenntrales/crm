@@ -78,6 +78,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 20. `NO-SUBIR-supabase/28-informes.sql` — panel de informes por periodo
 21. `NO-SUBIR-supabase/29-sitios.sql` — constructor de sitios web de varias páginas
 22. `NO-SUBIR-supabase/30-subagencias.sql` — subagencias (cada agencia puede crear y gestionar agencias propias)
+23. `NO-SUBIR-supabase/31-flujos.sql` — automatizaciones tipo n8n: webhook entrante, ramas si/si no, peticiones HTTP y variables
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 

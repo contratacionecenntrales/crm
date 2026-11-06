@@ -84,7 +84,7 @@ export async function guardarFlujo(subId: string, flujoId: string, d: {
     if (d.activo && pasos.data.length === 0) return { ok: false, error: 'Añade al menos un paso antes de publicar.' };
     // Filtro: solo claves conocidas y de texto/booleano.
     const filtro: Record<string, string | boolean> = {};
-    for (const k of ['etiqueta', 'calendario_id', 'estado', 'canal', 'palabra', 'embudo_id', 'etapa_id', 'solo_online', 'embudo_web_id']) {
+    for (const k of ['etiqueta', 'calendario_id', 'estado', 'canal', 'palabra', 'embudo_id', 'etapa_id', 'solo_online', 'embudo_web_id', 'campo_email', 'campo_telefono', 'campo_nombre']) {
       const v = d.filtro[k];
       if (typeof v === 'boolean') filtro[k] = v;
       else if (typeof v === 'string' && v.trim()) filtro[k] = v.trim().slice(0, 200);
@@ -178,4 +178,16 @@ export async function pararEjecucion(subId: string, ejecId: string): Promise<Res
   } catch (e) {
     return { ok: false, error: (e as Error).message || 'No se pudo completar la operación.' };
   }
+}
+
+// URL secreta del disparador «Webhook entrante» (la crea si no existe).
+export async function urlWebhook(subId: string, flujoId: string, renovar = false): Promise<Resultado & { url?: string }> {
+  try {
+    validar(flujoId);
+    const supabase = await contexto(subId);
+    const { data, error } = await supabase.rpc('aut_webhook_token', { p_flujo: flujoId, p_renovar: renovar });
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    const { siteUrl } = await import('@/lib/env');
+    return { ok: true, url: `${siteUrl()}/api/hooks/${data as string}`, ...(renovar ? { mensaje: 'URL renovada: la anterior deja de funcionar.' } : {}) };
+  } catch (e) { return { ok: false, error: (e as Error).message }; }
 }

@@ -45,3 +45,44 @@ test('las campañas automáticas preconstruidas son flujos válidos', async () =
     if (p.canal === 'sms') assert.ok(p.cuerpo.length <= 400, `${p.id}: SMS demasiado largo`);
   }
 });
+
+test('las ramas se compilan a saltos y se evalúan bien', async () => {
+  const { compilar, evaluar, rellenar } = await import('../lib/automatizacion/programa.ts');
+  const prog = compilar([
+    { tipo: 'nota', texto: 'antes' },
+    { tipo: 'si', modo: 'todas', reglas: [{ campo: 'contacto.etiquetas', operador: 'contiene', valor: 'vip' }], si: [{ tipo: 'nota', texto: 'vip' }], no: [{ tipo: 'nota', texto: 'normal' }, { tipo: 'nota', texto: 'normal2' }] },
+    { tipo: 'nota', texto: 'despues' },
+  ]);
+  // Recorre el programa como el motor y devuelve las notas que se ejecutarían.
+  const correr = (etiquetas: string[]) => {
+    const notas: string[] = []; let i = 0;
+    while (i < prog.length) {
+      const x = prog[i];
+      if (x.tipo === '_ir') { i = x.a; continue; }
+      if (x.tipo === '_si') { i = evaluar(x.reglas, x.modo, () => etiquetas) ? i + 1 : x.saltar; continue; }
+      if (x.tipo === 'nota') notas.push(x.texto);
+      i++;
+    }
+    return notas.join(',');
+  };
+  assert.equal(correr(['vip']), 'antes,vip,despues');
+  assert.equal(correr(['otro']), 'antes,normal,normal2,despues');
+  assert.equal(evaluar([{ campo: 'x', operador: 'mayor', valor: '10,5' }], 'todas', () => '11'), true);
+  assert.equal(evaluar([{ campo: 'x', operador: 'vacio', valor: '' }, { campo: 'y', operador: 'igual', valor: 'A' }], 'alguna', (c) => (c === 'y' ? 'a' : 'algo')), true);
+  assert.equal(rellenar('{"n":"{{var.r.datos.nombre}}"}', () => 'Ana "la" Pérez', 'json'), '{"n":"Ana \\"la\\" Pérez"}');
+  assert.equal(rellenar('https://x.com/?q={{webhook.q}}', () => 'a b&c', 'url'), 'https://x.com/?q=a%20b%26c');
+});
+
+test('el árbol de pasos se edita por rutas', async () => {
+  const a = await import('../lib/automatizacion/arbol.ts');
+  let p = [{ tipo: 'nota', texto: 'a' }, { tipo: 'si', modo: 'todas', reglas: [{ campo: 'x', operador: 'vacio', valor: '' }], si: [], no: [] }] as never[];
+  p = a.insertar(p, '1.si', 0, { tipo: 'nota', texto: 'dentro' } as never) as never[];
+  p = a.insertar(p, '1.si', 1, { tipo: 'nota', texto: 'dentro2' } as never) as never[];
+  assert.equal((a.obtener(p, '1.si.1') as { texto: string }).texto, 'dentro2');
+  const m = a.mover(p, '1.si.1', -1);
+  assert.equal(m.nodo, '1.si.0');
+  assert.equal((a.obtener(m.pasos, '1.si.0') as { texto: string }).texto, 'dentro2');
+  const q = a.quitar(m.pasos, '1.si.0');
+  assert.equal(a.listaEn(q, '1.si')!.length, 1);
+  assert.equal((a.obtener(p, '0') as { texto: string }).texto, 'a'); // el original no cambia
+});

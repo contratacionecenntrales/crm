@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import {
   ArrowDown, ArrowLeft, ArrowUp, Bell, CheckSquare, Clock, FlaskConical, GitBranch, Globe, Loader2, Mail, MessageCircle, MessageSquare,
-  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap, Sparkles, Star,
+  Plus, Save, StickyNote, Tag, Tags, Target, Trash2, UserCheck, X, Zap, Sparkles, Star, Split, Cloud, Braces, UserCog, Copy, RefreshCw,
 } from 'lucide-react';
-import { guardarFlujo, pararEjecucion, probarFlujo } from '@/app/subcuenta/[id]/automatizacion/acciones';
+import { insertar as insertarEn, listaEn, mover as moverEn, obtener, profundidad, quitar as quitarEn, reemplazar, rutaNodo } from '@/lib/automatizacion/arbol';
+import { guardarFlujo, pararEjecucion, probarFlujo, urlWebhook } from '@/app/subcuenta/[id]/automatizacion/acciones';
 import { SelectorContacto } from '@/components/crm/SelectorContacto';
 import { useFueraDe } from '@/components/shell/useFueraDe';
 import { Interruptor } from '@/components/ajustes/Piezas';
@@ -14,7 +15,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Aviso } from '@/components/ui/Aviso';
 import { estiloArea, estiloInput, estilosBoton } from '@/components/ui/clases';
 import {
-  DISPARADORES, PASOS, VARIABLES, nombrePaso, pasoVacio, resumenPaso, type Disparador, type Paso, type TipoPaso,
+  DISPARADORES, OPERADORES, PASOS, VARIABLES, nombrePaso, pasoVacio, resumenPaso, type Disparador, type Paso, type PasoSi, type Regla, type TipoPaso,
 } from '@/lib/automatizacion/tipos';
 import { nombreContacto, type Embudo, type Usuario } from '@/lib/crm/tipos';
 import type { Resultado } from '@/lib/tipos';
@@ -31,6 +32,7 @@ const ICONO: Record<TipoPaso, typeof Mail> = {
   enviar_sms: MessageSquare, enviar_whatsapp: MessageCircle, enviar_email: Mail, anadir_etiqueta: Tag, quitar_etiqueta: Tags,
   asignar_propietario: UserCheck, crear_tarea: CheckSquare, crear_oportunidad: Target, nota: StickyNote, notificar: Bell,
   esperar: Clock, condicion: GitBranch, webhook: Globe, ia_mensaje: Sparkles, pedir_resena: Star,
+  si: Split, http: Cloud, variable: Braces, actualizar_contacto: UserCog,
 };
 const COLOR: Record<string, string> = { Comunicación: '#155eef', Contacto: '#7a5af8', Interno: '#f79009', Lógica: '#12b76a' };
 const grupoDe = (t: TipoPaso) => PASOS.find((p) => p.tipo === t)!.grupo;
@@ -52,8 +54,8 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
   const [filtro, setFiltro] = useState<Record<string, string | boolean>>(flujo.filtro ?? {});
   const [pasos, setPasos] = useState<Paso[]>(flujo.pasos ?? []);
   const [reentrada, setReentrada] = useState(flujo.permitir_reentrada);
-  const [sel, setSel] = useState<'disparador' | number | null>(null);
-  const [menuEn, setMenuEn] = useState<number | null>(null);
+  const [sel, setSel] = useState<'disparador' | string | null>(null);
+  const [menuEn, setMenuEn] = useState<string | null>(null);
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [cambios, setCambios] = useState(false);
   const [probar, setProbar] = useState(false);
@@ -66,18 +68,17 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
     setAviso(r);
     if (r.ok) { setCambios(false); setActivo(publicar); router.refresh(); }
   });
-  const insertar = (i: number, tipo: TipoPaso) => {
-    setPasos((l) => [...l.slice(0, i), pasoVacio(tipo), ...l.slice(i)]);
+  // Edición del árbol de pasos por rutas ('2', '2.si.0'…).
+  const insertar = (lista: string, i: number, tipo: TipoPaso) => {
+    setPasos((l) => insertarEn(l, lista, i, pasoVacio(tipo)));
     setMenuEn(null);
-    setSel(i);
+    setSel(rutaNodo(lista, i));
     marcar();
   };
-  const ponerPaso = (i: number, p: Paso) => { setPasos((l) => l.map((x, j) => (j === i ? p : x))); marcar(); };
-  const mover = (i: number, d: -1 | 1) => {
-    setPasos((l) => { const n = [...l]; [n[i], n[i + d]] = [n[i + d], n[i]]; return n; });
-    setSel(i + d);
-    marcar();
-  };
+  const ponerPaso = (nodo: string, p: Paso) => { setPasos((l) => reemplazar(l, nodo, p)); marcar(); };
+  const mover = (nodo: string, d: -1 | 1) => { const m = moverEn(pasos, nodo, d); setPasos(m.pasos); setSel(m.nodo); marcar(); };
+  const pasoSel = typeof sel === 'string' && sel !== 'disparador' ? obtener(pasos, sel) : null;
+  const lienzo = { sel, setSel, menuEn, setMenuEn, insertar, sinPermiso };
 
   return (
     <div className="flex h-[calc(100dvh-93px)] min-h-[520px] flex-col font-sans">
@@ -113,34 +114,16 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
         <div className="flex min-h-0 flex-1">
           {/* Lienzo */}
           <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(#d0d5dd_1px,transparent_1px)] [background-size:18px_18px] py-8">
-            <div className="mx-auto flex w-[380px] max-w-[calc(100%-2rem)] flex-col items-center">
+            <div className="mx-auto flex w-max min-w-[380px] max-w-none flex-col items-center px-4">
               <button type="button" onClick={() => setSel('disparador')}
-                className={`w-full rounded-lg border-2 bg-superficie text-left shadow-xs ${sel === 'disparador' ? 'border-primario' : 'border-transparent hover:border-[#b2ccff]'}`}>
+                className={`w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border-2 bg-superficie text-left shadow-xs ${sel === 'disparador' ? 'border-primario' : 'border-transparent hover:border-[#b2ccff]'}`}>
                 <div className="flex items-center gap-2 rounded-t-md bg-[#155eef] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white"><Zap className="size-3.5" /> Disparador del flujo de trabajo</div>
                 <div className="px-4 py-3">
                   <p className="font-medium text-texto">{DISPARADORES.find((d) => d.valor === disparador)?.texto}</p>
                   <p className="text-xs text-tenue">{resumenFiltro(disparador, filtro, opciones)}</p>
                 </div>
               </button>
-              {pasos.map((p, i) => {
-                const Icono = ICONO[p.tipo];
-                const color = COLOR[grupoDe(p.tipo)];
-                return (
-                  <div key={i} className="flex w-full flex-col items-center">
-                    <Conector abierto={menuEn === i} alAbrir={() => setMenuEn(menuEn === i ? null : i)} alElegir={(t) => insertar(i, t)} deshabilitado={sinPermiso} />
-                    <button type="button" onClick={() => setSel(i)}
-                      className={`flex w-full items-start gap-3 rounded-lg border-2 bg-superficie px-4 py-3 text-left shadow-xs ${sel === i ? 'border-primario' : 'border-transparent hover:border-[#b2ccff]'}`}>
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: color }}><Icono className="size-4" /></span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-texto">{nombrePaso(p.tipo)}</span>
-                        <span className="block truncate text-xs text-tenue">{resumenPaso(p)}</span>
-                      </span>
-                      <span className="text-xs text-tenue">{i + 1}</span>
-                    </button>
-                  </div>
-                );
-              })}
-              <Conector abierto={menuEn === pasos.length} alAbrir={() => setMenuEn(menuEn === pasos.length ? null : pasos.length)} alElegir={(t) => insertar(pasos.length, t)} deshabilitado={sinPermiso} />
+              <ListaPasos ruta="" lista={pasos} c={lienzo} />
               <span className="rounded-full bg-[#f2f4f7] dark:bg-superficie-2 px-4 py-1 text-xs font-medium text-[#475467] dark:text-texto-2">FIN</span>
             </div>
           </div>
@@ -149,22 +132,22 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
           {sel !== null && (
             <aside className="flex w-[400px] max-w-full shrink-0 flex-col border-l border-borde bg-superficie" aria-label="Configurar">
               <div className="flex items-center justify-between border-b border-borde px-4 py-3">
-                <h3 className="font-semibold text-texto">{sel === 'disparador' ? 'Disparador' : nombrePaso(pasos[sel].tipo)}</h3>
+                <h3 className="font-semibold text-texto">{sel === 'disparador' ? 'Disparador' : pasoSel ? nombrePaso(pasoSel.tipo) : ''}</h3>
                 <button type="button" onClick={() => setSel(null)} aria-label="Cerrar" className="rounded p-1 text-tenue hover:bg-superficie-2"><X className="size-4" /></button>
               </div>
               <fieldset disabled={sinPermiso} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
                 {sel === 'disparador' ? (
-                  <PanelDisparador disparador={disparador} filtro={filtro} opciones={opciones} reentrada={reentrada}
+                  <PanelDisparador subId={subId} flujoId={flujo.id} disparador={disparador} filtro={filtro} opciones={opciones} reentrada={reentrada}
                     alCambiar={(d, f) => { setDisparador(d); setFiltro(f); marcar(); }} alReentrada={(v) => { setReentrada(v); marcar(); }} />
-                ) : pasos[sel] ? (
-                  <PanelPaso p={pasos[sel]} opciones={opciones} alCambiar={(p) => ponerPaso(sel, p)} />
+                ) : pasoSel && typeof sel === 'string' ? (
+                  <PanelPaso p={pasoSel} opciones={opciones} alCambiar={(p) => ponerPaso(sel, p)} />
                 ) : null}
               </fieldset>
-              {typeof sel === 'number' && pasos[sel] && soyAdmin && (
+              {typeof sel === 'string' && pasoSel && soyAdmin && (
                 <div className="flex items-center gap-1 border-t border-borde px-4 py-3">
-                  <button type="button" disabled={sel === 0} onClick={() => mover(sel, -1)} aria-label="Subir" className="rounded p-1.5 text-tenue hover:bg-superficie-2 disabled:opacity-40"><ArrowUp className="size-4" /></button>
-                  <button type="button" disabled={sel === pasos.length - 1} onClick={() => mover(sel, 1)} aria-label="Bajar" className="rounded p-1.5 text-tenue hover:bg-superficie-2 disabled:opacity-40"><ArrowDown className="size-4" /></button>
-                  <button type="button" onClick={() => { setPasos((l) => l.filter((_, j) => j !== sel)); setSel(null); marcar(); }}
+                  <button type="button" onClick={() => mover(sel, -1)} aria-label="Subir" className="rounded p-1.5 text-tenue hover:bg-superficie-2 disabled:opacity-40"><ArrowUp className="size-4" /></button>
+                  <button type="button" onClick={() => mover(sel, 1)} aria-label="Bajar" className="rounded p-1.5 text-tenue hover:bg-superficie-2 disabled:opacity-40"><ArrowDown className="size-4" /></button>
+                  <button type="button" onClick={() => { if (pasoSel.tipo === 'si' && (pasoSel.si.length || pasoSel.no.length) && !confirm('Se quitarán también los pasos de sus ramas. ¿Seguir?')) return; setPasos((l) => quitarEn(l, sel)); setSel(null); marcar(); }}
                     className={`${estilosBoton.fantasma} ml-auto text-peligro`}><Trash2 className="size-4" /> Quitar paso</button>
                 </div>
               )}
@@ -180,7 +163,56 @@ export function Constructor({ subId, zona, flujo, ejecuciones, opciones, soyAdmi
   );
 }
 
-function Conector({ abierto, alAbrir, alElegir, deshabilitado }: { abierto: boolean; alAbrir: () => void; alElegir: (t: TipoPaso) => void; deshabilitado: boolean }) {
+interface Lienzo { sel: 'disparador' | string | null; setSel: (s: string) => void; menuEn: string | null; setMenuEn: (s: string | null) => void; insertar: (lista: string, i: number, t: TipoPaso) => void; sinPermiso: boolean }
+
+// Lista de pasos (raíz o rama). Un nodo «si» abre dos columnas: «sí» y «si no».
+function ListaPasos({ ruta, lista, c }: { ruta: string; lista: Paso[]; c: Lienzo }) {
+  const clave = (i: number) => `${ruta}#${i}`;
+  const nivel = profundidad(ruta);
+  const conector = (i: number) => (
+    <Conector abierto={c.menuEn === clave(i)} alAbrir={() => c.setMenuEn(c.menuEn === clave(i) ? null : clave(i))} alElegir={(t) => c.insertar(ruta, i, t)} deshabilitado={c.sinPermiso} sinRamas={nivel >= 3} />
+  );
+  return (
+    <>
+      {lista.map((p, i) => {
+        const nodo = rutaNodo(ruta, i);
+        const Icono = ICONO[p.tipo];
+        const color = COLOR[grupoDe(p.tipo)];
+        return (
+          <div key={nodo} className="flex flex-col items-center">
+            {conector(i)}
+            <button type="button" onClick={() => c.setSel(nodo)}
+              className={`flex w-[340px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-lg border-2 bg-superficie px-4 py-3 text-left shadow-xs ${c.sel === nodo ? 'border-primario' : 'border-transparent hover:border-[#b2ccff]'}`}>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: color }}><Icono className="size-4" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-texto">{nombrePaso(p.tipo)}</span>
+                <span className="block truncate text-xs text-tenue">{resumenPaso(p)}</span>
+              </span>
+            </button>
+            {p.tipo === 'si' && (
+              <div className="mt-0 flex flex-col items-center">
+                <span className="h-5 w-px bg-[#98a2b3]" />
+                <div className="flex items-start gap-6 border-t border-[#98a2b3] pt-0">
+                  {(['si', 'no'] as const).map((rama) => (
+                    <div key={rama} className="flex flex-col items-center">
+                      <span className={`mt-[-1px] rounded-b-md px-3 py-0.5 text-[11px] font-semibold text-white ${rama === 'si' ? 'bg-[#12b76a]' : 'bg-[#f04438]'}`}>{rama === 'si' ? 'SÍ' : 'SI NO'}</span>
+                      <ListaPasos ruta={`${nodo}.${rama}`} lista={(p as PasoSi)[rama]} c={c} />
+                      <span className="h-4 w-px bg-[#98a2b3]" />
+                    </div>
+                  ))}
+                </div>
+                <span className="h-px w-full" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {conector(lista.length)}
+    </>
+  );
+}
+
+function Conector({ abierto, alAbrir, alElegir, deshabilitado, sinRamas }: { abierto: boolean; alAbrir: () => void; alElegir: (t: TipoPaso) => void; deshabilitado: boolean; sinRamas?: boolean }) {
   const caja = useRef<HTMLDivElement>(null);
   useFueraDe(caja, abierto, alAbrir);
   return (
@@ -197,7 +229,7 @@ function Conector({ abierto, alAbrir, alElegir, deshabilitado }: { abierto: bool
           {(['Comunicación', 'Contacto', 'Interno', 'Lógica'] as const).map((g) => (
             <div key={g}>
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-tenue">{g}</p>
-              {PASOS.filter((p) => p.grupo === g).map((p) => {
+              {PASOS.filter((p) => p.grupo === g && !(sinRamas && p.tipo === 'si')).map((p) => {
                 const Icono = ICONO[p.tipo];
                 return (
                   <button key={p.tipo} type="button" onClick={() => alElegir(p.tipo)} className="flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm text-[#344054] hover:bg-superficie-2 dark:text-texto-2">
@@ -229,8 +261,8 @@ function resumenFiltro(d: Disparador, f: Record<string, string | boolean>, o: Op
   }
 }
 
-function PanelDisparador({ disparador, filtro, opciones, reentrada, alCambiar, alReentrada }: {
-  disparador: Disparador; filtro: Record<string, string | boolean>; opciones: Opciones; reentrada: boolean;
+function PanelDisparador({ subId, flujoId, disparador, filtro, opciones, reentrada, alCambiar, alReentrada }: {
+  subId: string; flujoId: string; disparador: Disparador; filtro: Record<string, string | boolean>; opciones: Opciones; reentrada: boolean;
   alCambiar: (d: Disparador, f: Record<string, string | boolean>) => void; alReentrada: (v: boolean) => void;
 }) {
   const f = (k: string, v: string | boolean) => alCambiar(disparador, { ...filtro, [k]: v });
@@ -284,6 +316,7 @@ function PanelDisparador({ disparador, filtro, opciones, reentrada, alCambiar, a
             </select></label>
         )}
       </>)}
+      {disparador === 'webhook' && <PanelWebhook subId={subId} flujoId={flujoId} filtro={filtro} alCambiar={(k, v) => f(k, v)} />}
       {disparador === 'formulario_enviado' && (
         <label className="block"><span className={etiqueta}>Embudo o página</span>
           <select value={String(filtro.embudo_web_id ?? '')} onChange={(e) => f('embudo_web_id', e.target.value)} className={estiloInput}>
@@ -340,6 +373,47 @@ function PanelPaso({ p, opciones, alCambiar }: { p: Paso; opciones: Opciones; al
             <option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Correo</option>
           </select></label>
         <p className="text-xs text-tenue">Envía el mensaje de Reputación con un enlace de valoración. Las buenas van a tu ficha de Google; las malas te llegan en privado. Como mucho una por contacto y semana.</p>
+      </>);
+    case 'si':
+      return <PanelSi p={p} alCambiar={alCambiar} etiquetas={opciones.etiquetas} />;
+    case 'http':
+      return (<>
+        <div className="grid grid-cols-[110px_1fr] gap-2">
+          <label className="block"><span className={etiqueta}>Método</span>
+            <select value={p.metodo} onChange={(e) => set('metodo', e.target.value)} className={estiloInput}>{['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => <option key={m}>{m}</option>)}</select></label>
+          <label className="block min-w-0"><span className={etiqueta}>URL (https)</span><input value={p.url} onChange={(e) => set('url', e.target.value)} maxLength={1000} className={estiloInput} placeholder="https://api.ejemplo.com/clientes" /></label>
+        </div>
+        <div><span className={etiqueta}>Cabeceras</span>
+          {p.cabeceras.map((h, i) => (
+            <div key={i} className="mb-1.5 flex gap-1">
+              <input value={h.nombre} onChange={(e) => set('cabeceras', p.cabeceras.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))} placeholder="Authorization" className={`${estiloInput} w-36`} aria-label="Nombre de la cabecera" />
+              <input value={h.valor} onChange={(e) => set('cabeceras', p.cabeceras.map((x, j) => (j === i ? { ...x, valor: e.target.value } : x)))} placeholder="Bearer …" className={estiloInput} aria-label="Valor de la cabecera" />
+              <button type="button" onClick={() => set('cabeceras', p.cabeceras.filter((_, j) => j !== i))} aria-label="Quitar cabecera" className="rounded p-1 text-tenue hover:text-peligro"><Trash2 className="size-4" /></button>
+            </div>
+          ))}
+          {p.cabeceras.length < 10 && <button type="button" onClick={() => set('cabeceras', [...p.cabeceras, { nombre: '', valor: '' }])} className="inline-flex items-center gap-1 text-xs font-medium text-primario-texto"><Plus className="size-3.5" /> Añadir cabecera</button>}
+        </div>
+        {p.metodo !== 'GET' && p.metodo !== 'DELETE' && (
+          <label className="block"><span className={etiqueta}>Cuerpo (JSON)</span>
+            <textarea value={p.cuerpo} onChange={(e) => set('cuerpo', e.target.value)} rows={7} className={`${estiloArea} font-mono text-xs`} /></label>
+        )}
+        <label className="block"><span className={etiqueta}>Guardar la respuesta como</span>
+          <input value={p.guardar} onChange={(e) => set('guardar', e.target.value.toLowerCase())} maxLength={40} className={estiloInput} /></label>
+        <p className="rounded bg-superficie-2 p-2 text-xs text-tenue">Usa en los pasos siguientes <code>{`{{var.${p.guardar}.estado}}`}</code> (código HTTP) y <code>{`{{var.${p.guardar}.datos.campo}}`}</code> (datos de la respuesta). En URL, cabeceras y cuerpo puedes usar {'{{contacto.email}}'}, {'{{webhook.campo}}'}, {'{{var.x}}'}… Solo direcciones https públicas.</p>
+      </>);
+    case 'variable':
+      return (<>
+        <label className="block"><span className={etiqueta}>Nombre</span><input value={p.nombre} onChange={(e) => set('nombre', e.target.value.toLowerCase())} maxLength={40} className={estiloInput} /></label>
+        <label className="block"><span className={etiqueta}>Valor</span><textarea value={p.valor} onChange={(e) => set('valor', e.target.value)} rows={3} maxLength={5000} className={estiloArea} placeholder="{{webhook.pedido.total}}" /></label>
+        <p className="text-xs text-tenue">Después úsala como <code>{`{{var.${p.nombre}}}`}</code> en mensajes, reglas o peticiones.</p>
+      </>);
+    case 'actualizar_contacto':
+      return (<>
+        <label className="block"><span className={etiqueta}>Campo</span>
+          <select value={p.campo} onChange={(e) => set('campo', e.target.value)} className={estiloInput}>
+            <option value="nombre">Nombre</option><option value="apellidos">Apellidos</option><option value="email">Correo</option><option value="telefono">Teléfono</option><option value="fuente">Fuente</option>
+          </select></label>
+        <label className="block"><span className={etiqueta}>Nuevo valor</span><input value={p.valor} onChange={(e) => set('valor', e.target.value)} maxLength={300} className={estiloInput} placeholder="{{webhook.nombre}}" /></label>
       </>);
     case 'ia_mensaje':
       return (<>
@@ -476,4 +550,66 @@ function Historial({ subId, zona, ejecuciones, pasos }: { subId: string; zona: s
       </div>
     </div>
   );
+}
+
+// Reglas de una rama «si / si no».
+const CAMPOS_REGLA: [string, string][] = [
+  ['contacto.etiquetas', 'Etiquetas del contacto'], ['contacto.email', 'Correo'], ['contacto.telefono', 'Teléfono'], ['contacto.nombre', 'Nombre'],
+  ['contacto.fuente', 'Fuente'], ['mensaje.texto', 'Texto del mensaje recibido'], ['cita.fecha', 'Fecha de la cita'],
+];
+function PanelSi({ p, alCambiar, etiquetas }: { p: PasoSi; alCambiar: (p: Paso) => void; etiquetas: string[] }) {
+  const set = (reglas: Regla[]) => alCambiar({ ...p, reglas });
+  return (<>
+    <label className="block"><span className={etiqueta}>Se cumple si</span>
+      <select value={p.modo} onChange={(e) => alCambiar({ ...p, modo: e.target.value as PasoSi['modo'] })} className={estiloInput}>
+        <option value="todas">Se cumplen todas las reglas</option><option value="alguna">Se cumple alguna regla</option>
+      </select></label>
+    {p.reglas.map((x, i) => (
+      <div key={i} className="space-y-1.5 rounded-lg border border-borde p-2.5">
+        <input list="aut-campos-regla" value={x.campo} onChange={(e) => set(p.reglas.map((y, j) => (j === i ? { ...y, campo: e.target.value } : y)))} placeholder="contacto.etiquetas · var.respuesta.estado · webhook.plan" className={estiloInput} aria-label="Dato" />
+        <div className="flex gap-1.5">
+          <select value={x.operador} onChange={(e) => set(p.reglas.map((y, j) => (j === i ? { ...y, operador: e.target.value as Regla['operador'] } : y)))} className={`${estiloInput} w-40`} aria-label="Operador">
+            {OPERADORES.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+          </select>
+          {!['vacio', 'no_vacio'].includes(x.operador) && (
+            <input list={x.campo === 'contacto.etiquetas' ? 'aut-etiquetas-regla' : undefined} value={x.valor} onChange={(e) => set(p.reglas.map((y, j) => (j === i ? { ...y, valor: e.target.value } : y)))} placeholder="valor" className={estiloInput} aria-label="Valor" />
+          )}
+          {p.reglas.length > 1 && <button type="button" onClick={() => set(p.reglas.filter((_, j) => j !== i))} aria-label="Quitar regla" className="rounded p-1 text-tenue hover:text-peligro"><Trash2 className="size-4" /></button>}
+        </div>
+      </div>
+    ))}
+    <datalist id="aut-campos-regla">{CAMPOS_REGLA.map(([k, t]) => <option key={k} value={k}>{t}</option>)}</datalist>
+    <datalist id="aut-etiquetas-regla">{etiquetas.map((t) => <option key={t} value={t} />)}</datalist>
+    {p.reglas.length < 10 && <button type="button" onClick={() => set([...p.reglas, { campo: 'contacto.email', operador: 'no_vacio', valor: '' }])} className="inline-flex items-center gap-1 text-xs font-medium text-primario-texto"><Plus className="size-3.5" /> Añadir regla</button>}
+    <p className="text-xs text-tenue">Si se cumple, sigue por la rama «SÍ»; si no, por «SI NO». Después, las dos ramas continúan con los pasos de debajo.</p>
+  </>);
+}
+
+// Disparador «Webhook entrante»: URL secreta y qué campos identifican al contacto.
+function PanelWebhook({ subId, flujoId, filtro, alCambiar }: { subId: string; flujoId: string; filtro: Record<string, string | boolean>; alCambiar: (k: string, v: string) => void }) {
+  const [url, setUrl] = useState('');
+  const [r, setR] = useState<Resultado | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  const [pendiente, iniciar] = useTransition();
+  const pedir = (renovar: boolean) => iniciar(async () => { const x = await urlWebhook(subId, flujoId, renovar); setR(x.ok && !x.mensaje ? null : x); if (x.ok && x.url) setUrl(x.url); });
+  return (<>
+    <div className="rounded-lg border border-borde bg-superficie-2 p-3">
+      <span className={etiqueta}>URL del webhook (POST con JSON)</span>
+      {url ? (
+        <div className="flex gap-1">
+          <input readOnly value={url} className={`${estiloInput} font-mono text-xs`} aria-label="URL del webhook" onFocus={(e) => e.target.select()} />
+          <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 1500); } catch { /* sin permiso */ } }} className={estilosBoton.icono} aria-label="Copiar URL">{copiado ? '✓' : <Copy className="size-4" />}</button>
+          <button type="button" disabled={pendiente} onClick={() => confirm('La URL actual dejará de funcionar. ¿Renovarla?') && pedir(true)} className={estilosBoton.icono} aria-label="Renovar URL" title="Renovar"><RefreshCw className="size-4" /></button>
+        </div>
+      ) : <button type="button" disabled={pendiente} onClick={() => pedir(false)} className={estilosBoton.secundario}>Ver URL del webhook</button>}
+      <p className="mt-2 text-xs text-tenue">Guárdala en secreto. Funciona cuando el flujo está publicado.</p>
+    </div>
+    <Aviso estado={r} />
+    <p className="text-sm font-medium text-texto">¿Dónde vienen los datos del contacto en el JSON?</p>
+    {([['campo_email', 'Correo', 'email'], ['campo_telefono', 'Teléfono', 'telefono'], ['campo_nombre', 'Nombre', 'nombre']] as const).map(([k, t, ph]) => (
+      <label key={k} className="block"><span className={etiqueta}>{t}</span>
+        <input value={String(filtro[k] ?? '')} onChange={(e) => alCambiar(k, e.target.value)} placeholder={ph} maxLength={120} className={`${estiloInput} font-mono text-xs`} /></label>
+    ))}
+    <p className="text-xs text-tenue">Usa puntos para datos anidados (p. ej. <code>cliente.email</code>). Todo el JSON queda disponible en los pasos como {'{{webhook.campo}}'}.</p>
+  </>);
 }

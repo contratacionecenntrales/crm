@@ -2,15 +2,16 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { adminObligatorio, enviarGuardado } from '@/lib/conversaciones/envio';
 import { diaEn, fechaLarga, horaEn } from '@/lib/calendario/tiempo';
-import { esperaEnMinutos, esquemaPaso, rellenarVariables, urlPublica, type Paso } from './tipos';
-import { postJsonSeguro } from '@/lib/red/seguro';
+import { esperaEnMinutos, esquemaPaso, urlPublica, type Paso } from './tipos';
+import { peticionSegura, postJsonSeguro } from '@/lib/red/seguro';
+import { camino, compilar, evaluar, rellenar, type Instr } from './programa';
 import { ErrorIA, iaConfigurada, redactarMensaje } from '@/lib/ia/claude';
 import { pedirResena } from '@/lib/reputacion/enviar';
 
 interface Ejecucion {
   id: string; subcuenta_id: string; flujo_id: string; contacto_id: string; paso: number; pasos: unknown[]; datos: Record<string, unknown>;
 }
-interface Contacto { id: string; nombre: string; apellidos: string; email: string | null; telefono: string; etiquetas: string[]; propietario_id: string | null }
+interface Contacto { id: string; nombre: string; apellidos: string; email: string | null; telefono: string; etiquetas: string[]; propietario_id: string | null; fuente?: string }
 
 const MAX_PASOS_POR_VUELTA = 50;
 
@@ -53,7 +54,7 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
   };
 
   const [{ data: k }, { data: sub }] = await Promise.all([
-    admin.from('crm_contactos').select('id, nombre, apellidos, email, telefono, etiquetas, propietario_id').eq('id', e.contacto_id).maybeSingle(),
+    admin.from('crm_contactos').select('id, nombre, apellidos, email, telefono, etiquetas, propietario_id, fuente').eq('id', e.contacto_id).maybeSingle(),
     admin.from('subcuentas').select('nombre, zona_horaria').eq('id', e.subcuenta_id).single(),
   ]);
   if (!k) {
@@ -75,18 +76,40 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
       'oportunidad.nombre': String(d.nombre ?? ''),
     };
   };
-  const t = (s: string) => rellenarVariables(s, valores());
+  // Datos disponibles para plantillas y reglas: {{contacto.x}}, {{var.x.y}},
+  // {{webhook.x}}, más los del evento (cita, mensaje, factura…).
+  const datos = (e.datos ?? {}) as Record<string, unknown>;
+  const vars = (datos.vars && typeof datos.vars === 'object' ? datos.vars : {}) as Record<string, unknown>;
+  const valor = (campo: string): unknown => {
+    const ruta = campo.split('.');
+    if (ruta[0] === 'contacto' && ruta[1] === 'etiquetas') return contacto.etiquetas;
+    if (ruta[0] === 'contacto' && ruta[1] === 'fuente') return contacto.fuente ?? '';
+    if (ruta[0] === 'var') return camino(vars, ruta.slice(1));
+    if (ruta[0] === 'webhook') return camino(datos.webhook, ruta.slice(1));
+    const plano = valores()[campo];
+    return plano !== undefined ? plano : camino(datos, ruta.slice(1));
+  };
+  const t = (s: string) => rellenar(s, valor);
+  const guardarDatos = () => admin.from('aut_ejecuciones').update({ datos: { ...datos, vars } }).eq('id', e.id);
+
+  // Pasos compilados (las ramas pasan a saltos).
+  const pasosValidos: Paso[] = [];
+  for (const x of e.pasos) { const v = esquemaPaso.safeParse(x); if (v.success) pasosValidos.push(v.data); }
+  const programa: Instr[] = compilar(pasosValidos);
 
   let i = e.paso;
   let hechos = 0;
-  while (i < e.pasos.length && hechos < MAX_PASOS_POR_VUELTA) {
-    const parsed = esquemaPaso.safeParse(e.pasos[i]);
-    if (!parsed.success) {
-      await anotar(i, 'desconocido', false, 'Paso no válido; se salta.');
-      i++;
+  while (i < programa.length && hechos < MAX_PASOS_POR_VUELTA) {
+    const ins = programa[i];
+    if (ins.tipo === '_ir') { i = ins.a; continue; }
+    if (ins.tipo === '_si') {
+      const ok = evaluar(ins.reglas, ins.modo, valor);
+      await anotar(i, 'si', true, ok ? 'Se cumple: rama «sí».' : 'No se cumple: rama «si no».');
+      i = ok ? i + 1 : ins.saltar;
+      hechos++;
       continue;
     }
-    const p: Paso = parsed.data;
+    const p = ins;
     if (hechos > 0 && await parada()) return { estado: 'terminada', pasos: hechos };
     hechos++;
     if (p.tipo === 'esperar') {
@@ -96,7 +119,10 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
       return { estado: 'esperando', pasos: hechos };
     }
     try {
-      const r = await accion(admin, e, contacto, p, t);
+      const r = p.tipo === 'http' || p.tipo === 'variable' || p.tipo === 'actualizar_contacto'
+        ? await pasoDatos(admin, e, contacto, p, t, valor, vars)
+        : await accion(admin, e, contacto, p, t);
+      if (p.tipo === 'http' || p.tipo === 'variable') await guardarDatos();
       if (r.contacto) contacto = r.contacto;
       await anotar(i, p.tipo, r.ok, r.detalle);
       if (r.terminar) {
@@ -111,7 +137,7 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
     // no se repiten los mensajes ya enviados.
     await admin.from('aut_ejecuciones').update({ paso: i, tomado_en: new Date().toISOString() }).eq('id', e.id).eq('estado', 'procesando');
   }
-  if (i < e.pasos.length) {
+  if (i < programa.length) {
     // Demasiados pasos seguidos: sigue en la próxima vuelta.
     await cerrar({ estado: 'pendiente', paso: i, tomado_en: null });
     return { estado: 'pendiente', pasos: hechos };
@@ -121,6 +147,38 @@ async function ejecutar(admin: SupabaseClient, e: Ejecucion): Promise<{ estado: 
 }
 
 type R = { ok: boolean; detalle: string; terminar?: boolean; contacto?: Contacto };
+
+// Pasos de datos: petición HTTP, variable y actualizar contacto.
+async function pasoDatos(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Extract<Paso, { tipo: 'http' | 'variable' | 'actualizar_contacto' }>,
+  t: (s: string) => string, valor: (campo: string) => unknown, vars: Record<string, unknown>): Promise<R> {
+  if (p.tipo === 'variable') {
+    vars[p.nombre] = t(p.valor).slice(0, 5000);
+    return { ok: true, detalle: `{{var.${p.nombre}}} = ${String(vars[p.nombre]).slice(0, 200)}` };
+  }
+  if (p.tipo === 'actualizar_contacto') {
+    let v = t(p.valor).trim();
+    if (p.campo === 'email') { v = v.toLowerCase(); if (v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return { ok: false, detalle: `«${v}» no es un correo válido.` }; }
+    if (p.campo === 'telefono') { v = v.replace(/[^0-9+]/g, ''); if (v && !/^\+?[0-9]{6,15}$/.test(v)) return { ok: false, detalle: `«${v}» no es un teléfono válido.` }; }
+    const cambios = { [p.campo]: p.campo === 'email' ? (v || null) : v.slice(0, p.campo === 'fuente' ? 100 : 120) };
+    const { error } = await admin.from('crm_contactos').update(cambios).eq('id', c.id).eq('subcuenta_id', e.subcuenta_id);
+    if (error) return { ok: false, detalle: `No se pudo actualizar: ${error.message}` };
+    return { ok: true, detalle: `${p.campo} = ${v.slice(0, 120)}`, contacto: { ...c, ...cambios } as Contacto };
+  }
+  // Petición HTTP: la URL y las cabeceras admiten {{datos}}; el cuerpo va escapado como JSON.
+  const url = rellenar(p.url, valor, 'url');
+  if (!urlPublica(url)) return { ok: false, detalle: 'La URL tiene que ser https y pública.' };
+  const cabeceras: Record<string, string> = {};
+  for (const h of p.cabeceras) cabeceras[h.nombre] = t(h.valor).replace(/[\r\n]/g, ' ').slice(0, 2000);
+  const cuerpo = p.cuerpo ? rellenar(p.cuerpo, valor, 'json') : '';
+  const r = await peticionSegura({ metodo: p.metodo, url, cabeceras, cuerpo });
+  let datosResp: unknown = r.texto.slice(0, 4000);
+  if (/json/i.test(r.tipo) || /^[\[{]/.test(r.texto.trim())) {
+    try { const j = JSON.parse(r.texto); datosResp = JSON.stringify(j).length <= 32_000 ? j : { truncado: true }; } catch { /* texto tal cual */ }
+  }
+  vars[p.guardar] = { estado: r.status, datos: datosResp };
+  const ok = r.status >= 200 && r.status < 300;
+  return { ok, detalle: `${p.metodo} ${url.slice(0, 200)} → ${r.status}${ok ? '' : ' (error)'}` };
+}
 
 async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso, t: (s: string) => string): Promise<R> {
   const sub = e.subcuenta_id;
@@ -246,6 +304,8 @@ async function accion(admin: SupabaseClient, e: Ejecucion, c: Contacto, p: Paso,
     }
     case 'esperar':
       return { ok: true, detalle: '' };
+    default:
+      return { ok: false, detalle: 'Este paso no se puede ejecutar aquí.' };
   }
 }
 
