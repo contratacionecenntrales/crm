@@ -91,3 +91,27 @@ export async function duplicarCampana(sub: string, id: string): Promise<Resultad
     return guardarCampana(sub, null, { ...(c as DatosCampana), nombre: `${c.nombre} (copia)`.slice(0, 120) });
   } catch (e) { return error(e); }
 }
+
+// --- Biblioteca: usar una plantilla de envío o activar una campaña automática ---
+export async function usarPlantillaEnvio(sub: string, plantillaId: string): Promise<Resultado & { id?: string }> {
+  const { PLANTILLAS_ENVIO } = await import('@/lib/marketing/plantillas');
+  const p = PLANTILLAS_ENVIO.find((x) => x.id === plantillaId);
+  if (!p) return { ok: false, error: 'Plantilla no encontrada.' };
+  return guardarCampana(sub, null, { nombre: p.nombre, canal: p.canal, asunto: p.asunto, cuerpo: p.cuerpo, etiquetas: p.etiquetas_sugeridas, modo: 'alguna', excluir: [] });
+}
+
+export async function activarReceta(sub: string, recetaId: string): Promise<Resultado & { id?: string }> {
+  try {
+    const [{ RECETAS }, { esquemaPasos }] = await Promise.all([import('@/lib/marketing/plantillas'), import('@/lib/automatizacion/tipos')]);
+    const r = RECETAS.find((x) => x.id === recetaId);
+    if (!r) return { ok: false, error: 'Campaña no encontrada.' };
+    const pasos = esquemaPasos.safeParse(r.pasos);
+    if (!pasos.success) return { ok: false, error: 'La campaña no es válida.' };
+    const supabase = await ctx(sub);
+    const { data, error: e } = await supabase.from('aut_flujos').insert({ subcuenta_id: sub, nombre: r.nombre, disparador: r.disparador, filtro: r.filtro, pasos: pasos.data, activo: true }).select('id');
+    if (e) return { ok: false, error: mensajeDeError(e) };
+    if (!data?.length) return { ok: false, error: 'Solo un administrador de la subcuenta puede activar campañas automáticas.' };
+    revalidatePath(`/subcuenta/${sub}/automatizacion`);
+    return { ok: true, mensaje: `«${r.nombre}» activada. Ya funciona sola; puedes ajustarla en Automatización.`, id: data[0].id as string };
+  } catch (e) { return error(e); }
+}

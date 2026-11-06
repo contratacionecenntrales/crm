@@ -2,7 +2,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { Copy, Mail, Megaphone, MessageCircle, MessageSquare, Pencil, Plus, Send, Trash2, XCircle } from 'lucide-react';
-import { audienciaCampana, borrarCampana, cancelarCampana, duplicarCampana, guardarCampana, lanzarCampana, type DatosCampana } from '@/app/subcuenta/[id]/marketing/acciones';
+import { activarReceta, audienciaCampana, borrarCampana, cancelarCampana, duplicarCampana, guardarCampana, lanzarCampana, usarPlantillaEnvio, type DatosCampana } from '@/app/subcuenta/[id]/marketing/acciones';
+import { PLANTILLAS_ENVIO, RECETAS } from '@/lib/marketing/plantillas';
+import { DISPARADORES, nombrePaso } from '@/lib/automatizacion/tipos';
+import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
 import { Aviso } from '@/components/ui/Aviso';
 import { Insignia } from '@/components/ui/Insignia';
@@ -23,6 +26,8 @@ const VACIA: DatosCampana = { nombre: 'Nueva campaña', canal: 'email', asunto: 
 export function Campanas({ subId, campanas, etiquetas, soyAdmin }: { subId: string; campanas: FilaCampana[]; etiquetas: string[]; soyAdmin: boolean }) {
   const router = useRouter();
   const [editando, setEditando] = useState<FilaCampana | 'nueva' | null>(null);
+  const [pestana, setPestana] = useState<'campanas' | 'plantillas' | 'automaticas'>(campanas.length ? 'campanas' : 'plantillas');
+  const [activadas, setActivadas] = useState<Record<string, string>>({});
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [pendiente, iniciar] = useTransition();
   const hacer = (f: () => Promise<Resultado>) => iniciar(async () => { const r = await f(); setAviso(r); if (r.ok) router.refresh(); });
@@ -38,8 +43,64 @@ export function Campanas({ subId, campanas, etiquetas, soyAdmin }: { subId: stri
         </div>
         {soyAdmin && <button onClick={() => { setEditando('nueva'); setAviso(null); }} className={estilosBoton.primario}><Plus className="size-4" /> Nueva campaña</button>}
       </div>
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-borde" role="tablist">
+        {([['campanas', `Mis campañas (${campanas.length})`], ['plantillas', 'Plantillas de envío'], ['automaticas', 'Campañas automáticas']] as const).map(([k, t]) => (
+          <button key={k} role="tab" aria-selected={pestana === k} onClick={() => setPestana(k)} className={`-mb-px border-b-2 px-3 py-2 text-sm ${pestana === k ? 'border-primario font-medium text-primario-texto' : 'border-transparent text-texto-2 hover:text-texto'}`}>{t}</button>
+        ))}
+      </div>
       {aviso && <div className="mb-3"><Aviso estado={aviso} /></div>}
-      {campanas.length === 0 ? (
+      {pestana === 'plantillas' && (
+        <div>
+          <p className="mb-3 text-sm text-tenue">Mensajes ya escritos y probados. Elige uno, ajusta lo que quieras y envíalo.</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {PLANTILLAS_ENVIO.map((p) => {
+              const [canal, Ic] = CANAL[p.canal];
+              return (
+                <article key={p.id} className="flex flex-col rounded-lg border border-borde bg-superficie p-4">
+                  <div className="flex items-center justify-between gap-2"><Insignia tono="azul">{p.categoria}</Insignia><span className="flex items-center gap-1 text-xs text-tenue"><Ic className="size-3.5" />{canal}</span></div>
+                  <h3 className="mt-2 font-semibold text-texto">{p.nombre}</h3>
+                  <p className="mt-1 text-sm text-tenue">{p.descripcion}</p>
+                  <p className="mt-3 line-clamp-3 flex-1 whitespace-pre-line rounded-md bg-superficie-2 p-2.5 text-xs text-texto-2">{p.asunto ? `${p.asunto}\n\n` : ''}{p.cuerpo}</p>
+                  {soyAdmin && <button disabled={pendiente} onClick={() => iniciar(async () => {
+                    const r = await usarPlantillaEnvio(subId, p.id);
+                    if (!r.ok || !r.id) { setAviso(r); return; }
+                    setEditando({ id: r.id, nombre: p.nombre, canal: p.canal, asunto: p.asunto, cuerpo: p.cuerpo, etiquetas: p.etiquetas_sugeridas, modo: 'alguna', excluir: [], estado: 'borrador', programada_en: null, lanzada_en: null, terminada_en: null, creado: new Date().toISOString(), stats: null });
+                    router.refresh();
+                  })} className={`${estilosBoton.primario} mt-3`}>Usar esta plantilla</button>}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {pestana === 'automaticas' && (
+        <div>
+          <p className="mb-3 text-sm text-tenue">Secuencias completas que trabajan solas. Actívalas con un clic y ajústalas cuando quieras en Automatización.</p>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {RECETAS.map((rc) => (
+              <article key={rc.id} className="flex flex-col rounded-lg border border-borde bg-superficie p-4">
+                <div className="flex items-center justify-between gap-2"><Insignia tono="verde">{rc.categoria}</Insignia><span className="text-xs text-tenue">Empieza: {DISPARADORES.find((d) => d.valor === rc.disparador)?.texto}</span></div>
+                <h3 className="mt-2 font-semibold text-texto">{rc.nombre}</h3>
+                <p className="mt-1 text-sm text-tenue">{rc.descripcion}</p>
+                <ol className="mt-3 flex flex-1 flex-wrap items-center gap-1 text-xs">
+                  {rc.pasos.map((p, i) => (
+                    <li key={i} className="flex items-center gap-1">{i > 0 && <span className="text-tenue">→</span>}
+                      <span className="rounded-full border border-borde px-2 py-0.5 text-texto-2">{p.tipo === 'esperar' ? `Esperar ${p.cantidad} ${p.unidad === 'dias' ? 'd' : p.unidad === 'horas' ? 'h' : 'min'}` : nombrePaso(p.tipo)}</span></li>
+                  ))}
+                </ol>
+                {activadas[rc.id]
+                  ? <Link href={`/subcuenta/${subId}/automatizacion/${activadas[rc.id]}`} className={`${estilosBoton.secundario} mt-3`}>Activada · Ver y ajustar</Link>
+                  : soyAdmin && <button disabled={pendiente} onClick={() => confirm(`¿Activar «${rc.nombre}»? Empezará a funcionar sola desde ahora.`) && iniciar(async () => {
+                    const r = await activarReceta(subId, rc.id);
+                    setAviso(r);
+                    if (r.ok && r.id) setActivadas((x) => ({ ...x, [rc.id]: r.id! }));
+                  })} className={`${estilosBoton.primario} mt-3`}>Activar con un clic</button>}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+      {pestana === 'campanas' && (campanas.length === 0 ? (
         <div className="flex flex-col items-center rounded-lg border border-borde bg-superficie px-6 py-16 text-center">
           <Megaphone className="size-10 text-tenue" />
           <p className="mt-3 font-medium text-texto">Aún no hay campañas</p>
@@ -82,7 +143,7 @@ export function Campanas({ subId, campanas, etiquetas, soyAdmin }: { subId: stri
             </tbody>
           </table>
         </div>
-      )}
+      ))}
       <Modal abierto={editando !== null} alCerrar={() => setEditando(null)} titulo={editando === 'nueva' ? 'Nueva campaña' : 'Editar campaña'} ancho="max-w-2xl">
         {editando !== null && <Editor subId={subId} c={editando === 'nueva' ? null : editando} etiquetas={etiquetas}
           alTerminar={(r) => { setEditando(null); if (r) setAviso(r); router.refresh(); }} />}

@@ -31,3 +31,17 @@ test('webhooks: solo direcciones públicas por https', () => {
     'https://usuario:clave@ejemplo.com/']) assert.ok(!urlPublica(u), u);
   for (const u of ['https://fcbarcelona.com/', 'https://fdroid.org/', 'https://[2606:4700::1111]/']) assert.ok(urlPublica(u), u);
 });
+
+test('las campañas automáticas preconstruidas son flujos válidos', async () => {
+  const { RECETAS, PLANTILLAS_ENVIO } = await import('../lib/marketing/plantillas.ts');
+  const { esquemaPasos, DISPARADORES } = await import('../lib/automatizacion/tipos.ts');
+  for (const r of RECETAS) {
+    const v = esquemaPasos.safeParse(r.pasos);
+    assert.ok(v.success, `${r.id}: ${v.success ? '' : JSON.stringify(v.error.issues[0])}`);
+    assert.ok(DISPARADORES.some((d) => d.valor === r.disparador), `${r.id}: disparador`);
+  }
+  for (const p of PLANTILLAS_ENVIO) {
+    assert.ok(p.cuerpo.length > 20 && (p.canal !== 'email' || p.asunto), `${p.id}`);
+    if (p.canal === 'sms') assert.ok(p.cuerpo.length <= 400, `${p.id}: SMS demasiado largo`);
+  }
+});
