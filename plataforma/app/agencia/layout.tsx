@@ -10,6 +10,7 @@ export default async function LayoutAgencia({ children }: { children: React.Reac
   const principal: ElementoNav[] = [
     ...(admin ? [{ href: '/agencia', etiqueta: 'Tablero de la agencia', icono: 'tableroAgencia', exacto: true } as const] : []),
     { href: '/agencia/subcuentas', etiqueta: 'Subcuentas', icono: 'subcuentas' },
+    ...(admin ? [{ href: '/agencia/subagencias', etiqueta: 'Subagencias', icono: 'empresas' } as const] : []),
   ];
   const c = '/agencia/configuracion';
   const menuAjustes = {
