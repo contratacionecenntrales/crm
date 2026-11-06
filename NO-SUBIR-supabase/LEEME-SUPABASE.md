@@ -42,6 +42,7 @@ de notas, copia **todo** el contenido, pégalo y pulsa **Run**. En este orden:
 | 30 | `30-subagencias.sql` | Subagencias (reventa): agencias que cuelgan de otra, hasta 3 niveles; la madre suspende, limita subcuentas y puede conservar acceso de soporte. La suspensión baja en cascada. Requiere el 29 |
 | 31 | `31-flujos.sql` | Automatizaciones avanzadas: disparador «Webhook entrante» con URL secreta por flujo (las ramas, peticiones HTTP y variables viven en los pasos). Requiere el 30 |
 | 32 | `32-voz.sql` | Asistente de voz: canal «voz» en los asistentes (saludo y teléfono de desvío), tabla de llamadas y transcripción en la conversación. Requiere el 31 |
+| 33 | `33-tareas-programadas.sql` | Tareas programadas cada minuto desde Supabase (pg_cron + pg_net). Después: `select public.programar_tareas('https://tu-dominio', 'CRON_SECRET')`. Requiere el 32 |
 
 Con el **1** y el **2** ya entras. El **6** es de seguridad y no es opcional.
 Los demás son para los módulos correspondientes.

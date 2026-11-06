@@ -4,7 +4,7 @@ La nueva plataforma multi-tenant al estilo HighLevel: **agencia → subcuentas**
 con el aislamiento de datos hecho en la base de datos (RLS), no en la aplicación.
 
 Convive con el panel HTML de Hostalia (`SUBIR-A-HOSTALIA/`), que sigue funcionando
-igual. Esta carpeta **no** se sube a Hostalia: necesita un servidor Node (Vercel).
+igual. Esta carpeta **no** se sube a Hostalia: necesita un servidor Node (Vercel). Guía completa: `PUBLICAR-METATOK.md` en la raíz.
 
 ## Qué incluye este primer bloque
 
@@ -80,6 +80,7 @@ Supabase → SQL Editor → pega y ejecuta, en este orden:
 22. `NO-SUBIR-supabase/30-subagencias.sql` — subagencias (cada agencia puede crear y gestionar agencias propias)
 23. `NO-SUBIR-supabase/31-flujos.sql` — automatizaciones tipo n8n: webhook entrante, ramas si/si no, peticiones HTTP y variables
 24. `NO-SUBIR-supabase/32-voz.sql` — asistente de voz: la IA atiende las llamadas del número de Twilio, desvía a una persona y deja la transcripción
+25. `NO-SUBIR-supabase/33-tareas-programadas.sql` — tareas programadas cada minuto desde Supabase (pg_cron); después ejecuta `select public.programar_tareas(...)`
 
 Son independientes de los guiones 01–08 del panel antiguo y se pueden volver a ejecutar.
 
@@ -185,24 +186,18 @@ bandeja. El visitante solo ve su propia conversación (se identifica con un cód
 aleatorio guardado en su navegador), nunca el historial del contacto, y no puede
 cambiar datos de contactos existentes. «Renovar código» invalida el anterior.
 
-### Recordatorios de citas
+### Tareas programadas (recordatorios, automatizaciones, campañas, IA)
 
-Los avisos de citas y los pasos de Automatización se ejecutan desde `/api/cron/recordatorios`, que hay que llamar **cada 5 minutos** con la cabecera
+Se ejecutan desde `/api/cron/recordatorios`, que hay que llamar **cada minuto** con la cabecera
 `Authorization: Bearer <CRON_SECRET>` (pon `CRON_SECRET` en las variables de entorno: una cadena larga al azar).
-
-- **Vercel Pro:** ya está programado en `vercel.json` (Vercel añade la cabecera solo).
-- **Vercel Hobby u otro alojamiento:** prográmalo desde Supabase (SQL Editor), cambiando dominio y secreto:
+Lo hace la propia Supabase con el script `33-tareas-programadas.sql` y, una vez, en el SQL Editor:
 
 ```sql
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-select cron.schedule('recordatorios-citas', '*/5 * * * *', $$
-  select net.http_post(
-    url := 'https://TU-DOMINIO/api/cron/recordatorios',
-    headers := jsonb_build_object('Authorization', 'Bearer TU_CRON_SECRET'),
-    body := '{}'::jsonb);
-$$);
+select public.programar_tareas('https://TU-DOMINIO', 'TU_CRON_SECRET');
+select * from public.tareas_ultimas;  -- respuestas recientes (código 200 = va bien)
 ```
+
+Así funciona igual en el plan gratuito de Vercel, que solo admite tareas una vez al día.
 
 ### 2 · Plantillas de correo de Supabase
 

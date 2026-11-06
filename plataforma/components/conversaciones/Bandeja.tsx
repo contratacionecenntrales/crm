@@ -6,7 +6,7 @@ import {
   Archive, ArrowUpDown, Clock, Inbox, Mail, MessageSquare, MessagesSquare, Search, SquarePen, Star, User, UserX, X,
 } from 'lucide-react';
 import { conversacionesLote, destacar } from '@/app/subcuenta/[id]/conversaciones/acciones';
-import { crearClienteNavegador } from '@/lib/supabase/navegador';
+import { canalEnDirecto, crearClienteNavegador } from '@/lib/supabase/navegador';
 import { SelectorContacto } from '@/components/crm/SelectorContacto';
 import { Modal } from '@/components/ui/Modal';
 import { estilosBoton } from '@/components/ui/clases';
@@ -110,11 +110,9 @@ export function Bandeja(p: Props) {
       if (refresco.current) clearTimeout(refresco.current);
       refresco.current = setTimeout(() => router.refresh(), 400);
     };
-    const canal = supabase.channel(`conversaciones:${p.subId}`)
+    return canalEnDirecto(supabase, (s) => s.channel(`conversaciones:${p.subId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conv_mensajes', filter: `subcuenta_id=eq.${p.subId}` }, recargar)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conv_conversaciones', filter: `subcuenta_id=eq.${p.subId}` }, recargar)
-      .subscribe();
-    return () => { void supabase.removeChannel(canal); };
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conv_conversaciones', filter: `subcuenta_id=eq.${p.subId}` }, recargar));
   }, [p.subId, router]);
 
   const noLeidas = useMemo(() => p.conversaciones.filter((c) => c.no_leidos > 0).length, [p.conversaciones]);

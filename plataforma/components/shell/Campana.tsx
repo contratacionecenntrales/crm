@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, BellRing, Trash2, X } from 'lucide-react';
-import { crearClienteNavegador } from '@/lib/supabase/navegador';
+import { canalEnDirecto, crearClienteNavegador } from '@/lib/supabase/navegador';
 import { borrarNotificacion, marcarNotificacion, marcarTodasLeidas } from '@/app/acciones-panel';
 import { haceCuanto } from '@/lib/formato';
 import type { Notificacion } from '@/lib/tipos';
@@ -27,15 +27,11 @@ export function Campana({ usuarioId, iniciales }: { usuarioId: string; iniciales
   // Altas en directo por Realtime.
   useEffect(() => {
     const supabase = crearClienteNavegador();
-    const canal = supabase
+    return canalEnDirecto(supabase, (s) => s
       .channel(`notificaciones:${usuarioId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notificaciones', filter: `usuario_id=eq.${usuarioId}` }, () => {
         void recargar();
-      })
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(canal);
-    };
+      }));
   }, [usuarioId, recargar]);
 
   useEffect(() => setLista(iniciales), [iniciales]);
