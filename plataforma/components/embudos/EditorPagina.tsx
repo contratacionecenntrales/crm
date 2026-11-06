@@ -9,7 +9,7 @@ import { guardarPaso } from '@/app/subcuenta/[id]/embudos/acciones';
 import { Aviso } from '@/components/ui/Aviso';
 import { estilosBoton } from '@/components/ui/clases';
 import { esquemaContenido, type Bloque, type Contenido, type Seccion } from '@/lib/embudos/tipos';
-import { BloqueVista, fuenteDe, SeccionVista } from './Renderizado';
+import { BloqueVista, fuenteDe, SeccionVista, temaDe, Tipografia } from './Renderizado';
 import {
   bloqueNuevo, CATALOGO, conIdsNuevos, PropiedadesBloque, PropiedadesEstilo, PropiedadesSeccion, seccionNueva,
   type Calendario, type Imagen, type TipoBloque,
@@ -193,7 +193,7 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
             {panel === 'anadir' && (
               <div className="space-y-4">
                 <button onClick={() => anadirSeccion(donde?.si)} className={`${estilosBoton.secundario} w-full`}><Plus className="size-4" /> Nueva sección</button>
-                {(['Texto', 'Medios', 'Conversión', 'Diseño'] as const).map((g) => (
+                {(['Secciones', 'Texto', 'Medios', 'Conversión', 'Diseño'] as const).map((g) => (
                   <div key={g}>
                     <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-tenue">{g}</p>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -276,6 +276,7 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
         <div className="min-w-0 flex-1 overflow-y-auto bg-superficie-2 p-3 sm:p-6" onClick={() => setSel(null)}>
           <div className={`mx-auto overflow-hidden rounded-lg bg-white shadow-md ring-1 ring-black/5 transition-all ${movil ? 'max-w-[390px]' : 'max-w-[1200px]'}`}
             style={{ fontFamily: fuenteDe(c.estilo.fuente), background: c.estilo.fondo }}>
+            <Tipografia fuente={c.estilo.fuente} />
             {c.secciones.length === 0 && (
               <div className="flex flex-col items-center gap-3 py-24 text-center text-[#667085]">
                 <p>La página está vacía.</p>
@@ -296,13 +297,13 @@ export function EditorPagina({ subId, embudo, paso, pasos, inicial, imagenes, ca
                       <BtnH t="Borrar sección" on={() => borrarSeleccion()}><Trash2 className="size-3.5" /></BtnH>
                     </Herr>
                   )}
-                  <SeccionVista s={s} ctx={ctx} color={color}>
+                  <SeccionVista s={s} ctx={ctx} color={color} estilo={c.estilo}>
                     {s.bloques.length === 0 && <p className="rounded-lg border-2 border-dashed border-current/30 py-8 text-center text-sm opacity-60">Sección vacía: elige un bloque en «Añadir».</p>}
                     {s.bloques.map((b) => {
                       const activo = sel?.tipo === 'bloque' && sel.id === b.id;
                       return (
                         <div key={b.id} id={`ed-${b.id}`} className="relative" onClick={(e) => { e.stopPropagation(); setSel({ tipo: 'bloque', id: b.id }); }}>
-                          <BloqueVista b={b} ctx={ctx} color={color} texto="" />
+                          <BloqueVista b={b} ctx={ctx} color={color} tema={temaDe(c.estilo, s)} />
                           {/* Capa que recoge los clics (vídeos, calendarios y formularios no reaccionan en el editor). */}
                           <div className={`absolute -inset-1.5 z-10 cursor-pointer rounded ${activo ? 'ring-2 ring-primario' : 'hover:ring-1 hover:ring-primario/60'}`} />
                           {activo && (

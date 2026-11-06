@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { estiloArea, estiloInput, estilosBoton } from '@/components/ui/clases';
-import { nuevoId, type Bloque, type CampoFormulario, type Contenido, type Seccion } from '@/lib/embudos/tipos';
+import { nuevoId, type Bloque, type CampoFormulario, type Contenido, type Seccion, type Visual } from '@/lib/embudos/tipos';
+import { ICONOS } from './Renderizado';
 
 // Panel de propiedades del editor de embudos y bloques nuevos por defecto.
 
@@ -11,7 +12,18 @@ export type TipoBloque = Bloque['tipo'];
 export interface Imagen { id: string; nombre: string; url: string }
 export interface Calendario { nombre: string; slug: string; activo: boolean }
 
-export const CATALOGO: { tipo: TipoBloque; nombre: string; grupo: 'Texto' | 'Medios' | 'Conversión' | 'Diseño' }[] = [
+export const CATALOGO: { tipo: TipoBloque; nombre: string; grupo: 'Secciones' | 'Texto' | 'Medios' | 'Conversión' | 'Diseño' }[] = [
+  { tipo: 'hero', nombre: 'Portada (hero)', grupo: 'Secciones' },
+  { tipo: 'caracteristicas', nombre: 'Ventajas', grupo: 'Secciones' },
+  { tipo: 'imagen_texto', nombre: 'Imagen y texto', grupo: 'Secciones' },
+  { tipo: 'cifras', nombre: 'Cifras', grupo: 'Secciones' },
+  { tipo: 'testimonios', nombre: 'Testimonios', grupo: 'Secciones' },
+  { tipo: 'planes', nombre: 'Tabla de precios', grupo: 'Secciones' },
+  { tipo: 'pasos', nombre: 'Cómo funciona', grupo: 'Secciones' },
+  { tipo: 'preguntas', nombre: 'Preguntas frecuentes', grupo: 'Secciones' },
+  { tipo: 'logos', nombre: 'Logos de clientes', grupo: 'Secciones' },
+  { tipo: 'llamada', nombre: 'Llamada a la acción', grupo: 'Secciones' },
+  { tipo: 'galeria', nombre: 'Galería', grupo: 'Medios' },
   { tipo: 'titulo', nombre: 'Titular', grupo: 'Texto' },
   { tipo: 'texto', nombre: 'Párrafo', grupo: 'Texto' },
   { tipo: 'lista', nombre: 'Lista', grupo: 'Texto' },
@@ -41,6 +53,24 @@ export function bloqueNuevo(tipo: TipoBloque): Bloque {
     case 'cuenta_atras': return { id, tipo, hasta: new Date(Date.now() + 7 * 864e5).toISOString(), texto_fin: '¡Ya ha empezado!' };
     case 'calendario': return { id, tipo, slug: '', alto: 760 };
     case 'separador': return { id, tipo, estilo: 'espacio', alto: 32 };
+    case 'hero': return { id, tipo, etiqueta: 'Nuevo', titulo: 'Un titular que *vende* en una frase', subtitulo: 'Explica en dos líneas qué consigue tu cliente y por qué tú.', prueba: 'Valorado 4,9 por +500 clientes', disposicion: 'dividido', visual: 'tarjetas', imagen: '', boton_texto: 'Empezar ahora', boton_accion: 'siguiente', boton_url: '', boton2_texto: 'Ver cómo funciona', boton2_accion: 'ancla', boton2_url: '' };
+    case 'caracteristicas': return { id, tipo, titulo: 'Todo lo que necesitas', subtitulo: 'Sin complicaciones ni letra pequeña.', columnas: 3, estilo: 'tarjetas', items: [
+      { icono: 'rayo', titulo: 'Rápido', texto: 'Resultados desde la primera semana.' }, { icono: 'escudo', titulo: 'Seguro', texto: 'Tus datos protegidos en todo momento.' }, { icono: 'chat', titulo: 'Cercano', texto: 'Te atendemos cuando lo necesitas.' }] };
+    case 'imagen_texto': return { id, tipo, etiqueta: 'Por qué nosotros', titulo: 'Un beneficio claro y concreto', texto: 'Cuenta cómo lo consigues y qué cambia para tu cliente.', puntos: ['Primer punto fuerte', 'Segundo punto fuerte', 'Tercer punto fuerte'], visual: 'panel', imagen: '', invertir: false, boton_texto: '', boton_accion: 'siguiente', boton_url: '' };
+    case 'cifras': return { id, tipo, items: [{ valor: '+2.000', etiqueta: 'clientes' }, { valor: '4,9★', etiqueta: 'valoración media' }, { valor: '24 h', etiqueta: 'tiempo de respuesta' }, { valor: '98 %', etiqueta: 'repiten' }] };
+    case 'testimonios': return { id, tipo, titulo: 'Lo que dicen nuestros clientes', items: [
+      { cita: 'El mejor servicio que hemos contratado. Se nota la experiencia.', autor: 'Laura Gómez', cargo: 'Directora, Estudio Luz', foto: '', estrellas: 5 },
+      { cita: 'Rápidos, claros y con resultados desde el primer mes.', autor: 'Carlos Ruiz', cargo: 'Fundador, Ruiz & Co.', foto: '', estrellas: 5 },
+      { cita: 'Me resolvieron en un día lo que llevaba meses arrastrando.', autor: 'Marta Pérez', cargo: 'Autónoma', foto: '', estrellas: 5 }] };
+    case 'planes': return { id, tipo, titulo: 'Planes sencillos', subtitulo: 'Sin permanencia. Cambia cuando quieras.', accion: 'siguiente', url: '', items: [
+      { nombre: 'Básico', precio: '29 €', periodo: '/mes', descripcion: 'Para empezar', caracteristicas: ['Lo esencial', 'Soporte por correo'], boton: 'Empezar', destacado: false },
+      { nombre: 'Pro', precio: '79 €', periodo: '/mes', descripcion: 'El más completo', caracteristicas: ['Todo lo del Básico', 'Soporte prioritario', 'Informes'], boton: 'Elegir Pro', destacado: true },
+      { nombre: 'Empresa', precio: '199 €', periodo: '/mes', descripcion: 'Para equipos', caracteristicas: ['Todo lo del Pro', 'Gestor dedicado'], boton: 'Hablar con ventas', destacado: false }] };
+    case 'preguntas': return { id, tipo, titulo: 'Preguntas frecuentes', items: [{ pregunta: '¿Cuánto tarda?', respuesta: 'Normalmente lo tienes listo en menos de una semana.' }, { pregunta: '¿Hay permanencia?', respuesta: 'No. Puedes cancelar cuando quieras.' }] };
+    case 'logos': return { id, tipo, titulo: 'Confían en nosotros', items: ['Nórdika', 'Lumen', 'Atlas', 'Verdia', 'Kairos'] };
+    case 'llamada': return { id, tipo, titulo: '¿Empezamos hoy?', texto: 'Te respondemos en menos de 24 horas.', estilo: 'tarjeta', boton_texto: 'Quiero empezar', boton_accion: 'siguiente', boton_url: '' };
+    case 'pasos': return { id, tipo, titulo: 'Así de fácil', items: [{ titulo: 'Cuéntanos', texto: 'Rellena el formulario en un minuto.' }, { titulo: 'Te llamamos', texto: 'Analizamos tu caso sin compromiso.' }, { titulo: 'Resultados', texto: 'Ponemos el plan en marcha.' }] };
+    case 'galeria': return { id, tipo, imagenes: [], columnas: 3 };
   }
 }
 
@@ -256,12 +286,141 @@ export function PropiedadesBloque({ b, on, imagenes, calendarios, anclas, subId 
       <Grupo t="Estilo" v={b.estilo} on={(estilo) => set({ estilo })} op={[['espacio', 'Espacio'], ['linea', 'Línea']]} />
       <Etq t={`Alto: ${b.alto} px`}><input type="range" min={4} max={200} value={b.alto} onChange={(e) => set({ alto: Number(e.target.value) })} className="w-full" /></Etq>
     </>);
+    case 'hero': return (<>
+      <Txt t="Etiqueta superior" v={b.etiqueta} on={(etiqueta) => set({ etiqueta })} max={80} />
+      <Txt t="Titular (rodea palabras con *asteriscos* para destacarlas)" v={b.titulo} on={(titulo) => set({ titulo })} area={3} max={200} />
+      <Txt t="Subtítulo" v={b.subtitulo} on={(subtitulo) => set({ subtitulo })} area={3} max={600} />
+      <Txt t="Botón principal" v={b.boton_texto} on={(boton_texto) => set({ boton_texto })} max={80} />
+      <AccionCampos accion={b.boton_accion} url={b.boton_url} on={(c) => set({ ...(c.accion ? { boton_accion: c.accion } : {}), ...(c.url !== undefined ? { boton_url: c.url } : {}) })} anclas={anclas} />
+      <Txt t="Botón secundario (opcional)" v={b.boton2_texto} on={(boton2_texto) => set({ boton2_texto })} max={80} />
+      {b.boton2_texto && <AccionCampos accion={b.boton2_accion} url={b.boton2_url} on={(c) => set({ ...(c.accion ? { boton2_accion: c.accion } : {}), ...(c.url !== undefined ? { boton2_url: c.url } : {}) })} anclas={anclas} />}
+      <Txt t="Prueba social (opcional)" v={b.prueba} on={(prueba) => set({ prueba })} max={120} ph="Valorado 4,9 por +500 clientes" />
+      <Grupo t="Disposición" v={b.disposicion} on={(disposicion) => set({ disposicion })} op={[['dividido', 'Texto + visual'], ['centro', 'Centrado']]} />
+      <VisualCampo v={b.visual} img={b.imagen} on={(visual, imagen) => set({ visual, imagen })} imagenes={imagenes} subId={subId} />
+    </>);
+    case 'caracteristicas': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={200} />
+      <Txt t="Subtítulo" v={b.subtitulo} on={(subtitulo) => set({ subtitulo })} area={2} max={400} />
+      <Grupo t="Columnas" v={String(b.columnas) as '2' | '3' | '4'} on={(c) => set({ columnas: Number(c) as 2 | 3 | 4 })} op={[['2', '2'], ['3', '3'], ['4', '4']]} />
+      <Grupo t="Estilo" v={b.estilo} on={(estilo) => set({ estilo })} op={[['tarjetas', 'Tarjetas'], ['simple', 'Simple']]} />
+      <Elementos t="Ventajas" v={b.items} on={(items) => set({ items })} max={12} nuevo={{ icono: 'rayo', titulo: 'Ventaja', texto: 'Explica el beneficio.' }}
+        campos={[['icono', 'Icono', 'icono'], ['titulo', 'Título', 'texto', 100], ['texto', 'Texto', 'area', 400]]} />
+    </>);
+    case 'imagen_texto': return (<>
+      <Txt t="Etiqueta superior" v={b.etiqueta} on={(etiqueta) => set({ etiqueta })} max={80} />
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} area={2} max={200} />
+      <Txt t="Texto" v={b.texto} on={(texto) => set({ texto })} area={4} max={1500} />
+      <ListaTextos t="Puntos" v={b.puntos} on={(puntos) => set({ puntos })} max={8} />
+      <Txt t="Botón (opcional)" v={b.boton_texto} on={(boton_texto) => set({ boton_texto })} max={80} />
+      {b.boton_texto && <AccionCampos accion={b.boton_accion} url={b.boton_url} on={(c) => set({ ...(c.accion ? { boton_accion: c.accion } : {}), ...(c.url !== undefined ? { boton_url: c.url } : {}) })} anclas={anclas} />}
+      <VisualCampo v={b.visual} img={b.imagen} on={(visual, imagen) => set({ visual, imagen })} imagenes={imagenes} subId={subId} />
+      <Casilla t="Visual a la izquierda" v={b.invertir} on={(invertir) => set({ invertir })} />
+    </>);
+    case 'cifras': return <Elementos t="Cifras" v={b.items} on={(items) => set({ items })} max={6} nuevo={{ valor: '100 %', etiqueta: 'Etiqueta' }} campos={[['valor', 'Cifra', 'texto', 20], ['etiqueta', 'Etiqueta', 'texto', 80]]} />;
+    case 'testimonios': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={200} />
+      <Elementos t="Testimonios" v={b.items} on={(items) => set({ items })} max={9} nuevo={{ cita: 'Una opinión real de un cliente.', autor: 'Nombre', cargo: 'Cargo', foto: '', estrellas: 5 }}
+        campos={[['cita', 'Opinión', 'area', 600], ['autor', 'Autor', 'texto', 80], ['cargo', 'Cargo o empresa', 'texto', 100], ['estrellas', 'Estrellas (0-5)', 'numero', 5]]} />
+    </>);
+    case 'planes': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={200} />
+      <Txt t="Subtítulo" v={b.subtitulo} on={(subtitulo) => set({ subtitulo })} max={400} />
+      <AccionCampos accion={b.accion} url={b.url} on={(c) => set(c)} anclas={anclas} />
+      <Elementos t="Planes" v={b.items} on={(items) => set({ items })} max={4} nuevo={{ nombre: 'Plan', precio: '49 €', periodo: '/mes', descripcion: '', caracteristicas: ['Ventaja'], boton: 'Empezar', destacado: false }}
+        campos={[['nombre', 'Nombre', 'texto', 60], ['precio', 'Precio', 'texto', 30], ['periodo', 'Periodo', 'texto', 30], ['descripcion', 'Descripción', 'texto', 200], ['caracteristicas', 'Incluye', 'lista'], ['boton', 'Botón', 'texto', 60], ['destacado', 'Destacado', 'casilla']]} />
+    </>);
+    case 'preguntas': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={200} />
+      <Elementos t="Preguntas" v={b.items} on={(items) => set({ items })} max={20} nuevo={{ pregunta: '¿Pregunta?', respuesta: 'Respuesta.' }} campos={[['pregunta', 'Pregunta', 'texto', 200], ['respuesta', 'Respuesta', 'area', 1500]]} />
+    </>);
+    case 'logos': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={120} />
+      <ListaTextos t="Nombres de clientes o medios" v={b.items} on={(items) => set({ items })} max={10} />
+    </>);
+    case 'llamada': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} area={2} max={200} />
+      <Txt t="Texto" v={b.texto} on={(texto) => set({ texto })} area={2} max={500} />
+      <Txt t="Botón" v={b.boton_texto} on={(boton_texto) => set({ boton_texto })} max={80} />
+      <AccionCampos accion={b.boton_accion} url={b.boton_url} on={(c) => set({ ...(c.accion ? { boton_accion: c.accion } : {}), ...(c.url !== undefined ? { boton_url: c.url } : {}) })} anclas={anclas} />
+      <Grupo t="Estilo" v={b.estilo} on={(estilo) => set({ estilo })} op={[['tarjeta', 'Tarjeta de color'], ['plano', 'Sencillo']]} />
+    </>);
+    case 'pasos': return (<>
+      <Txt t="Título" v={b.titulo} on={(titulo) => set({ titulo })} max={200} />
+      <Elementos t="Pasos" v={b.items} on={(items) => set({ items })} max={6} nuevo={{ titulo: 'Paso', texto: 'Qué ocurre.' }} campos={[['titulo', 'Título', 'texto', 100], ['texto', 'Texto', 'area', 400]]} />
+    </>);
+    case 'galeria': return (<>
+      <Grupo t="Columnas" v={String(b.columnas) as '2' | '3' | '4'} on={(c) => set({ columnas: Number(c) as 2 | 3 | 4 })} op={[['2', '2'], ['3', '3'], ['4', '4']]} />
+      {b.imagenes.map((u, i) => (
+        <div key={i} className="flex items-end gap-1">
+          <div className="min-w-0 flex-1"><ImagenCampo t={`Imagen ${i + 1}`} v={u} on={(x) => set({ imagenes: b.imagenes.map((y, j) => (j === i ? x : y)) })} imagenes={imagenes} subId={subId} /></div>
+          <button type="button" onClick={() => set({ imagenes: b.imagenes.filter((_, j) => j !== i) })} aria-label="Quitar imagen" className="mb-1 rounded p-1 text-tenue hover:text-peligro"><Trash2 className="size-4" /></button>
+        </div>
+      ))}
+      {b.imagenes.length < 12 && <button type="button" onClick={() => set({ imagenes: [...b.imagenes, ''] })} className="inline-flex items-center gap-1 text-xs font-medium text-primario-texto"><Plus className="size-3.5" /> Añadir imagen</button>}
+    </>);
   }
+}
+
+// Visual de un bloque: ninguno, imagen propia o una de las ilustraciones.
+function VisualCampo({ v, img, on, imagenes, subId }: { v: Visual; img: string; on: (v: Visual, img: string) => void; imagenes: Imagen[]; subId: string }) {
+  return (<>
+    <Sel t="Visual" v={v} on={(x) => on(x, img)} op={[['tarjetas', 'Tarjetas flotantes'], ['panel', 'Panel de control'], ['movil', 'Móvil con chat'], ['chat', 'Ventana de chat'], ['imagen', 'Mi imagen'], ['ninguno', 'Ninguno']]} />
+    {v === 'imagen' && <ImagenCampo t="Imagen" v={img} on={(x) => on(v, x)} imagenes={imagenes} subId={subId} />}
+  </>);
+}
+
+// Editor genérico de elementos repetibles (ventajas, testimonios, planes…).
+type TipoCampo = 'texto' | 'area' | 'icono' | 'numero' | 'casilla' | 'lista';
+function Elementos<T extends Record<string, unknown>>({ t, v, on, campos, nuevo, max }: { t: string; v: T[]; on: (x: T[]) => void; campos: [keyof T & string, string, TipoCampo, number?][]; nuevo: T; max: number }) {
+  const [abierto, setAbierto] = useState<number | null>(null);
+  const cambiar = (i: number, k: string, x: unknown) => on(v.map((e, j) => (j === i ? { ...e, [k]: x } : e)));
+  const mover = (i: number, d: number) => { const n = [...v]; [n[i], n[i + d]] = [n[i + d], n[i]]; on(n); };
+  return (
+    <div><span className="mb-1 block text-xs font-medium text-texto-2">{t}</span>
+      <div className="space-y-1.5">
+        {v.map((e, i) => (
+          <div key={i} className="rounded border border-borde">
+            <div className="flex items-center gap-1 px-2 py-1.5">
+              <button type="button" onClick={() => setAbierto(abierto === i ? null : i)} className="min-w-0 flex-1 truncate text-left text-sm text-texto">{String(e[campos.find((c) => c[2] === 'texto')?.[0] ?? campos[0][0]] ?? `Elemento ${i + 1}`) || `Elemento ${i + 1}`}</button>
+              <button type="button" disabled={i === 0} onClick={() => mover(i, -1)} aria-label="Subir" className="rounded p-0.5 text-tenue hover:text-texto disabled:opacity-30"><ArrowUp className="size-3.5" /></button>
+              <button type="button" disabled={i === v.length - 1} onClick={() => mover(i, 1)} aria-label="Bajar" className="rounded p-0.5 text-tenue hover:text-texto disabled:opacity-30"><ArrowDown className="size-3.5" /></button>
+              <button type="button" onClick={() => on(v.filter((_, j) => j !== i))} aria-label="Quitar" className="rounded p-0.5 text-tenue hover:text-peligro"><Trash2 className="size-3.5" /></button>
+            </div>
+            {abierto === i && (
+              <div className="space-y-2 border-t border-borde p-2">
+                {campos.map(([k, et, tipo, mx]) => {
+                  const val = e[k];
+                  if (tipo === 'casilla') return <Casilla key={k} t={et} v={Boolean(val)} on={(x) => cambiar(i, k, x)} />;
+                  if (tipo === 'numero') return <Etq key={k} t={et}><input type="number" min={0} max={mx} value={Number(val ?? 0)} onChange={(ev) => cambiar(i, k, Math.max(0, Math.min(mx ?? 100, Number(ev.target.value) || 0)))} className={estiloInput} /></Etq>;
+                  if (tipo === 'lista') return <ListaTextos key={k} t={et} v={(val as string[]) ?? []} on={(x) => cambiar(i, k, x)} max={12} />;
+                  if (tipo === 'icono') return (
+                    <div key={k}><span className="mb-1 block text-xs font-medium text-texto-2">{et}</span>
+                      <div className="flex flex-wrap gap-1">{Object.entries(ICONOS).map(([n, I]) => (
+                        <button key={n} type="button" title={n} aria-label={n} aria-pressed={val === n} onClick={() => cambiar(i, k, n)} className={`rounded p-1.5 ${val === n ? 'bg-primario text-white' : 'text-texto-2 hover:bg-superficie-2'}`}><I className="size-4" /></button>
+                      ))}</div>
+                    </div>
+                  );
+                  return <Txt key={k} t={et} v={String(val ?? '')} on={(x) => cambiar(i, k, x)} max={mx ?? 300} area={tipo === 'area' ? 3 : undefined} />;
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+        {v.length < max && <button type="button" onClick={() => { on([...v, structuredClone(nuevo)]); setAbierto(v.length); }} className="inline-flex items-center gap-1 text-xs font-medium text-primario-texto"><Plus className="size-3.5" /> Añadir</button>}
+      </div>
+    </div>
+  );
 }
 
 export function PropiedadesSeccion({ s, on }: { s: Seccion; on: (s: Seccion) => void }) {
   return (<>
-    <ColorCampo t="Fondo" v={s.fondo} on={(fondo) => on({ ...s, fondo })} />
+    <Sel t="Tipo de fondo" v={s.fondo_tipo ?? 'solido'} on={(fondo_tipo) => on({ ...s, fondo_tipo })} op={[['solido', 'Color liso'], ['degradado', 'Degradado'], ['malla', 'Malla de color'], ['imagen', 'Imagen']]} />
+    <ColorCampo t={s.fondo_tipo === 'degradado' ? 'Color inicial' : 'Fondo'} v={s.fondo} on={(fondo) => on({ ...s, fondo })} />
+    {s.fondo_tipo === 'degradado' && <ColorCampo t="Color final" v={s.fondo2 ?? '#ffffff'} on={(fondo2) => on({ ...s, fondo2 })} />}
+    {s.fondo_tipo === 'imagen' && (<>
+      <Txt t="Imagen de fondo (enlace https)" v={s.imagen_fondo ?? ''} on={(imagen_fondo) => on({ ...s, imagen_fondo })} max={1000} ph="https://…" />
+      <Etq t={`Oscurecer: ${s.oscurecer ?? 55} %`}><input type="range" min={0} max={90} value={s.oscurecer ?? 55} onChange={(e) => on({ ...s, oscurecer: Number(e.target.value) })} className="w-full" /></Etq>
+    </>)}
     <Grupo t="Espaciado" v={s.relleno} on={(relleno) => on({ ...s, relleno })} op={[['pequeno', 'Poco'], ['normal', 'Normal'], ['grande', 'Mucho']]} />
     <Grupo t="Ancho del contenido" v={s.ancho} on={(ancho) => on({ ...s, ancho })} op={[['estrecho', 'Estrecho'], ['normal', 'Normal'], ['ancho', 'Ancho']]} />
     <Txt t="Ancla (para enlazar con #)" v={s.ancla ?? ''} max={40} ph="ej. precios"
@@ -273,6 +432,8 @@ export function PropiedadesEstilo({ e, on }: { e: Contenido['estilo']; on: (e: C
   return (<>
     <ColorCampo t="Color principal (botones, iconos)" v={e.color_primario} on={(color_primario) => on({ ...e, color_primario })} />
     <ColorCampo t="Fondo de la página" v={e.fondo} on={(fondo) => on({ ...e, fondo })} />
-    <Sel t="Tipografía" v={e.fuente} on={(fuente) => on({ ...e, fuente })} op={[['sans', 'Moderna (sans)'], ['serif', 'Clásica (serif)'], ['redondeada', 'Redondeada']]} />
+    <ColorCampo t="Color de acento (degradados)" v={e.color_acento ?? '#7a5af8'} on={(color_acento) => on({ ...e, color_acento })} />
+    <Sel t="Tipografía" v={e.fuente} on={(fuente) => on({ ...e, fuente })} op={[['sans', 'Moderna (Inter)'], ['geometrica', 'Geométrica (Plus Jakarta)'], ['elegante', 'Elegante (Playfair)'], ['editorial', 'Editorial (Fraunces)'], ['redondeada', 'Redondeada (Nunito)'], ['serif', 'Clásica (Georgia)']]} />
+    <Grupo t="Esquinas" v={e.radio ?? 'suave'} on={(radio) => on({ ...e, radio })} op={[['recto', 'Rectas'], ['suave', 'Suaves'], ['redondo', 'Redondas']]} />
   </>);
 }

@@ -118,7 +118,8 @@ export function ListaEmbudos({ subId, embudos, planIncluye }: { subId: string; e
                 <div className="p-3">
                   <p className="font-medium text-texto">{p.nombre}</p>
                   <p className="line-clamp-2 text-xs text-tenue">{p.descripcion}</p>
-                  <p className="mt-1 text-xs text-tenue">{p.categoria} · {p.pasos().length} página(s)</p>
+                  <p className="mt-1 flex items-center justify-between text-xs text-tenue">{p.categoria} · {p.pasos().length} página(s)
+                    <a href={`/plantilla/${p.id}`} target="_blank" rel="noopener" onClick={(ev) => ev.stopPropagation()} className="font-medium text-primario-texto hover:underline">Vista previa</a></p>
                 </div>
               </div>
             ))}
