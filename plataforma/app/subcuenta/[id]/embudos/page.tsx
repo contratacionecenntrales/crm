@@ -2,7 +2,8 @@ import { subcuentaVisible } from '@/lib/sesion';
 import { crearClienteServidor } from '@/lib/supabase/server';
 import { ListaEmbudos, type EmbudoResumen } from '@/components/embudos/ListaEmbudos';
 
-export const metadata = { title: 'Embudos' };
+export const metadata = { title: 'Sitios y embudos' };
+export const maxDuration = 300; // la generación con IA puede tardar hasta un par de minutos
 
 export default async function PaginaEmbudos({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tipo?: string }> }) {
   const { id } = await params;

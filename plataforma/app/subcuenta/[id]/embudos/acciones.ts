@@ -6,6 +6,10 @@ import { PAGINA_EN_BLANCO, PLANTILLAS } from '@/lib/embudos/plantillas';
 import { esquemaContenido, rutaPaso, slugEmbudo, type Contenido } from '@/lib/embudos/tipos';
 import { CONFIG_VACIA, PLANTILLAS_SITIO, type ConfigSitio } from '@/lib/embudos/sitios';
 import { z } from 'zod';
+import { crearClienteAdmin } from '@/lib/supabase/admin';
+import { proveedorPaginas } from '@/lib/ia/generarPagina';
+import { contenidoDesdeBrief } from '@/lib/embudos/desdeBrief';
+import { ErrorIA } from '@/lib/ia/claude';
 import type { Resultado } from '@/lib/tipos';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -227,4 +231,37 @@ export async function actualizarSitio(sub: string, eid: string, config: ConfigSi
     refrescar(sub, eid);
     return { ok: true, mensaje: 'Ajustes del sitio guardados.' };
   } catch (e) { return fallo(e); }
+}
+
+// Crea un embudo o un sitio a partir de la descripción del negocio, con IA.
+export async function crearConIA(sub: string, tipo: 'embudo' | 'sitio', nombre: string, descripcion: string): Promise<Resultado & { id?: string }> {
+  try {
+    validar(sub);
+    const n = nombre.trim(); const d = descripcion.trim();
+    if (!n || n.length > 120) return { ok: false, error: 'Ponle un nombre (máximo 120 caracteres).' };
+    if (d.length < 20) return { ok: false, error: 'Describe el negocio con algo más de detalle (qué haces, para quién y qué quieres conseguir).' };
+    if (d.length > 3000) return { ok: false, error: 'La descripción es demasiado larga (máximo 3000 caracteres).' };
+    if (tipo !== 'embudo' && tipo !== 'sitio') return { ok: false, error: 'Tipo no válido.' };
+    const proveedor = proveedorPaginas();
+    if (!proveedor) return { ok: false, error: 'La IA no está conectada en el servidor de la plataforma.' };
+    const supabase = await crearClienteServidor();
+    const { data: cupo } = await supabase.rpc('ia_reservar_uso', { p_subcuenta: sub });
+    if (!cupo) return { ok: false, error: 'Sin IA disponible: el plan no la incluye o se alcanzó el límite diario.' };
+    const { brief, uso } = await proveedor.generar({ tipo, descripcion: d, nombre: n });
+    await crearClienteAdmin()?.rpc('ia_sumar_tokens', { p_subcuenta: sub, p_entrada: uso.entrada, p_salida: uso.salida });
+    const r = contenidoDesdeBrief(brief, tipo);
+    const config = tipo === 'sitio' ? { ...CONFIG_VACIA, marca: r.marca || n, descripcion: r.descripcion, menu_cta_texto: r.boton_menu || 'Contactar', menu_cta_ruta: r.paginas[r.paginas.length - 1].ruta } : {};
+    const { data: e, error } = await supabase.from('emb_embudos')
+      .insert({ subcuenta_id: sub, nombre: n, slug: slugEmbudo(n, sufijo()), plantilla: `ia-${proveedor.id}`, tipo, config }).select('id').single();
+    if (error) return { ok: false, error: mensajeDeError(error) };
+    const { error: e2 } = await supabase.from('emb_pasos').insert(r.paginas.map((x, i) => ({ embudo_id: e.id, subcuenta_id: sub, nombre: x.nombre, ruta: x.ruta, orden: i, contenido: x.contenido })));
+    if (e2) {
+      await supabase.from('emb_embudos').delete().eq('id', e.id);
+      return { ok: false, error: mensajeDeError(e2) };
+    }
+    refrescar(sub);
+    return { ok: true, id: e.id as string };
+  } catch (e) {
+    return { ok: false, error: e instanceof ErrorIA ? e.message : (e as Error).message || 'No se pudo generar.' };
+  }
 }

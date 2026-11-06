@@ -63,3 +63,19 @@ test('todas las plantillas de sitio cumplen el esquema y enlazan a páginas que 
     }
   }
 });
+
+test('un brief de la IA se convierte en páginas válidas y saneadas', async () => {
+  const { contenidoDesdeBrief } = await import('../lib/embudos/desdeBrief.ts');
+  const item = { icono: 'inventado', titulo: 'Rápido', texto: 'Muy rápido', valor: '+500', etiqueta: 'clientes', cita: 'Genial', autor: 'Ana', cargo: 'CEO', nombre: 'Pro', precio: '49 €', periodo: '/mes', caracteristicas: ['Todo'], destacado: false, pregunta: '¿Sí?', respuesta: 'Sí.' };
+  const sec = (tipo: string) => ({ tipo, etiqueta: 'E', titulo: 'T *x*', subtitulo: 'S', texto: 'X', boton: 'Vamos', boton2: 'Más', prueba: '4,9', visual: 'raro', puntos: ['a', 'b', 'c'], items: [item, item, item] });
+  const r = contenidoDesdeBrief({ marca: 'Marca', color: 'rojo', acento: '#00ff00', fuente: 'comic', radio: 'suave', descripcion: 'D', boton_menu: 'Contactar',
+    paginas: [{ nombre: 'Inicio', ruta: 'Inicio!', secciones: ['hero', 'ventajas', 'cifras', 'testimonios', 'planes', 'preguntas', 'tipo-raro', 'formulario'].map(sec) }, { nombre: 'Contacto', ruta: 'contacto', secciones: [sec('formulario')] }] }, 'sitio');
+  assert.equal(r.paginas.length, 2);
+  assert.equal(r.paginas[0].ruta, 'inicio');
+  const c = r.paginas[0].contenido;
+  assert.equal(c.estilo.color_primario, '#155eef'); // color no válido → por defecto
+  assert.equal(c.estilo.fuente, 'geometrica');
+  const json = JSON.stringify(c);
+  assert.ok(!json.includes('inventado') && !json.includes('"raro"'), 'iconos y visuales saneados');
+  assert.ok(c.secciones.some((s) => s.ancla === 'formulario'));
+});

@@ -2,12 +2,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import { Copy, ExternalLink, FileText, LayoutTemplate, Lock, MoreVertical, Plus, Search, Trash2 } from 'lucide-react';
-import { borrarEmbudo, crearEmbudo, duplicarEmbudo } from '@/app/subcuenta/[id]/embudos/acciones';
+import { Copy, ExternalLink, FileText, LayoutTemplate, Lock, MoreVertical, Plus, Search, Trash2, Sparkles } from 'lucide-react';
+import { borrarEmbudo, crearConIA, crearEmbudo, duplicarEmbudo } from '@/app/subcuenta/[id]/embudos/acciones';
 import { Modal } from '@/components/ui/Modal';
 import { Aviso } from '@/components/ui/Aviso';
 import { Insignia } from '@/components/ui/Insignia';
-import { estilosBoton, estiloInput } from '@/components/ui/clases';
+import { estilosBoton, estiloArea, estiloInput } from '@/components/ui/clases';
 import { PLANTILLAS } from '@/lib/embudos/plantillas';
 import { PLANTILLAS_SITIO } from '@/lib/embudos/sitios';
 import type { Contenido } from '@/lib/embudos/tipos';
@@ -40,6 +40,8 @@ export function ListaEmbudos({ subId, embudos, planIncluye, tipo = 'embudo' }: {
   const [nombre, setNombre] = useState('');
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
+  const [descripcion, setDescripcion] = useState('');
+  const [errorGaleria, setErrorGaleria] = useState('');
   const [pendiente, iniciar] = useTransition();
   const lista = embudos.filter((e) => !q || e.nombre.toLowerCase().includes(q.toLowerCase()));
 
@@ -115,6 +117,11 @@ export function ListaEmbudos({ subId, embudos, planIncluye, tipo = 'embudo' }: {
       <Modal abierto={galeria} alCerrar={() => setGaleria(false)} titulo={sitio ? 'Nuevo sitio web' : 'Nuevo embudo'} ancho="max-w-5xl">
         <div className="space-y-4">
           <div className="grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4">
+            <button type="button" onClick={() => { setElegida('ia'); setNombre((n) => n || (sitio ? 'Mi web' : 'Mi embudo')); }}
+              className={`overflow-hidden rounded-lg border-2 text-left ${elegida === 'ia' ? 'border-primario' : 'border-borde hover:border-borde-fuerte'}`}>
+              <div className="flex h-36 flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#155eef] via-[#7a5af8] to-[#ee46bc] text-white"><Sparkles className="size-8" /><span className="text-sm font-semibold">Crear con IA</span></div>
+              <div className="p-3"><p className="font-medium text-texto">Crear con IA</p><p className="text-xs text-tenue">Describe tu negocio y la IA diseña {sitio ? 'el sitio completo' : 'el embudo'} con textos.</p></div>
+            </button>
             <button type="button" onClick={() => { setElegida('blanco'); setNombre((n) => n || (sitio ? 'Mi web' : 'Mi embudo')); }}
               className={`overflow-hidden rounded-lg border-2 text-left ${elegida === 'blanco' ? 'border-primario' : 'border-borde hover:border-borde-fuerte'}`}>
               <div className="flex h-36 items-center justify-center bg-superficie-2"><Plus className="size-8 text-tenue" /></div>
@@ -136,17 +143,25 @@ export function ListaEmbudos({ subId, embudos, planIncluye, tipo = 'embudo' }: {
           </div>
           <form className="flex flex-wrap items-end gap-3 border-t border-borde pt-4" onSubmit={(ev) => {
             ev.preventDefault();
-            if (!elegida) return setAviso({ ok: false, error: 'Elige una plantilla o «Desde cero».' });
+            if (!elegida) return setErrorGaleria('Elige una plantilla, «Crear con IA» o «Desde cero».');
+            setErrorGaleria('');
             iniciar(async () => {
-              const r = await crearEmbudo(subId, nombre, elegida === 'blanco' ? '' : elegida, tipo);
+              const r = elegida === 'ia' ? await crearConIA(subId, tipo, nombre, descripcion) : await crearEmbudo(subId, nombre, elegida === 'blanco' ? '' : elegida, tipo);
               if (r.ok && r.id) router.push(`/subcuenta/${subId}/embudos/${r.id}`);
-              else setAviso(r);
+              else setErrorGaleria(r.ok ? 'No se pudo crear.' : r.error);
             });
           }}>
+            {elegida === 'ia' && (
+              <label className="block w-full"><span className="mb-1.5 block text-sm font-medium">Describe tu negocio</span>
+                <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={4} maxLength={3000} className={estiloArea}
+                  placeholder="Ej.: Clínica de fisioterapia en Valencia para deportistas y personas con dolor de espalda. Queremos conseguir citas de primera visita (gratis). Tono cercano y profesional. Tenemos 12 años de experiencia y 4 fisioterapeutas." />
+                <span className="text-xs text-tenue">Qué ofreces, a quién, en qué zona, qué quieres conseguir (citas, llamadas, ventas…) y el tono. Tarda entre 30 segundos y 2 minutos.</span></label>
+            )}
+            {errorGaleria && <p role="alert" className="w-full rounded-md bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318] dark:bg-red-950/40 dark:text-red-300">{errorGaleria}</p>}
             <label className="block min-w-60 flex-1"><span className="mb-1.5 block text-sm font-medium">{sitio ? 'Nombre del sitio' : 'Nombre del embudo'}</span>
               <input value={nombre} onChange={(e) => setNombre(e.target.value)} required maxLength={120} className={estiloInput} /></label>
             <button type="button" onClick={() => setGaleria(false)} className={estilosBoton.secundario}>Cancelar</button>
-            <button disabled={pendiente || !elegida} className={estilosBoton.primario}>{pendiente ? 'Creando…' : sitio ? 'Crear sitio' : 'Crear embudo'}</button>
+            <button disabled={pendiente || !elegida} className={estilosBoton.primario}>{pendiente ? (elegida === 'ia' ? 'Diseñando con IA…' : 'Creando…') : elegida === 'ia' ? 'Generar con IA' : sitio ? 'Crear sitio' : 'Crear embudo'}</button>
           </form>
         </div>
       </Modal>

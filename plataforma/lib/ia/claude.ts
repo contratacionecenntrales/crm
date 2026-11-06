@@ -12,7 +12,7 @@ const BETA_RESPALDO = 'server-side-fallback-2026-07-01';
 export const iaConfigurada = () => Boolean(process.env.ANTHROPIC_API_KEY);
 
 let cliente: Anthropic | null = null;
-function claude(): Anthropic {
+export function claude(): Anthropic {
   if (!iaConfigurada()) throw new ErrorIA('La IA no está configurada en el servidor (falta ANTHROPIC_API_KEY).', false);
   cliente ??= new Anthropic({ timeout: 25_000, maxRetries: 1 });
   return cliente;
@@ -23,7 +23,7 @@ export class ErrorIA extends Error {
   constructor(mensaje: string, public reintentable: boolean) { super(mensaje); }
 }
 
-function traducirError(e: unknown): ErrorIA {
+export function traducirError(e: unknown): ErrorIA {
   if (e instanceof ErrorIA) return e;
   if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return new ErrorIA('La clave de la IA no es válida o no tiene permiso.', false);
   if (e instanceof Anthropic.RateLimitError) return new ErrorIA('La IA está saturada ahora mismo; se reintentará.', true);
